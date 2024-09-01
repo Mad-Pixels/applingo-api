@@ -83,7 +83,7 @@ tasks:
     dir: "{{ .git_root }}"
     deps:
       - go/install/imports
-    cmd: goimports -w -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
+    cmd: goimports -w $(find {{.git_root}} -type f -name '*.go' -not -path "{{.git_root}}/vendor/*")
     silent: true
 
   go/run/outdated:
