@@ -11,7 +11,7 @@ vars:
   go_imports:  latest
   go_fumpt:    latest
   go_outdated: latest
-  project: lingocards-api
+  repository_name: lingocards-api
 
 tasks:
   default:
@@ -103,7 +103,7 @@ tasks:
     vars:
       FUNC_NAME: '{{ .FUNC }}'
     cmds:
-      - docker build -t {{ .project }}/{{ .FUNC_NAME }}:latest --build-arg FUNC_NAME={{ .FUNC_NAME }} .
+      - docker build -t {{ .repository_name }}:{{ .FUNC_NAME }} --build-arg FUNC_NAME={{ .FUNC_NAME }} .
     silent: true
   
   docker/build/all:
@@ -119,6 +119,21 @@ tasks:
           fi
         done
     silent: true
+  
+  docker/push/func:
+    desc: Push image to repository.
+    cmds:
+      - |
+        if [ -z "{{ .REPO_URL }}" ]; then
+          echo "Error: REPO_URL is not set"
+          exit 1
+        fi
+        if [ -z "{{ .TAG }}" ]; then
+          echo "Error: TAG is not set"
+          exit 1
+        fi
+      - docker image tag {{ .repository_name }}:{{ .TAG }} {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
+      - docker push {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
 
   terraform/init:
     desc: Run 'terraform init'.
@@ -210,6 +225,10 @@ tasks:
           KEY_ID:     test
           ACCESS_KEY: test
       - task: docker/build/all
+      - task: docker/push/func
+        vars:
+          REPO_URL: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
+          TAG:      "dictionary" 
     silent: true
 
   env/localstack/stop:
