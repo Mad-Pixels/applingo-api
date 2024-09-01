@@ -1,3 +1,0 @@
-bucket = "your-actual-aws-bucket-name"
-key    = "terraform.tfstate"
-region = "your-aws-region"
