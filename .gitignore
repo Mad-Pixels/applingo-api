@@ -27,6 +27,8 @@ go.work
 *.swo
 
 # terraform
+terraform.tfstate
+tfplan
 .terraform.lock.hcl
 .terraform/
 

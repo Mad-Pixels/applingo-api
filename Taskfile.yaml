@@ -120,24 +120,87 @@ tasks:
         done
     silent: true
 
-  terraform/init:
-    desc: Run 'terraform init'.
+  terraform/init/localstack:
+    desc: Initialize Terraform for LocalStack
     dir: "{{ .git_root }}/terraform"
     cmds:
-      - terraform init
-    sources:
-      - "../cmd/*/main.go"
-      - "*.tf"
-      - "modules/**/*.tf"
-    silent: true
-    internal: true
-     
-  terraform/plan:
-    desc: Run 'terraform plan'.
+      - terraform init -reconfigure -backend-config=localstack.tfbackend
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+
+  terraform/init/aws:
+    desc: Initialize Terraform for AWS
     dir: "{{ .git_root }}/terraform"
-    deps:
-      - terraform/init
     cmds:
-      - terraform plan
-    
-    
+      - terraform init -backend-config=aws.tfbackend
+
+  localstack/start:
+    desc: Start LocalStack
+    cmds:
+      - |
+        if docker ps | grep -q localstack; then
+          echo "LocalStack is already running."
+        else
+          echo "Starting LocalStack..."
+          docker run -d --name localstack \
+            -p 4566:4566 -p 4571:4571 \
+            -e SERVICES=lambda,iam,sts \
+            -e DEBUG=1 \
+            -e DATA_DIR=/tmp/localstack/data \
+            -v "/tmp/localstack:/tmp/localstack" \
+            -v "/var/run/docker.sock:/var/run/docker.sock" \
+            localstack/localstack
+          echo "Waiting for LocalStack to be ready..."
+          until curl -s http://localhost:4566 > /dev/null; do
+            sleep 1
+          done
+          echo "LocalStack is ready!"
+        fi
+    silent: false
+
+  localstack/stop:
+    desc: Stop LocalStack
+    cmds:
+      - docker stop localstack
+      - docker rm localstack
+    silent: false
+
+  localstack/create-s3-bucket:
+    desc: Create S3 bucket in LocalStack
+    cmds:
+      - |
+        aws --endpoint-url=http://localhost:4566 s3 mb s3://terraform-state
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+
+  localstack/deploy:
+    desc: Deploy to LocalStack
+    deps: [localstack/start, docker/build/all, localstack/create-s3-bucket]
+    dir: "{{ .git_root }}/terraform"
+    cmds:
+      - task: terraform/init/localstack
+      - |
+        terraform plan -var="use_localstack=true" -var="region=us-east-1" -var="localstack_endpoint=http://localhost:4566" -out=tfplan
+        terraform apply -auto-approve tfplan
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+    silent: false
+  
+  aws/deploy:
+    desc: Deploy to AWS
+    deps: [docker/build/all]
+    dir: "{{ .git_root }}/terraform"
+    cmds:
+      - task: terraform/init/aws
+      - |
+        terraform plan
+        terraform apply -auto-approve
+    silent: false
+
+  
