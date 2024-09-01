@@ -42,27 +42,7 @@ tasks:
       - "{{ .go_root }}/bin/golangci-lint"
     internal: true
     silent: true
-
-  go/install/fumpt:
-    desc: Install 'gofumpt'.
-    cmd: go install mvdan.cc/gofumpt@{{ .go_fumpt }}
-    internal: true
-    silent: true
-
-  go/install/imports:
-    desc: Install 'goimports'.
-    cmd: go install golang.org/x/tools/cmd/goimports@{{ .go_imports }}
-    internal: true
-    silent: true
-
-  go/install/outdated:
-    desc: Install 'go-mod-outdated'.
-    deps: 
-      - go/mod/vendor
-    cmd: go install github.com/psampaz/go-mod-outdated@{{ .go_outdated }}
-    internal: true
-    silent: true
-
+  
   go/run/lint:
     desc: Run 'golangci-lint'.
     dir: "{{ .git_root }}"
@@ -70,7 +50,13 @@ tasks:
       - go/install/lint
     cmds: 
       - "{{ .go_root }}/bin/golangci-lint run cmd/... -v --timeout=15m"
-
+  
+  go/install/fumpt:
+    desc: Install 'gofumpt'.
+    cmd: go install mvdan.cc/gofumpt@{{ .go_fumpt }}
+    internal: true
+    silent: true
+    
   go/run/fumpt:
     desc: Run 'gofumpt'.
     dir: "{{ .git_root }}"
@@ -79,12 +65,26 @@ tasks:
     cmd: gofumpt -l -w .
     silent: true
 
+  go/install/imports:
+    desc: Install 'goimports'.
+    cmd: go install golang.org/x/tools/cmd/goimports@{{ .go_imports }}
+    internal: true
+    silent: true
+
   go/run/imports:
     desc: Run 'goimports'.
     dir: "{{ .git_root }}"
     deps:
       - go/install/imports
     cmd: goimports -w $(find {{ .git_root }} -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
+    silent: true
+
+  go/install/outdated:
+    desc: Install 'go-mod-outdated'.
+    deps: 
+      - go/mod/vendor
+    cmd: go install github.com/psampaz/go-mod-outdated@{{ .go_outdated }}
+    internal: true
     silent: true
 
   go/run/outdated:
@@ -129,4 +129,15 @@ tasks:
       - "../cmd/*/main.go"
       - "*.tf"
       - "modules/**/*.tf"
+    silent: true
+    internal: true
      
+  terraform/plan:
+    desc: Run 'terraform plan'.
+    dir: "{{ .git_root }}/terraform"
+    deps:
+      - terraform/init
+    cmds:
+      - terraform plan
+    
+    
