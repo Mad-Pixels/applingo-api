@@ -166,6 +166,27 @@ tasks:
     silent: true
     internal: true
 
+  terraform/apply:
+    desc: Run 'terraform apply'.
+    dir: "{{ .DIR }}"
+    cmds:
+      - |
+        if [ -z "{{ .LOCALSTACK }}" ]; then
+          echo "Error: LOCALSTACK is not set"
+          exit 1
+        fi
+        if [ -z "{{ .REGION }}" ]; then
+          echo "Error: REGION is not set"
+          exit 1
+        fi
+        terraform apply --auto-approve -var="use_localstack={{ .LOCALSTACK }}" -var="aws_region={{ .REGION }}"
+    env:
+      AWS_DEFAULT_REGION:    '{{ .REGION }}'
+      AWS_ACCESS_KEY_ID:     '{{ .KEY_ID }}'
+      AWS_SECRET_ACCESS_KEY: '{{ .ACCESS_KEY }}'
+    silent: true
+    internal: true
+
   env/localstack/start:
     desc: Run localstack environment.
     cmds:
@@ -181,13 +202,14 @@ tasks:
           REGION:     us-east-1
           KEY_ID:     test
           ACCESS_KEY: test
-      - task: terraform/plan
+      - task: terraform/apply
         vars:
           DIR:        "{{ .git_root }}/terraform/provisioners/infra"
           REGION:     us-east-1
           LOCALSTACK: "true"
           KEY_ID:     test
           ACCESS_KEY: test
+      - task: docker/build/all
     silent: true
 
   env/localstack/stop:
