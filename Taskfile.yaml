@@ -1,4 +1,4 @@
-version: 3
+version: "3"
 
 vars:
   git_root:
@@ -7,45 +7,93 @@ vars:
     sh: go env GOPATH
   go_version:
     sh: grep '^go ' ./go.mod | awk '{print $2}'
-  go_lint: v1.60.3
+  go_lint:     v1.60.3
+  go_imports:  latest
+  go_fumpt:    latest
+  go_outdated: latest
 
-  tasks:
-    default:
-      desc: Default task.
-      cmds:
-        - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
-      silent: true
+tasks:
+  default:
+    desc: Default task.
+    cmds:
+      - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
+    silent: true
 
-    go/mod/vendor:
-      desc: Run 'go mod vendor'.
-      dir: "{{ .git_root }}"
-      cmds:
-        - |
-          if [ -d "{{ .git_root }}/vendor" ]; then
-            cd {{ .git_root }} && go mod tidy
-          else 
-            cd {{ .git_root }} && go mod tidy && go mod vendor
-          fi
-      internal: true
-      silent: true
+  go/mod/vendor:
+    desc: Run 'go mod vendor'.
+    dir: "{{ .git_root }}"
+    cmds:
+      - |
+        if [ -d "{{ .git_root }}/vendor" ]; then
+          cd {{ .git_root }} && go mod tidy
+        else 
+          cd {{ .git_root }} && go mod tidy && go mod vendor
+        fi
+    internal: true
+    silent: true
 
-    go/lint/install:
-      desc: Install 'golangci-lint'
-      dir: "{{ .git_root }}"
-      cmds:
-        - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .golint_version }}
-        - "{{ .go_root }}/bin/golangci-lint version"
-      sources:
-        - "{{ .go_root }}/bin/golangci-lint"
-      internal: true
-      silent: true
+  go/install/lint:
+    desc: Install 'golangci-lint'.
+    cmds:
+      - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .golint_version }}
+      - "{{ .go_root }}/bin/golangci-lint version"
+    sources:
+      - "{{ .go_root }}/bin/golangci-lint"
+    internal: true
+    silent: true
 
-    go/lint/run:
-      desc: Run 'golangci-lint'
-      deps:
-        - go/lint/install
-      cmds: 
-        - "{{ .go_root }}/bin/golangci-lint run"
+  go/install/fumpt:
+    desc: Install 'gofumpt'.
+    cmd: go install mvdan.cc/gofumpt@{{ .go_fumpt }}
+    internal: true
+    silent: true
+
+  go/install/imports:
+    desc: Install 'goimports'.
+    cmd: go install golang.org/x/tools/cmd/goimports@{{ .go_imports }}
+    internal: true
+    silent: true
+
+  go/install/outdated:
+    desc: Install 'go-mod-outdated'.
+    deps: 
+      - go/mod/vendor
+    cmd: go install github.com/psampaz/go-mod-outdated@{{ .go_outdated }}
+    internal: true
+    silent: true
+
+  go/run/lint:
+    desc: Run 'golangci-lint'.
+    dir: "{{ .git_root }}"
+    deps:
+      - go/install/lint
+    cmds: 
+      - "{{ .go_root }}/bin/golangci-lint run cmd/... -v --timeout=15m"
+
+  go/run/fumpt:
+    desc: Run 'gofumpt'.
+    dir: "{{ .git_root }}"
+    deps:
+      - go/install/fumpt
+    cmd: gofumpt -l -w .
+    silent: true
+
+  go/run/imports:
+    desc: Run 'goimports'.
+    dir: "{{ .git_root }}"
+    deps:
+      - go/install/imports
+    cmd: goimports -w -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
+    silent: true
+
+  go/run/outdated:
+    desc: Run 'outdated'
+    dir: "{{ .git_root }}"
+    deps:
+      - go/install/outdated
+    cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
+    silent: true
+
 
     
 
