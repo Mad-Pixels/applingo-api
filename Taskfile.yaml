@@ -145,13 +145,7 @@ tasks:
         else
           echo "Starting LocalStack..."
           docker run -d --name localstack \
-            -p 4566:4566 -p 4571:4571 \
-            -e SERVICES=lambda,iam,sts \
-            -e DEBUG=1 \
-            -e DATA_DIR=/tmp/localstack/data \
-            -v "/tmp/localstack:/tmp/localstack" \
-            -v "/var/run/docker.sock:/var/run/docker.sock" \
-            localstack/localstack
+            localstack/localstack-pro
           echo "Waiting for LocalStack to be ready..."
           until curl -s http://localhost:4566 > /dev/null; do
             sleep 1
@@ -179,7 +173,6 @@ tasks:
 
   localstack/deploy:
     desc: Deploy to LocalStack
-    deps: [localstack/start, docker/build/all, localstack/create-s3-bucket]
     dir: "{{ .git_root }}/terraform"
     cmds:
       - task: terraform/init/localstack

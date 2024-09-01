@@ -1,5 +1,5 @@
 terraform {
-  backend "s3" {}
+  # Бэкенд будет настроен динамически через -backend-config
 }
 
 provider "aws" {
@@ -24,7 +24,6 @@ provider "aws" {
   secret_key = var.use_localstack ? "test" : null
 }
 
-
 variable "use_localstack" {
   description = "Whether to use LocalStack instead of real AWS"
   type        = bool
@@ -41,6 +40,8 @@ variable "region" {
   type    = string
   default = "us-east-1"
 }
+
+
 
 module "lambda_functions" {
   
