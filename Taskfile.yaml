@@ -93,7 +93,3 @@ tasks:
       - go/install/outdated
     cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
     silent: true
-
-
-    
-
