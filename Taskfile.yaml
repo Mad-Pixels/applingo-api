@@ -119,3 +119,27 @@ tasks:
           fi
         done
     silent: true
+
+  terraform/init/localstack:
+    desc: Run 'terraform init'.
+    dir: "{{ .git_root }}/terraform"
+    cmds:
+      - terraform init -reconfigure
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+
+  env/localstack/start:
+    desc: Run 'localstack' after checking for LOCALSTACK_AUTH_TOKEN.
+    cmds:
+      - |
+        if [ -z "$LOCALSTACK_AUTH_TOKEN" ]; then
+          echo "Error: LOCALSTACK_AUTH_TOKEN is not set. Please set this environment variable before running LocalStack."
+          exit 1
+        fi
+        localstack start -d 1>/dev/null 2>&1
+    internal: true
+    silent: true
+
+# terraform plan -var="use_localstack=true" -var="aws_region=us-east-1" -var="localstack_endpoint=http://localhost:4566" 
