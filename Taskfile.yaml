@@ -119,4 +119,14 @@ tasks:
           fi
         done
     silent: true
+
+  terraform/init:
+    desc: Run 'terraform init'.
+    dir: "{{ .git_root }}/terraform"
+    cmds:
+      - terraform init
+    sources:
+      - "../cmd/*/main.go"
+      - "*.tf"
+      - "modules/**/*.tf"
      

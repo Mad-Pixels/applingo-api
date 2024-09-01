@@ -26,6 +26,10 @@ go.work
 *.swp
 *.swo
 
+# terraform
+.terraform.lock.hcl
+.terraform/
+
 # OS-specific files
 .DS_Store
 Thumbs.db
