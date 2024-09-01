@@ -12,6 +12,7 @@ vars:
   go_fumpt:    latest
   go_outdated: latest
   repository_name: lingocards-api
+  localstack_ecr_url: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
 
 tasks:
   default:
@@ -122,6 +123,8 @@ tasks:
   
   docker/push/func:
     desc: Push image to repository.
+    vars:
+      REPO_URL: '{{ .REPO_URL }}'
     cmds:
       - |
         if [ -z "{{ .REPO_URL }}" ]; then
@@ -134,6 +137,22 @@ tasks:
         fi
       - docker image tag {{ .repository_name }}:{{ .TAG }} {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
       - docker push {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
+    silent: true
+
+  docker/push/all:
+    desc: Push all images to repository.
+    vars:
+      REPO_URL: '{{ .REPO_URL }}'
+    cmds:
+      - |
+        if [ -z "{{.REPO_URL}}" ]; then
+          echo "Error: REPO_URL is not set"
+          exit 1
+        fi
+        for tag in $(docker images --format '{{`{{.Repository}}:{{.Tag}}`}}' | grep "^{{.repository_name}}:"); do
+          task docker/push/func TAG=${tag#*:} REPO_URL={{.REPO_URL}}
+        done
+    silent: true
 
   terraform/init:
     desc: Run 'terraform init'.
@@ -225,10 +244,9 @@ tasks:
           KEY_ID:     test
           ACCESS_KEY: test
       - task: docker/build/all
-      - task: docker/push/func
+      - task: docker/push/all
         vars:
-          REPO_URL: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
-          TAG:      "dictionary" 
+          REPO_URL: '{{ .localstack_ecr_url }}'
     silent: true
 
   env/localstack/stop:
