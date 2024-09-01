@@ -179,7 +179,7 @@ tasks:
           echo "Error: REGION is not set"
           exit 1
         fi
-        terraform apply  -var="use_localstack={{ .LOCALSTACK }}" -var="aws_region={{ .REGION }}"
+        terraform apply --auto-approve -var="use_localstack={{ .LOCALSTACK }}" -var="aws_region={{ .REGION }}"
     env:
       AWS_DEFAULT_REGION:    '{{ .REGION }}'
       AWS_ACCESS_KEY_ID:     '{{ .KEY_ID }}'
