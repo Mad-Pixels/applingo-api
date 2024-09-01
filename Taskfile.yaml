@@ -11,6 +11,7 @@ vars:
   go_imports:  latest
   go_fumpt:    latest
   go_outdated: latest
+  project: lingocards-api
 
 tasks:
   default:
@@ -83,7 +84,7 @@ tasks:
     dir: "{{ .git_root }}"
     deps:
       - go/install/imports
-    cmd: goimports -w $(find {{.git_root}} -type f -name '*.go' -not -path "{{.git_root}}/vendor/*")
+    cmd: goimports -w $(find {{ .git_root }} -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
     silent: true
 
   go/run/outdated:
@@ -93,3 +94,29 @@ tasks:
       - go/install/outdated
     cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
     silent: true
+
+  docker/build/func:
+    desc: Run 'docker build' for 'FUNC=...' argument.
+    dir: "{{ .git_root }}"
+    deps:
+      - go/mod/vendor
+    vars:
+      FUNC_NAME: '{{ .FUNC }}'
+    cmds:
+      - docker build -t {{ .project }}/{{ .FUNC_NAME }}:latest --build-arg FUNC_NAME={{ .FUNC_NAME }} .
+    silent: true
+  
+  docker/build/all:
+    desc: Run 'docker build' for all funcs.
+    dir: "{{ .git_root }}"
+    cmds:
+      - |
+        for dir in {{ .git_root }}/cmd/*; do
+          if [ -d "$dir" ]; then
+            func=$(basename "$dir")
+            echo "Building $func"
+            task docker/build/func FUNC=$func
+          fi
+        done
+    silent: true
+     
