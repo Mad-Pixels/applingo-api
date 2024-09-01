@@ -120,18 +120,49 @@ tasks:
         done
     silent: true
 
-  terraform/init/localstack:
+  terraform/init:
     desc: Run 'terraform init'.
     dir: "{{ .git_root }}/terraform"
     cmds:
-      - terraform init -reconfigure
-    env:
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
+      - |
+        if [ -z "AWS_ACCESS_KEY_ID" ]; then
+          echo "Error: AWS_ACCESS_KEY_ID is not set"
+          exit 1
+        fi
+        if [ -z "AWS_SECRET_ACCESS_KEY" ]; then
+          echo "Error: AWS_SECRET_ACCESS_KEY is not set"
+          exit 1
+        fi
+        if [ -z "AWS_DEFAULT_REGION" ]; then
+          echo "Error: AWS_DEFAULT_REGION is not set"
+          exit 1
+        fi
+        terraform init -reconfigure
+    silent: true
+
+  terraform/plan:
+    desc: Run 'terraform plan'.
+    dir: "{{ .git_root }}/terraform"
+    cmds:
+      - |
+        if [ -z "LOCALSTACK_FLAG" ]; then
+          echo "Error: AWS_DEFAULT_REGION is not set"
+          exit 1
+        fi
+        if [ -z "AWS_DEFAULT_REGION" ]; then
+          echo "Error: AWS_DEFAULT_REGION is not set"
+          exit 1
+        fi
+        terraform plan -var="use_localstack=${LOCALSTACK_FLAG}" -var="aws_region=${AWS_DEFAULT_REGION}" 
+    silent: true
 
   env/localstack/start:
-    desc: Run 'localstack' after checking for LOCALSTACK_AUTH_TOKEN.
+    desc: Run localstack environment.
+    env:
+      AWS_ACCESS_KEY_ID:     test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION:    us-east-1
+      LOCALSTACK_FLAG:       true 
     cmds:
       - |
         if [ -z "$LOCALSTACK_AUTH_TOKEN" ]; then
@@ -139,7 +170,14 @@ tasks:
           exit 1
         fi
         localstack start -d 1>/dev/null 2>&1
-    internal: true
+        task terraform/init 
+        task terraform/plan
     silent: true
 
-# terraform plan -var="use_localstack=true" -var="aws_region=us-east-1" -var="localstack_endpoint=http://localhost:4566" 
+  env/localstack/stop:
+    desc: Remove localstack environment.
+    cmds:
+      - |
+        docker stop $(docker ps)
+        docker rm $(docker ps -qa)
+    silent: true
