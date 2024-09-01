@@ -145,12 +145,12 @@ tasks:
       REPO_URL: '{{ .REPO_URL }}'
     cmds:
       - |
-        if [ -z "{{.REPO_URL}}" ]; then
+        if [ -z "{{ .REPO_URL }}" ]; then
           echo "Error: REPO_URL is not set"
           exit 1
         fi
-        for tag in $(docker images --format '{{`{{.Repository}}:{{.Tag}}`}}' | grep "^{{.repository_name}}:"); do
-          task docker/push/func TAG=${tag#*:} REPO_URL={{.REPO_URL}}
+        for tag in $(docker images --format '{{`{{ .Repository }}:{{ .Tag }}`}}' | grep "^{{ .repository_name }}:"); do
+          task docker/push/func TAG=${tag#*:} REPO_URL={{ .REPO_URL }}
         done
     silent: true
 
