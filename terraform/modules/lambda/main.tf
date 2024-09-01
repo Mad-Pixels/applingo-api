@@ -27,13 +27,13 @@ resource "aws_iam_role" "this" {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = var.source_dir
-  output_path = "${path.module}/${var.function_name}.zip"
+  source_dir  = "/Users/igorchelyshkin/Desktop/lingo/lingocards-api/cmd/dictionary"
+  output_path = "${path.module}/dictionary.zip"
 }
 
 resource "aws_lambda_function" "function" {
   filename         = data.archive_file.lambda_zip.output_path
-  function_name    = var.function_name
+  function_name    = "dictionary"
   role             = aws_iam_role.this.arn
   handler          = "main"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
