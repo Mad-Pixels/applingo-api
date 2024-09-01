@@ -7,6 +7,7 @@ provider "aws" {
     for_each = var.use_localstack ? [1] : []
     content {
       ecr = var.localstack_endpoint
+      iam = var.localstack_endpoint
     }
   }
 
