@@ -19,7 +19,7 @@ provider "aws" {
 }
 
 module "ecr-lingocards-api" {
-  source = "./modules/ecr"
+  source = "../../modules/ecr"
 
   repository_name = "lingocards-api"
 }
