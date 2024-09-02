@@ -5,10 +5,10 @@
       {
         "Effect": "Allow",
         "Action": [
-          "s3:GetObject",
-          "s3:PutObject"
+          "dynamodb:GetItem",
+          "dynamodb:PutItem"
         ],
-        "Resource": "arn:aws:s3:::my-bucket/*"
+        "Resource": "arn:aws:dynamodb:*:*:table/lingocards-dictionary"
       }
     ]
   },
