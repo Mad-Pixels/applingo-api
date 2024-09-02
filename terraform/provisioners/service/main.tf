@@ -1,5 +1,13 @@
 terraform {}
 
+data "terraform_remote_state" "ecr" {
+  backend = "local"
+
+  config = {
+    path = "../infra/terraform.tfstate"
+  }
+}
+
 provider "aws" {
   region = var.aws_region
 
