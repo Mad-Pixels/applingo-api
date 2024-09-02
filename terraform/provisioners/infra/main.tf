@@ -6,8 +6,9 @@ provider "aws" {
   dynamic "endpoints" {
     for_each = var.use_localstack ? [1] : []
     content {
-      ecr = var.localstack_endpoint
-      iam = var.localstack_endpoint
+      ecr      = var.localstack_endpoint
+      iam      = var.localstack_endpoint
+      dynamodb = var.localstack_endpoint
     }
   }
 
@@ -24,4 +25,24 @@ module "ecr-lingocards-api" {
 
   project         = "lingocards"
   repository_name = "api"
+}
+
+module "dynamo-dictionary-table" {
+  source = "../../modules/dynamo"
+
+  project    = "lingocards"
+  table_name = "dictionary"
+  hash_key   = "id"
+  range_key  = "timestamp"
+
+  attributes = [
+    {
+      name = "id"
+      type = "S"
+    },
+    {
+      name = "timestamp"
+      type = "N"
+    }
+  ] 
 }
