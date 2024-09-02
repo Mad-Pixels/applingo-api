@@ -22,5 +22,6 @@ provider "aws" {
 module "ecr-lingocards-api" {
   source = "../../modules/ecr"
 
-  repository_name = "lingocards-api"
+  project         = "lingocards"
+  repository_name = "api"
 }

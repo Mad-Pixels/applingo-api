@@ -1,38 +1,45 @@
 resource "aws_ecr_repository" "this" {
-  name                 = var.repository_name
+  name                 = "${var.project}-${var.repository_name}"
   image_tag_mutability = var.image_tag_mutability
   
   image_scanning_configuration {
     scan_on_push = var.scan_on_push
   }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+
+  tags = merge(
+    var.shared_tags,
+    {
+      "TF"      = "true",
+      "Project" = var.project,
+      "Github"  = "github.com/Mad-Pixels/lingocards-api", 
+    }
+  )
 }
 
-resource "aws_iam_policy" "ecr_policy" {
-  name        = "${var.repository_name}-ecr-policy"
-  description = "IAM policy to access the ECR repository"
+resource "aws_ecr_lifecycle_policy" "this" {
+  repository = aws_ecr_repository.this.name
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action   = [
-            "ecr:GetDownloadUrlForLayer", 
-            "ecr:BatchGetImage", 
-            "ecr:BatchCheckLayerAvailability", 
-            "ecr:PutImage", 
-            "ecr:InitiateLayerUpload", 
-            "ecr:UploadLayerPart", 
-            "ecr:CompleteLayerUpload", 
-            "ecr:DescribeImages"
-        ],
-        Effect   = "Allow",
-        Resource = aws_ecr_repository.this.arn
-      },
-      {
-        Action   = ["ecr:GetAuthorizationToken"],
-        Effect   = "Allow",
-        Resource = "*"
-      }
+  policy = <<EOF
+{
+    "rules": [
+        {
+            "rulePriority": 1,
+            "description": "Expire overwritten images older than 1 day",
+            "selection": {
+                "tagStatus": "untagged",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 1
+            },
+            "action": {
+                "type": "expire"
+            }
+        }
     ]
-  })
+}
+EOF
 }
