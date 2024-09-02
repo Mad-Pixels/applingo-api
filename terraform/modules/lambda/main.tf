@@ -1,5 +1,44 @@
-resource "aws_iam_role" "lambda_role" {
-  name = "${var.name}-role"
+resource "aws_lambda_function" "this" {
+  function_name = "${var.project}-${var.function_name}"
+  role          = aws_iam_role.this.arn 
+  image_uri     = var.image 
+  timeout       = var.timeout
+  memory_size   = var.memory_size
+
+  package_type  = "Image"
+  architectures = ["arm64"]
+
+  environment {
+    variables = merge(
+      var.environments,
+      {
+        LOG_LEVEL = var.log_level
+      }
+    )
+  }
+
+  dynamic "vpc_config" {
+    for_each = var.vpc_config != null ? [var.vpc_config] : []
+    content {
+      subnet_ids         = vpc_config.value.subnet_ids
+      security_group_ids = vpc_config.value.security_group_ids
+    }
+  }  
+
+  tags = merge(
+    var.shared_tags,
+    {
+      "TF"      = "true",
+      "Project" = var.project,
+      "Github"  = "github.com/Mad-Pixels/lingocards-api", 
+    }
+  )
+
+  depends_on = [aws_cloudwatch_log_group.logs]
+}
+
+resource "aws_iam_role" "this" {
+  name = "${var.project}-${var.function_name}-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -13,31 +52,13 @@ resource "aws_iam_role" "lambda_role" {
       }
     ]
   })
-}
 
-resource "aws_iam_role_policy_attachment" "lambda_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  role       = aws_iam_role.lambda_role.name
-}
-
-resource "aws_iam_role_policy" "additional_policy" {
-  count  = var.additional_policy != "" ? 1 : 0
-  name   = "${var.name}-additional-policy"
-  role   = aws_iam_role.lambda_role.id
-  policy = var.additional_policy
-}
-
-resource "aws_lambda_function" "container_function" {
-  function_name = var.name
-  role          = aws_iam_role.lambda_role.arn
-  package_type  = "Image"
-  image_uri     = var.image
-  memory_size   = var.mem_size
-  timeout       = var.timeout
-
-  environment {
-    variables = {
-      CONTAINER_IMAGE = var.image
+  tags = merge(
+    var.shared_tags,
+    {
+      "TF"      = "true",
+      "Project" = var.project,
+      "Github"  = "github.com/Mad-Pixels/lingocards-api", 
     }
-  }
+  )
 }

@@ -18,8 +18,10 @@ provider "aws" {
   dynamic "endpoints" {
     for_each = var.use_localstack ? [1] : []
     content {
-      lambda = var.localstack_endpoint
-      iam    = var.localstack_endpoint
+      lambda     = var.localstack_endpoint
+      iam        = var.localstack_endpoint
+      logs       = var.localstack_endpoint
+      cloudwatch = var.localstack_endpoint
     }
   }
 
@@ -35,9 +37,10 @@ module "lambda_functions" {
   source   = "../../modules/lambda"
   for_each = local.lambdas
 
-  name              = each.key
-  image             = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
-  mem_size          = try(each.value.memory_size, 128)
-  timeout           = try(each.value.timeout, 30)
-  additional_policy = try(jsonencode(each.value.policy), "")
+  function_name = each.key
+  project       = "lingocards"
+  image         = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
+  memory_size   = try(each.value.memory_size, 128)
+  timeout       = try(each.value.timeout, 30)
+  policy        = try(jsonencode(each.value.policy), "")
 }
