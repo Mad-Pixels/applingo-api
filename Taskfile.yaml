@@ -236,6 +236,19 @@ tasks:
       - task: _docker/push/all
         vars:
           REPO_URL: '{{ .localstack_ecr_url }}'
+      - task: _terraform/init
+        vars: 
+          DIR:        "{{ .git_root }}/terraform/provisioners/service"
+          REGION:     us-east-1
+          KEY_ID:     test
+          ACCESS_KEY: test
+      - task: _terraform/apply
+        vars:
+          DIR:        "{{ .git_root }}/terraform/provisioners/service"
+          REGION:     us-east-1
+          LOCALSTACK: "true"
+          KEY_ID:     test
+          ACCESS_KEY: test
     silent: true
 
   env/localstack/stop:
