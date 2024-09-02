@@ -21,7 +21,7 @@ tasks:
       - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
     silent: true
 
-  go/mod/vendor:
+  _go/mod/vendor:
     desc: Run 'go mod vendor'.
     dir: "{{ .git_root }}"
     cmds:
@@ -34,7 +34,7 @@ tasks:
     internal: true
     silent: true
 
-  go/install/lint:
+  _go/install/lint:
     desc: Install 'golangci-lint'.
     cmds:
       - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .golint_version }}
@@ -48,11 +48,11 @@ tasks:
     desc: Run 'golangci-lint'.
     dir: "{{ .git_root }}"
     deps:
-      - go/install/lint
+      - _go/install/lint
     cmds: 
       - "{{ .go_root }}/bin/golangci-lint run cmd/... -v --timeout=15m"
   
-  go/install/fumpt:
+  _go/install/fumpt:
     desc: Install 'gofumpt'.
     cmd: go install mvdan.cc/gofumpt@{{ .go_fumpt }}
     internal: true
@@ -62,11 +62,11 @@ tasks:
     desc: Run 'gofumpt'.
     dir: "{{ .git_root }}"
     deps:
-      - go/install/fumpt
+      - _go/install/fumpt
     cmd: gofumpt -l -w .
     silent: true
 
-  go/install/imports:
+  _go/install/imports:
     desc: Install 'goimports'.
     cmd: go install golang.org/x/tools/cmd/goimports@{{ .go_imports }}
     internal: true
@@ -76,11 +76,11 @@ tasks:
     desc: Run 'goimports'.
     dir: "{{ .git_root }}"
     deps:
-      - go/install/imports
+      - _go/install/imports
     cmd: goimports -w $(find {{ .git_root }} -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
     silent: true
 
-  go/install/outdated:
+  _go/install/outdated:
     desc: Install 'go-mod-outdated'.
     deps: 
       - go/mod/vendor
@@ -92,7 +92,7 @@ tasks:
     desc: Run 'outdated'
     dir: "{{ .git_root }}"
     deps:
-      - go/install/outdated
+      - _go/install/outdated
     cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
     silent: true
 
@@ -100,46 +100,31 @@ tasks:
     desc: Run 'docker build' for 'FUNC=...' argument.
     dir: "{{ .git_root }}"
     deps:
-      - go/mod/vendor
+      - _go/mod/vendor
     vars:
       FUNC_NAME: '{{ .FUNC }}'
     cmds:
       - docker build -t {{ .repository_name }}:{{ .FUNC_NAME }} --build-arg FUNC_NAME={{ .FUNC_NAME }} .
     silent: true
   
-  docker/build/all:
+  _docker/build/all:
     desc: Run 'docker build' for all funcs.
     dir: "{{ .git_root }}"
+    deps:
+      - _go/mod/vendor
     cmds:
       - |
         for dir in {{ .git_root }}/cmd/*; do
           if [ -d "$dir" ]; then
             func=$(basename "$dir")
             echo "Building $func"
-            task docker/build/func FUNC=$func
+            docker build -t {{ .repository_name }}:$func --build-arg FUNC_NAME=$func .
           fi
         done
     silent: true
+    internal: true
   
-  docker/push/func:
-    desc: Push image to repository.
-    vars:
-      REPO_URL: '{{ .REPO_URL }}'
-    cmds:
-      - |
-        if [ -z "{{ .REPO_URL }}" ]; then
-          echo "Error: REPO_URL is not set"
-          exit 1
-        fi
-        if [ -z "{{ .TAG }}" ]; then
-          echo "Error: TAG is not set"
-          exit 1
-        fi
-      - docker image tag {{ .repository_name }}:{{ .TAG }} {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
-      - docker push {{ .REPO_URL }}/{{ .repository_name }}:{{ .TAG }}
-    silent: true
-
-  docker/push/all:
+  _docker/push/all:
     desc: Push all images to repository.
     vars:
       REPO_URL: '{{ .REPO_URL }}'
@@ -150,11 +135,15 @@ tasks:
           exit 1
         fi
         for tag in $(docker images --format '{{`{{ .Repository }}:{{ .Tag }}`}}' | grep "^{{ .repository_name }}:"); do
-          task docker/push/func TAG=${tag#*:} REPO_URL={{ .REPO_URL }}
+          image_name=${tag#*:}
+          echo "Pushing {{ .repository_name }}:$image_name to {{ .REPO_URL }}"
+          docker image tag {{ .repository_name }}:$image_name {{ .REPO_URL }}/{{ .repository_name }}:$image_name
+          docker push {{ .REPO_URL }}/{{ .repository_name }}:$image_name
         done
     silent: true
+    internal: true
 
-  terraform/init:
+  _terraform/init:
     desc: Run 'terraform init'.
     dir: "{{ .DIR }}"
     cmds:
@@ -179,7 +168,7 @@ tasks:
     silent: true
     internal: true
 
-  terraform/plan:
+  _terraform/plan:
     desc: Run 'terraform plan'.
     dir: "{{ .DIR }}"
     cmds:
@@ -200,7 +189,7 @@ tasks:
     silent: true
     internal: true
 
-  terraform/apply:
+  _terraform/apply:
     desc: Run 'terraform apply'.
     dir: "{{ .DIR }}"
     cmds:
@@ -230,21 +219,21 @@ tasks:
           exit 1
         fi
       - localstack start -d
-      - task: terraform/init
+      - task: _terraform/init
         vars: 
           DIR:        "{{ .git_root }}/terraform/provisioners/infra"
           REGION:     us-east-1
           KEY_ID:     test
           ACCESS_KEY: test
-      - task: terraform/apply
+      - task: _terraform/apply
         vars:
           DIR:        "{{ .git_root }}/terraform/provisioners/infra"
           REGION:     us-east-1
           LOCALSTACK: "true"
           KEY_ID:     test
           ACCESS_KEY: test
-      - task: docker/build/all
-      - task: docker/push/all
+      - task: _docker/build/all
+      - task: _docker/push/all
         vars:
           REPO_URL: '{{ .localstack_ecr_url }}'
     silent: true
