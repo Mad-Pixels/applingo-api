@@ -11,6 +11,7 @@ vars:
   go_imports:  latest
   go_fumpt:    latest
   go_outdated: latest
+  trivy:       v0.54.1
   repository_name: lingocards-api
   localstack_ecr_url: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
 
@@ -89,11 +90,31 @@ tasks:
     silent: true
 
   go/run/outdated:
-    desc: Run 'outdated'
+    desc: Run 'outdated'.
     dir: "{{ .git_root }}"
     deps:
       - _go/install/outdated
     cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
+    silent: true
+  
+  _trivy/install:
+    desc: Install 'trivy'.
+    cmd: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .trivy }}
+    internal: true
+    silent: true
+  
+  trivy/check/config:
+    desc: Run 'trivy config'.
+    deps:
+      - _trivy/install
+    cmd: trivy config {{ .git_root }}/terraform 
+    silent: true
+  
+  trivy/check/repository:
+    desc: Run 'trivy repository'.
+    deps:
+      - _trivy/install
+    cmd: trivy repository {{ .git_root }}
     silent: true
 
   docker/build/func:
@@ -128,6 +149,8 @@ tasks:
     desc: Push all images to repository.
     vars:
       REPO_URL: '{{ .REPO_URL }}'
+    deps:
+      - _trivy/install
     cmds:
       - |
         if [ -z "{{ .REPO_URL }}" ]; then
@@ -136,6 +159,8 @@ tasks:
         fi
         for tag in $(docker images --format '{{`{{ .Repository }}:{{ .Tag }}`}}' | grep "^{{ .repository_name }}:"); do
           image_name=${tag#*:}
+          echo "Checking by trivy {{ .repository_name }}:$image_name"
+          trivy image {{ .repository_name }}:$image_name
           echo "Pushing {{ .repository_name }}:$image_name to {{ .REPO_URL }}"
           docker image tag {{ .repository_name }}:$image_name {{ .REPO_URL }}/{{ .repository_name }}:$image_name
           docker push {{ .REPO_URL }}/{{ .repository_name }}:$image_name
