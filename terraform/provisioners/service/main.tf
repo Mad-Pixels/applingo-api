@@ -1,10 +1,14 @@
 terraform {}
 
 data "terraform_remote_state" "ecr" {
-  backend = "local"
+  backend = var.use_localstack ? "local" : "s3"
 
-  config = {
+  config = var.use_localstack ? {
     path = "../infra/terraform.tfstate"
+  } : {
+    bucket = local.state_bucket
+    key    = local.tfstate_file
+    region = var.aws_region
   }
 }
 

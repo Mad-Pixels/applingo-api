@@ -1,6 +1,9 @@
 locals {
     root_dir        = "${path.module}/../../../cmd"
     all_directories = fileset(local.root_dir, "*")
+
+    state_bucket   = "tfstates-lingocards"
+    tfstate_file   = "api.tfstates"
   
     lambda_functions = toset([
         for d in local.all_directories : d
