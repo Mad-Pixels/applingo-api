@@ -32,12 +32,12 @@ provider "aws" {
 }
 
 module "lambda_functions" {
-    source   = "../../modules/lambda"
-    for_each = local.lambda_functions
+  source   = "../../modules/lambda"
+  for_each = local.lambdas
 
-    name              = each.key
-    image             = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
-    mem_size          = try(local.lambda_configs[each.key].memory_size, 128)
-    timeout           = try(local.lambda_configs[each.key].timeout, 30)
-    additional_policy = try(local.lambda_configs[each.key].policy, "")
+  name              = each.key
+  image             = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
+  mem_size          = try(each.value.memory_size, 128)
+  timeout           = try(each.value.timeout, 30)
+  additional_policy = try(jsonencode(each.value.policy), "")
 }
