@@ -21,12 +21,12 @@ provider "aws" {
 
 module "lambda_functions" {
     source   = "../../modules/lambda"
-    #for_each = local.lambda_functions
+    for_each = local.lambda_functions
 
-    name              = "dictionary"
+    name              = each.key
     #image             = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
     image = "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/lingocards-api:dictionary"
-    #mem_size          = try(local.lambda_configs[each.key].memory_size, 128)
-    #timeout           = try(local.lambda_configs[each.key].timeout, 30)
-    #additional_policy = try(local.lambda_configs[each.key].policy, "")
+    mem_size          = try(local.lambda_configs[each.key].memory_size, 128)
+    timeout           = try(local.lambda_configs[each.key].timeout, 30)
+    additional_policy = try(local.lambda_configs[each.key].policy, "")
 }
