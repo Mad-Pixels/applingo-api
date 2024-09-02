@@ -32,7 +32,7 @@ module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
   project     = "lingocards"
-  bucket_name = "test-dictionary"
+  bucket_name = "dictionary"
 }
 
 module "dynamo-dictionary-table" {
