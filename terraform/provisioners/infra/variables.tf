@@ -7,7 +7,7 @@ variable "use_localstack" {
 variable "localstack_endpoint" {
   description = "LocalStack endpoint"
   type        = string
-  default     = "http://localhost:4566"
+  default     = "https://localhost.localstack.cloud:4566"
 }
 
 variable "aws_region" {

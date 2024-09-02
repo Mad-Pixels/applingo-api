@@ -6,6 +6,7 @@ provider "aws" {
   dynamic "endpoints" {
     for_each = var.use_localstack ? [1] : []
     content {
+      s3       = var.localstack_endpoint
       ecr      = var.localstack_endpoint
       iam      = var.localstack_endpoint
       dynamodb = var.localstack_endpoint
@@ -25,6 +26,13 @@ module "ecr-lingocards-api" {
 
   project         = "lingocards"
   repository_name = "api"
+}
+
+module "s3-dictionary-bucket" {
+  source = "../../modules/s3"
+
+  project     = "lingocards"
+  bucket_name = "test-dictionary"
 }
 
 module "dynamo-dictionary-table" {
