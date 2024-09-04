@@ -33,6 +33,31 @@ variable "attributes" {
   }))
 }
 
+variable "secondary_index_list" {
+  description = "List of global secondary indexes"
+  type        = list(object({
+    name               = string
+    hash_key           = string
+    projection_type    = string
+    non_key_attributes = optional(list(string))
+    read_capacity      = optional(number)
+    write_capacity     = optional(number)
+  }))
+  default     = null 
+}
+
+variable "ttl_enabled" {
+  description = "Whether to enable TTL for the DynamoDB table"
+  type        = bool
+  default     = false
+}
+
+variable "ttl_attribute_name" {
+  description = "The name of the TTL attribute"
+  type        = string
+  default     = "ttl"
+}
+
 variable "shared_tags" {
   description = "Tags to add to all resources"
   default     = {}
