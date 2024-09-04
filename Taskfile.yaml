@@ -13,7 +13,7 @@ vars:
   go_outdated: latest
   trivy: v0.54.1
   terraform: 1.9.5
-  .terraform_docs: v0.18.0
+  terraform_docs: v0.18.0
   repository_name: lingocards-api
   localstack_ecr_url: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
 
