@@ -24,46 +24,74 @@ tasks:
       - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
     silent: true
 
-  _go/mod/vendor:
-    desc: Run 'go mod vendor'.
-    dir: "{{ .git_root }}"
+  _go/version/check:
+    desc: Check actual golang version.
+    dir: "{{.git_root}}"
     cmds:
       - |
-        if [ -d "{{ .git_root }}/vendor" ]; then
-          cd {{ .git_root }} && go mod tidy
+        required_version="{{.go_version}}"
+        current_version=$(go version | awk '{print $3}' | sed 's/go//')
+        
+        version_compare() {
+          if [ "$(echo -e "$1\n$2" | sort -V | head -n1)" = "$1" ]; then
+            return 0
+          else
+            return 1
+          fi
+        }
+        if ! version_compare "$required_version" "$current_version"; then
+          echo "Error: Go version $required_version or higher is required, but you have $current_version"
+          exit 1
+        fi
+    silent: true
+    internal: true
+
+  _go/mod/vendor:
+    desc: Run 'go mod vendor'.
+    dir: "{{.git_root}}"
+    deps:
+      - _go/version/check
+    cmds:
+      - |
+        if [ -d "{{.git_root}}/vendor" ]; then
+          cd {{.git_root}} && go mod tidy
         else 
-          cd {{ .git_root }} && go mod tidy && go mod vendor
+          cd {{.git_root}} && go mod tidy && go mod vendor
         fi
     internal: true
     silent: true
 
   _go/install/lint:
     desc: Install 'golangci-lint'.
+    deps:
+      - _go/version/check
     cmds:
-      - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .golint_version }}
-      - "{{ .go_root }}/bin/golangci-lint version"
+      - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{.go_root}}/bin {{.golint_version}}
+      - "{{.go_root}}/bin/golangci-lint version"
     sources:
-      - "{{ .go_root }}/bin/golangci-lint"
+      - "{{.go_root}}/bin/golangci-lint"
     internal: true
     silent: true
   
   go/run/lint:
     desc: Run 'golangci-lint'.
-    dir: "{{ .git_root }}"
+    dir: "{{.git_root}}"
     deps:
       - _go/install/lint
     cmds: 
-      - "{{ .go_root }}/bin/golangci-lint run cmd/... -v --timeout=15m"
+      - "{{.go_root}}/bin/golangci-lint run cmd/... -v --timeout=15m"
   
   _go/install/fumpt:
     desc: Install 'gofumpt'.
-    cmd: go install mvdan.cc/gofumpt@{{ .go_fumpt }}
+    deps:
+      - _go/version/check
+    cmd: go install mvdan.cc/gofumpt@{{.go_fumpt}}
     internal: true
     silent: true
     
   go/run/fumpt:
     desc: Run 'gofumpt'.
-    dir: "{{ .git_root }}"
+    dir: "{{.git_root}}"
     deps:
       - _go/install/fumpt
     cmd: gofumpt -l -w .
@@ -71,7 +99,9 @@ tasks:
 
   _go/install/imports:
     desc: Install 'goimports'.
-    cmd: go install golang.org/x/tools/cmd/goimports@{{ .go_imports }}
+    deps:
+      - _go/version/check
+    cmd: go install golang.org/x/tools/cmd/goimports@{{.go_imports}}
     internal: true
     silent: true
 
@@ -80,20 +110,20 @@ tasks:
     dir: "{{ .git_root }}"
     deps:
       - _go/install/imports
-    cmd: goimports -w $(find {{ .git_root }} -type f -name '*.go' -not -path "{{ .git_root }}/vendor/*")
+    cmd: goimports -w $(find {{.git_root}} -type f -name '*.go' -not -path "{{.git_root}}/vendor/*")
     silent: true
 
   _go/install/outdated:
     desc: Install 'go-mod-outdated'.
     deps: 
-      - go/mod/vendor
-    cmd: go install github.com/psampaz/go-mod-outdated@{{ .go_outdated }}
+      - _go/mod/vendor
+    cmd: go install github.com/psampaz/go-mod-outdated@{{.go_outdated}}
     internal: true
     silent: true
 
   go/run/outdated:
     desc: Run 'outdated'.
-    dir: "{{ .git_root }}"
+    dir: "{{.git_root}}"
     deps:
       - _go/install/outdated
     cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
@@ -101,7 +131,7 @@ tasks:
   
   _trivy/install:
     desc: Install 'trivy'.
-    cmd: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b {{ .go_root }}/bin {{ .trivy }}
+    cmd: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b {{.go_root}}/bin {{.trivy}}
     internal: true
     silent: true
   
@@ -109,39 +139,39 @@ tasks:
     desc: Run 'trivy config'.
     deps:
       - _trivy/install
-    cmd: trivy config {{ .git_root }}/terraform 
+    cmd: trivy config {{.git_root}}/terraform 
     silent: true
   
   trivy/check/repository:
     desc: Run 'trivy repository'.
     deps:
       - _trivy/install
-    cmd: trivy repository {{ .git_root }}
+    cmd: trivy repository {{.git_root}}
     silent: true
 
   docker/build/func:
     desc: Run 'docker build' for 'FUNC=...' argument.
-    dir: "{{ .git_root }}"
+    dir: "{{.git_root}}"
     deps:
       - _go/mod/vendor
     vars:
       FUNC_NAME: '{{ .FUNC }}'
     cmds:
-      - docker build -t {{ .repository_name }}:{{ .FUNC_NAME }} --build-arg FUNC_NAME={{ .FUNC_NAME }} .
+      - docker build -t {{.repository_name}}:{{.FUNC_NAME }} --build-arg FUNC_NAME={{.FUNC_NAME}} --build-arg GO_VERSION={{.go_version}} .
     silent: true
   
   _docker/build/all:
     desc: Run 'docker build' for all funcs.
-    dir: "{{ .git_root }}"
+    dir: "{{.git_root}}"
     deps:
       - _go/mod/vendor
     cmds:
       - |
-        for dir in {{ .git_root }}/cmd/*; do
+        for dir in {{.git_root}}/cmd/*; do
           if [ -d "$dir" ]; then
             func=$(basename "$dir")
             echo "Building $func"
-            docker build -t {{ .repository_name }}:$func --build-arg FUNC_NAME=$func .
+            docker build -t {{.repository_name}}:$func --build-arg FUNC_NAME=$func --build-arg GO_VERSION={{.go_version}} .
           fi
         done
     silent: true
@@ -150,22 +180,22 @@ tasks:
   _docker/push/all:
     desc: Push all images to repository.
     vars:
-      REPO_URL: '{{ .REPO_URL }}'
+      REPO_URL: '{{.REPO_URL}}'
     deps:
       - _trivy/install
     cmds:
       - |
-        if [ -z "{{ .REPO_URL }}" ]; then
+        if [ -z "{{.REPO_URL}}" ]; then
           echo "Error: REPO_URL is not set"
           exit 1
         fi
-        for tag in $(docker images --format '{{`{{ .Repository }}:{{ .Tag }}`}}' | grep "^{{ .repository_name }}:"); do
+        for tag in $(docker images --format '{{`{{.Repository}}:{{ .Tag }}`}}' | grep "^{{.repository_name}}:"); do
           image_name=${tag#*:}
-          echo "Checking by trivy {{ .repository_name }}:$image_name"
-          trivy image {{ .repository_name }}:$image_name
-          echo "Pushing {{ .repository_name }}:$image_name to {{ .REPO_URL }}"
-          docker image tag {{ .repository_name }}:$image_name {{ .REPO_URL }}/{{ .repository_name }}:$image_name
-          docker push {{ .REPO_URL }}/{{ .repository_name }}:$image_name
+          echo "Checking by trivy {{.repository_name}}:$image_name"
+          trivy image {{.repository_name}}:$image_name
+          echo "Pushing {{.repository_name}}:$image_name to {{.REPO_URL}}"
+          docker image tag {{.repository_name}}:$image_name {{.REPO_URL}}/{{.repository_name}}:$image_name
+          docker push {{.REPO_URL}}/{{.repository_name}}:$image_name
         done
     silent: true
     internal: true
@@ -173,7 +203,7 @@ tasks:
   _terraform/install:
     desc: Install 'terraform'.
     cmds:
-      - curl -sL https://releases.hashicorp.com/terraform/{{ .terraform }}/terraform_{{ .terraform }}_{{OS}}_{{ARCH}}.zip -o /tmp/terraform.zip
+      - curl -sL https://releases.hashicorp.com/terraform/{{.terraform}}/terraform_{{.terraform}}_{{OS}}_{{ARCH}}.zip -o /tmp/terraform.zip
       - sudo unzip -o /tmp/terraform.zip -d /usr/local/bin/
       - sudo chmod a+x /usr/local/bin/terraform
       - terraform version
@@ -184,7 +214,7 @@ tasks:
 
   _terraform/plan:
     desc: Run 'terraform plan'.
-    dir: "{{ .DIR }}"
+    dir: "{{.DIR}}"
     deps:
       - _terraform/install
     cmds:
@@ -208,25 +238,25 @@ tasks:
 
   _terraform/apply:
     desc: Run 'terraform apply'.
-    dir: "{{ .DIR }}"
+    dir: "{{.DIR}}"
     deps:
       - _terraform/install
     cmds:
       - |
-        if [ -z "{{ .LOCALSTACK }}" ]; then
+        if [ -z "{{.LOCALSTACK}}" ]; then
           echo "Error: LOCALSTACK is not set"
           exit 1
         fi
-        if [ -z "{{ .REGION }}" ]; then
+        if [ -z "{{.REGION}}" ]; then
           echo "Error: REGION is not set"
           exit 1
         fi
         terraform init -reconfigure
-        terraform apply --auto-approve -var="use_localstack={{ .LOCALSTACK }}" -var="aws_region={{ .REGION }}"
+        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}"
     env:
-      AWS_DEFAULT_REGION:    '{{ .REGION }}'
-      AWS_ACCESS_KEY_ID:     '{{ .KEY_ID }}'
-      AWS_SECRET_ACCESS_KEY: '{{ .ACCESS_KEY }}'
+      AWS_DEFAULT_REGION:    '{{.REGION}}'
+      AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'
+      AWS_SECRET_ACCESS_KEY: '{{.ACCESS_KEY}}'
     silent: true
     internal: true
 
@@ -240,7 +270,7 @@ tasks:
 
   terraform/fmt/fix:
     desc: Run 'terraform fix fmt'.
-    dir: "{{ .git_root }}/terraform"
+    dir: "{{.git_root}}/terraform"
     deps:
       - _terraform/install
     cmd: terraform fmt -recursive --diff --write=true
@@ -283,7 +313,7 @@ tasks:
       - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
-          DIR:        "{{ .git_root }}/terraform/provisioners/infra"
+          DIR:        "{{.git_root}}/terraform/provisioners/infra"
           REGION:     us-east-1
           LOCALSTACK: "true"
           KEY_ID:     test
@@ -294,7 +324,7 @@ tasks:
           REPO_URL: '{{ .localstack_ecr_url }}'
       - task: _terraform/apply
         vars:
-          DIR:        "{{ .git_root }}/terraform/provisioners/service"
+          DIR:        "{{.git_root}}/terraform/provisioners/service"
           REGION:     us-east-1
           LOCALSTACK: "true"
           KEY_ID:     test
