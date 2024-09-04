@@ -1,8 +1,8 @@
 resource "aws_dynamodb_table" "this" {
-  name           = "${var.project}-${var.table_name}" 
-  billing_mode   = var.billing_mode
-  hash_key       = var.hash_key
-  range_key      = var.range_key
+  name         = "${var.project}-${var.table_name}"
+  billing_mode = var.billing_mode
+  hash_key     = var.hash_key
+  range_key    = var.range_key
 
   dynamic "attribute" {
     for_each = var.attributes
@@ -37,7 +37,7 @@ resource "aws_dynamodb_table" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api", 
+      "Github"  = "github.com/Mad-Pixels/lingocards-api",
     }
   )
 

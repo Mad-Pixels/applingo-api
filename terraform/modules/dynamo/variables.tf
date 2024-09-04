@@ -35,7 +35,7 @@ variable "attributes" {
 
 variable "secondary_index_list" {
   description = "List of global secondary indexes"
-  type        = list(object({
+  type = list(object({
     name               = string
     hash_key           = string
     projection_type    = string
@@ -43,7 +43,7 @@ variable "secondary_index_list" {
     read_capacity      = optional(number)
     write_capacity     = optional(number)
   }))
-  default     = null 
+  default = null
 }
 
 variable "ttl_enabled" {

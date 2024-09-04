@@ -3,7 +3,7 @@ data "terraform_remote_state" "ecr" {
 
   config = var.use_localstack ? {
     path = "../infra/terraform.tfstate"
-  } : {
+    } : {
     bucket = local.state_bucket
     key    = local.tfstate_file
     region = var.aws_region

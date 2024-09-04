@@ -1,7 +1,7 @@
 resource "aws_ecr_repository" "this" {
   name                 = "${var.project}-${var.repository_name}"
   image_tag_mutability = var.image_tag_mutability
-  
+
   image_scanning_configuration {
     scan_on_push = var.scan_on_push
   }
@@ -15,7 +15,7 @@ resource "aws_ecr_repository" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api", 
+      "Github"  = "github.com/Mad-Pixels/lingocards-api",
     }
   )
 }

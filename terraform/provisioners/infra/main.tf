@@ -21,12 +21,12 @@ module "dynamo-dictionary-table" {
   range_key  = "name"
 
   attributes = [
-    { name = "id",            type = "S" },
-    { name = "name",          type = "S" },
-    { name = "author",        type = "S" },
+    { name = "id", type = "S" },
+    { name = "name", type = "S" },
+    { name = "author", type = "S" },
     { name = "category_main", type = "S" },
-    { name = "is_private",    type = "N" },
-    { name = "is_publish",    type = "N" }
+    { name = "is_private", type = "N" },
+    { name = "is_publish", type = "N" }
   ]
 
   secondary_index_list = [

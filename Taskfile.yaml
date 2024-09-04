@@ -7,12 +7,13 @@ vars:
     sh: go env GOPATH
   go_version:
     sh: grep '^go ' ./go.mod | awk '{print $2}'
-  go_lint:     v1.60.3
-  go_imports:  latest
-  go_fumpt:    latest
+  go_lint: v1.60.3
+  go_imports: latest
+  go_fumpt: latest
   go_outdated: latest
-  trivy:       v0.54.1
-  terraform:   1.9.5
+  trivy: v0.54.1
+  terraform: 1.9.5
+  .terraform_docs: v0.18.0
   repository_name: lingocards-api
   localstack_ecr_url: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
 
@@ -229,6 +230,47 @@ tasks:
     silent: true
     internal: true
 
+  _terraform/fmt/check:
+    desc: Run 'terraform fmt'.
+    deps:
+      - _terraform/install
+    cmd: terraform fmt -recursive -check --diff {{.git_root}} || { exit 1; };
+    silent: true
+    internal: true
+
+  terraform/fmt/fix:
+    desc: Run 'terraform fix fmt'.
+    dir: "{{ .git_root }}/terraform"
+    deps:
+      - _terraform/install
+    cmd: terraform fmt -recursive --diff --write=true
+    silent: true
+
+  _terraform/docs/install:
+    desc: Install 'terraform docs'
+    cmds:
+      - curl -sL https://terraform-docs.io/dl/{{.terraform_docs}}/terraform-docs-{{.terraform_docs}}-{{OS}}-{{ARCH}}.tar.gz -o /tmp/terraform-docs.tar.gz
+      - sudo tar -C /tmp -xzf /tmp/terraform-docs.tar.gz
+      - sudo chmod a+x /tmp/terraform-docs
+      - sudo mv /tmp/terraform-docs /usr/local/bin
+      - terraform-docs version
+    sources:
+      - /usr/local/bin/terraform-docs
+    silent: true
+    internal: true
+
+  terraform/docs/run:
+    desc: Run 'terraform docs'
+    deps:
+      - _terraform/install
+    cmds:
+      - |
+        modules=$(find {{.git_root}}/terraform/modules/* {{.git_root}}/terraform/provisioners/* -maxdepth 0 -type d)
+        for m in $modules; do
+          terraform-docs markdown table --output-file README.md --output-mode inject $m
+        done
+    silent: true
+
   env/localstack/start:
     desc: Run localstack environment.
     cmds:
@@ -238,6 +280,7 @@ tasks:
           exit 1
         fi
       - ~/venv/bin/localstack start -d
+      - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
           DIR:        "{{ .git_root }}/terraform/provisioners/infra"

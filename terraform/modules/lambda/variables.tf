@@ -42,7 +42,7 @@ variable "policy" {
 
 variable "environments" {
   description = "Additional ENVs for the Lambda function"
-  default     = {} 
+  default     = {}
 }
 
 variable "shared_tags" {
@@ -58,5 +58,5 @@ variable "log_level" {
 
 variable "log_retention" {
   description = "Cloudwatch retention in days"
-  default     = 3 
+  default     = 3
 }
