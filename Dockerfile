@@ -20,6 +20,7 @@ WORKDIR /go/src/${NAME}
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
+COPY ./internal ./internal
 COPY go.mod go.sum ./
 
 ENV GOARCH=amd64
@@ -50,6 +51,7 @@ WORKDIR /go/src/${NAME}
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
+COPY ./internal ./internal
 COPY go.mod go.sum ./
 
 ENV GOARCH=arm64
