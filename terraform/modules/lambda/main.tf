@@ -12,7 +12,8 @@ resource "aws_lambda_function" "this" {
     variables = merge(
       var.environments,
       {
-        LOG_LEVEL = var.log_level
+        LOG_LEVEL        = var.log_level
+        DEPLOY_TIMESTAMP = timestamp()
       }
     )
   }

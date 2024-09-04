@@ -19,6 +19,7 @@ ARG NAME
 WORKDIR /go/src/${NAME}
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
+COPY ./pkg ./pkg
 COPY go.mod go.sum ./
 
 ENV GOARCH=amd64
@@ -48,6 +49,7 @@ ARG NAME
 WORKDIR /go/src/${NAME}
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
+COPY ./pkg ./pkg
 COPY go.mod go.sum ./
 
 ENV GOARCH=arm64
