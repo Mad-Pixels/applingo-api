@@ -243,7 +243,7 @@ tasks:
           echo "Error: LOCALSTACK_AUTH_TOKEN is not set. Please set this environment variable before running LocalStack."
           exit 1
         fi
-      - localstack start -d
+      - ~/venv/bin/localstack start -d
       - task: _terraform/init
         vars: 
           DIR:        "{{ .git_root }}/terraform/provisioners/infra"
@@ -279,7 +279,6 @@ tasks:
   env/localstack/stop:
     desc: Remove localstack environment.
     cmds:
-      - |
-        docker stop $(docker ps)
-        docker rm $(docker ps -qa)
+      - docker stop $(docker ps -q --filter name=localstack) 
+      - docker rm $(docker ps -aq --filter name=localstack) || true
     silent: true
