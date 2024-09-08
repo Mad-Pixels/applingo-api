@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	lambda2 "github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/amz"
 	"github.com/aws/aws-lambda-go/lambda"
-	"os"
 )
 
 var (
