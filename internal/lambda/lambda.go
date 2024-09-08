@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 const (
@@ -45,21 +46,21 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (events.APIG
 	var base BaseRequest
 	if err := json.Unmarshal(event, &base); err != nil {
 		l.logger.Error("Invalid request format", zap.Error(err))
-		return NewResponse(400, fmt.Sprintf("Invalid request format: %v", err), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(400, http.StatusText(400), nil).ToAPIGatewayProxyResponse()
 	}
 
 	handler, ok := l.handlers[base.Action]
 	if !ok {
 		l.logger.Warn("Unknown action", zap.String("action", base.Action))
-		return NewResponse(404, fmt.Sprintf("Unknown action: %s", base.Action), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(404, http.StatusText(404), nil).ToAPIGatewayProxyResponse()
 	}
 
 	result, err := handler(ctx, base.Data)
 	if err != nil {
 		l.logger.Error("Error processing request", zap.Error(err))
-		return NewResponse(500, fmt.Sprintf("Error processing request: %v", err), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(500, http.StatusText(500), nil).ToAPIGatewayProxyResponse()
 	}
 
 	l.logger.Debug("Request processed successfully", zap.Any("result", result))
-	return NewResponse(200, "", result).ToAPIGatewayProxyResponse()
+	return NewResponse(200, http.StatusText(200), result).ToAPIGatewayProxyResponse()
 }
