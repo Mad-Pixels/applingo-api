@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Mad-Pixels/lingocards-api/internal"
+	lambda2 "github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/amz"
 	"github.com/aws/aws-lambda-go/lambda"
 	"os"
@@ -29,7 +29,7 @@ func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
 		return nil, fmt.Errorf("invalid request format: %w", err)
 	}
 
-	l := internal.MustLambda(nil)
+	l := lambda2.MustLambda(nil)
 	obj := amz.NewS3(l.AwsSes)
 	result, err := obj.PutRequest("fname", "lingocards.dictionary", "json")
 	if err != nil {
@@ -42,9 +42,9 @@ func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
 }
 
 func main() {
-	handlers := map[string]internal.HandleFunc{
+	handlers := map[string]lambda2.HandleFunc{
 		"putRequest": putRequestHandler,
 	}
-	l := internal.MustLambda(handlers)
+	l := lambda2.MustLambda(handlers)
 	lambda.Start(l.Route)
 }

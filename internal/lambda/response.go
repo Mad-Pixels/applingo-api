@@ -1,4 +1,4 @@
-package internal
+package lambda
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type response[T any] struct {
 	Message    string            `json:"message,omitempty" msg:"message"`
 }
 
-// SetHeader sets a header for the response
+// SetHeader sets a header for the response.
 func (r *response[T]) SetHeader(key, value string) {
 	if r.Headers == nil {
 		r.Headers = make(map[string]string)
@@ -22,7 +22,7 @@ func (r *response[T]) SetHeader(key, value string) {
 	r.Headers[key] = value
 }
 
-// ToAPIGatewayProxyResponse ...
+// ToAPIGatewayProxyResponse creates a new events.APIGatewayProxyResponse object.
 func (r *response[T]) ToAPIGatewayProxyResponse() (events.APIGatewayProxyResponse, error) {
 	body, err := json.Marshal(r)
 	if err != nil {
@@ -43,7 +43,7 @@ func (r *response[T]) ToAPIGatewayProxyResponse() (events.APIGatewayProxyRespons
 	}, nil
 }
 
-// NewResponse creates a new optimized response
+// NewResponse creates a new response object.
 func NewResponse[T any](statusCode int32, message string, data T) *response[T] {
 	return &response[T]{
 		Headers:    make(map[string]string),
