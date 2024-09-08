@@ -1,21 +1,21 @@
-module "ecr-lingocards-api" {
+module "ecr-repository-api" {
   source = "../../modules/ecr"
 
-  project         = "lingocards"
+  project         = local.project
   repository_name = "api"
 }
 
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
-  project     = "lingocards"
+  project     = local.project
   bucket_name = "dictionary"
 }
 
 module "dynamo-dictionary-table" {
   source = "../../modules/dynamo"
 
-  project    = "lingocards"
+  project    = local.project
   table_name = "dictionary"
   hash_key   = "id"
   range_key  = "name"

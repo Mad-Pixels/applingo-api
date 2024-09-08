@@ -15,13 +15,15 @@ module "lambda_functions" {
   for_each = local.lambdas
 
   function_name = each.key
-  project       = "lingocards"
-  image         = "${data.terraform_remote_state.infra.outputs.lambda_lingocards_repository_url}:${each.key}"
-  environments = {
-    "SERVICE_DICTIONARY_BUCKET" : "${data.terraform_remote_state.infra.outputs.bucket_lingocards_name}"
-    "SERVICE_DICTIONARY_DYNAMO" : "${data.terraform_remote_state.infra.outputs.dynamo_lingocards_table}"
-  }
+  project       = local.project
+  image         = "${data.terraform_remote_state.infra.outputs.ecr-repository-api_url}:${each.key}"
+
   memory_size = try(each.value.memory_size, 128)
   timeout     = try(each.value.timeout, 30)
   policy      = try(jsonencode(each.value.policy), "")
+
+  environments = {
+    SERVICE_DICTIONARY_BUCKET : data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name,
+    SERVICE_DICTIONARY_DYNAMO : data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_name
+  }
 }

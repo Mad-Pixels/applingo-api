@@ -12,6 +12,7 @@ locals {
   }
 
   lambdas      = { for func in local._lambda_functions : func => local._lambda_configs[func] }
-  state_bucket = "tfstates-lingocards"
-  tfstate_file = "api.tfstates"
+  project      = "lingocards"
+  state_bucket = "tfstates-${local.project}"
+  tfstate_file = "service.tfstates"
 }
