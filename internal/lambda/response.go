@@ -7,15 +7,15 @@ import (
 
 //go:generate msgp
 
-type response[T any] struct {
+type response struct {
 	Headers    map[string]string `json:"-" msg:"-"`
-	Data       T                 `json:"data,omitempty" msg:"data"`
+	Data       any               `json:"data,omitempty" msg:"data"`
 	StatusCode int32             `json:"status_code" msg:"status_code"`
 	Message    string            `json:"message,omitempty" msg:"message"`
 }
 
 // SetHeader sets a header for the response.
-func (r *response[T]) SetHeader(key, value string) {
+func (r *response) SetHeader(key, value string) {
 	if r.Headers == nil {
 		r.Headers = make(map[string]string)
 	}
@@ -23,7 +23,7 @@ func (r *response[T]) SetHeader(key, value string) {
 }
 
 // ToAPIGatewayProxyResponse creates a new events.APIGatewayProxyResponse object.
-func (r *response[T]) ToAPIGatewayProxyResponse() (events.APIGatewayProxyResponse, error) {
+func (r *response) ToAPIGatewayProxyResponse() (events.APIGatewayProxyResponse, error) {
 	body, err := json.Marshal(r)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, err
@@ -44,8 +44,8 @@ func (r *response[T]) ToAPIGatewayProxyResponse() (events.APIGatewayProxyRespons
 }
 
 // NewResponse creates a new response object.
-func NewResponse[T any](statusCode int32, message string, data T) *response[T] {
-	return &response[T]{
+func NewResponse(statusCode int32, message string, data any) *response {
+	return &response{
 		Headers:    make(map[string]string),
 		StatusCode: statusCode,
 		Message:    message,

@@ -45,19 +45,19 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (events.APIG
 	var base BaseRequest
 	if err := json.Unmarshal(event, &base); err != nil {
 		l.logger.Error("Invalid request format", zap.Error(err))
-		return NewResponse[any](400, fmt.Sprintf("Invalid request format: %v", err), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(400, fmt.Sprintf("Invalid request format: %v", err), nil).ToAPIGatewayProxyResponse()
 	}
 
 	handler, ok := l.handlers[base.Action]
 	if !ok {
 		l.logger.Warn("Unknown action", zap.String("action", base.Action))
-		return NewResponse[any](404, fmt.Sprintf("Unknown action: %s", base.Action), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(404, fmt.Sprintf("Unknown action: %s", base.Action), nil).ToAPIGatewayProxyResponse()
 	}
 
 	result, err := handler(ctx, base.Data)
 	if err != nil {
 		l.logger.Error("Error processing request", zap.Error(err))
-		return NewResponse[any](500, fmt.Sprintf("Error processing request: %v", err), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(500, fmt.Sprintf("Error processing request: %v", err), nil).ToAPIGatewayProxyResponse()
 	}
 
 	l.logger.Debug("Request processed successfully", zap.Any("result", result))
