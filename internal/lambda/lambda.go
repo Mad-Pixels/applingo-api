@@ -5,12 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/aws/aws-lambda-go/events"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 	"net/http"
-)
-
-const (
-	EnvLogLevel = "LOG_LEVEL"
 )
 
 // BaseRequest represents the structure of incoming requests.
@@ -20,7 +16,7 @@ type BaseRequest struct {
 }
 
 // HandleFunc is the type for action handlers.
-type HandleFunc func(context.Context, *zap.Logger, json.RawMessage) (any, *HandleError)
+type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage) (any, *HandleError)
 
 // HandleError implement error from handlers.
 type HandleError struct {
@@ -29,13 +25,13 @@ type HandleError struct {
 }
 
 type lambda struct {
-	logger   *zap.Logger
+	logger   zerolog.Logger
 	handlers map[string]HandleFunc
 }
 
 // NewLambda creates a new Lambda object.
 func NewLambda(handlers map[string]HandleFunc) *lambda {
-	logger, _ := initLogger()
+	logger := initLogger()
 
 	return &lambda{
 		handlers: handlers,
@@ -45,31 +41,34 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 
 // Handle processes the incoming Lambda event
 func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events.APIGatewayProxyResponse, err error) {
-	l.logger.Debug("Received event", zap.String("event", string(event)))
+	l.logger.Debug().RawJSON("event", event).Msg("Received event")
 
-	var (
-		base BaseRequest
-	)
+	var base BaseRequest
 	defer func() {
 		if err != nil {
-			l.logger.Error("Prepare response error", zap.Error(err), zap.String("action", base.Action))
+			l.logger.Error().Err(err).Str("action", base.Action).Msg("Prepare response error")
 			err = nil
 		}
 	}()
+
 	if err = json.Unmarshal(event, &base); err != nil {
-		l.logger.Error("Invalid request format", zap.Error(err), zap.String("action", base.Action))
+		l.logger.Error().Err(err).Str("action", base.Action).Msg("Invalid request format")
 		return errResponse(http.StatusInternalServerError)
 	}
 
 	handler, ok := l.handlers[base.Action]
 	if !ok {
-		l.logger.Error("Unknown action", zap.Error(errors.New("requested action not implemented")), zap.String("action", base.Action))
+		l.logger.Error().Err(errors.New("requested action not implemented")).Str("action", base.Action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
-	result, handleError := handler(ctx, l.logger, base.Data)
+
+	handlerLogger := l.logger.With().Str("action", base.Action).Logger()
+
+	result, handleError := handler(ctx, handlerLogger, base.Data)
 	if handleError != nil {
-		l.logger.Error("Handle error", zap.Error(handleError.Err), zap.String("action", base.Action))
+		l.logger.Error().Err(handleError.Err).Str("action", base.Action).Msg("Handle error")
 		return errResponse(handleError.Status)
 	}
+
 	return okResponse(result)
 }

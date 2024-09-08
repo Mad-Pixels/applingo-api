@@ -3,53 +3,50 @@ package lambda
 import (
 	"os"
 	"strings"
+	"time"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/rs/zerolog"
 )
 
-func initLogger() (*zap.Logger, error) {
+const (
+	EnvLogLevel = "LOG_LEVEL"
+)
+
+func initLogger() zerolog.Logger {
 	level := getLogLevel()
 
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "timestamp",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	zerolog.MessageFieldName = "message"
+	zerolog.LevelFieldName = "level"
 
-	config := zap.Config{
-		Level:             zap.NewAtomicLevelAt(level),
-		Development:       false,
-		DisableCaller:     false,
-		DisableStacktrace: level != zap.DebugLevel,
-		Sampling:          nil,
-		Encoding:          "console",
-		EncoderConfig:     encoderConfig,
-		OutputPaths:       []string{"stdout"},
-		ErrorOutputPaths:  []string{"stderr"},
+	output := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: time.RFC3339Nano,
+		NoColor:    true,
 	}
-	return config.Build(zap.AddCallerSkip(1))
+	logger := zerolog.New(output).
+		Level(level).
+		With().
+		Timestamp().
+		Caller().
+		Logger()
+
+	return logger
 }
 
-func getLogLevel() zapcore.Level {
+func getLogLevel() zerolog.Level {
 	switch strings.ToLower(os.Getenv(EnvLogLevel)) {
 	case "debug":
-		return zap.DebugLevel
+		return zerolog.DebugLevel
 	case "info":
-		return zap.InfoLevel
+		return zerolog.InfoLevel
 	case "warn", "warning":
-		return zap.WarnLevel
-	case "error", "dpanic", "panic", "fatal":
-		return zap.ErrorLevel
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
 	default:
-		return zap.InfoLevel
+		return zerolog.InfoLevel
 	}
 }

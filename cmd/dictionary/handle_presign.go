@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ type handlePresignResponse struct {
 	Url string `json:"url"`
 }
 
-func handlePresign(_ context.Context, _ *zap.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+func handlePresign(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
 	var (
 		s3  = cloud.NewBucket(sess)
 		req handlePresignRequest
