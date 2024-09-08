@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-
 	"github.com/aws/aws-lambda-go/events"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 const (
@@ -21,7 +20,13 @@ type BaseRequest struct {
 }
 
 // HandleFunc is the type for action handlers.
-type HandleFunc func(context.Context, *zap.Logger, json.RawMessage) (any, error)
+type HandleFunc func(context.Context, *zap.Logger, json.RawMessage) (any, *HandleError)
+
+// HandleError implement error from handlers.
+type HandleError struct {
+	Err    error
+	Status int
+}
 
 type lambda struct {
 	logger   *zap.Logger
@@ -43,31 +48,28 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 	l.logger.Debug("Received event", zap.String("event", string(event)))
 
 	var (
-		base   BaseRequest
-		logMsg string
+		base BaseRequest
 	)
 	defer func() {
 		if err != nil {
-			l.logger.Error(logMsg, zap.Error(err), zap.Int("statusCode", resp.StatusCode), zap.String("action", base.Action))
-		} else {
-			l.logger.Info(logMsg, zap.Int("statusCode", resp.StatusCode), zap.String("action", base.Action))
+			l.logger.Error("Prepare response error", zap.Error(err), zap.String("action", base.Action))
+			err = nil
 		}
 	}()
-
 	if err = json.Unmarshal(event, &base); err != nil {
-		logMsg = "Invalid request format"
-		return NewResponse(http.StatusBadRequest, nil).ToAPIGatewayProxyResponse(), err
+		l.logger.Error("Invalid request format", zap.Error(err), zap.String("action", base.Action))
+		return errResponse(http.StatusInternalServerError)
 	}
+
 	handler, ok := l.handlers[base.Action]
 	if !ok {
-		logMsg = "Unknown action"
-		return NewResponse(http.StatusNotFound, nil).ToAPIGatewayProxyResponse(), errors.New("ActionNotSupport")
+		l.logger.Error("Unknown action", zap.Error(errors.New("requested action not implemented")), zap.String("action", base.Action))
+		return errResponse(http.StatusNotFound)
 	}
-	result, err := handler(ctx, l.logger, base.Data)
-	if err != nil {
-		logMsg = "Error processing request"
-		return NewResponse(http.StatusInternalServerError, nil).ToAPIGatewayProxyResponse(), err
+	result, handleError := handler(ctx, l.logger, base.Data)
+	if handleError != nil {
+		l.logger.Error("Handle error", zap.Error(handleError.Err), zap.String("action", base.Action))
+		return errResponse(handleError.Status)
 	}
-	logMsg = "Request processed successfully"
-	return NewResponse(http.StatusOK, result).ToAPIGatewayProxyResponse(), nil
+	return okResponse(result)
 }

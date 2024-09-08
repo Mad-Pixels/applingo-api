@@ -9,38 +9,47 @@ import (
 )
 
 func initLogger() (*zap.Logger, error) {
-	var (
-		stacktrace bool
-		develop    bool
-		level      = zap.InfoLevel
-	)
-	switch strings.ToLower(os.Getenv(EnvLogLevel)) {
-	case "debug":
-		develop, stacktrace, level = true, true, zap.DebugLevel
-	case "info":
-		develop, stacktrace, level = true, true, zap.InfoLevel
-	case "warn", "warning":
-		develop, stacktrace, level = false, false, zap.WarnLevel
-	case "error", "dpanic", "panic", "fatal":
-		develop, stacktrace, level = false, false, zap.ErrorLevel
-	}
+	level := getLogLevel()
 
 	encoderConfig := zapcore.EncoderConfig{
-		EncodeLevel:    func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) { enc.AppendString(l.String()) },
-		EncodeDuration: zapcore.StringDurationEncoder,
-		MessageKey:     "message",
+		TimeKey:        "timestamp",
 		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
+
 	config := zap.Config{
 		Level:             zap.NewAtomicLevelAt(level),
+		Development:       false,
+		DisableCaller:     false,
+		DisableStacktrace: level != zap.DebugLevel,
+		Sampling:          nil,
+		Encoding:          "console",
+		EncoderConfig:     encoderConfig,
 		OutputPaths:       []string{"stdout"},
 		ErrorOutputPaths:  []string{"stderr"},
-		EncoderConfig:     encoderConfig,
-		DisableStacktrace: !stacktrace,
-		Development:       develop,
-		Encoding:          "json",
-		DisableCaller:     true,
-		Sampling:          nil,
 	}
-	return config.Build()
+	return config.Build(zap.AddCallerSkip(1))
+}
+
+func getLogLevel() zapcore.Level {
+	switch strings.ToLower(os.Getenv(EnvLogLevel)) {
+	case "debug":
+		return zap.DebugLevel
+	case "info":
+		return zap.InfoLevel
+	case "warn", "warning":
+		return zap.WarnLevel
+	case "error", "dpanic", "panic", "fatal":
+		return zap.ErrorLevel
+	default:
+		return zap.InfoLevel
+	}
 }

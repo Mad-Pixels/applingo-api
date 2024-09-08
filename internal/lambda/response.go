@@ -2,50 +2,34 @@ package lambda
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"github.com/aws/aws-lambda-go/events"
+	"net/http"
 )
 
-//go:generate msgp
-
-type response struct {
-	Headers    map[string]string `json:"-" msg:"-"`
-	Data       any               `json:"data,omitempty" msg:"data"`
-	StatusCode int32             `json:"status_code" msg:"status_code"`
-	Message    string            `json:"message,omitempty" msg:"message"`
-}
-
-// SetHeader sets a header for the response.
-func (r *response) SetHeader(key, value string) {
-	if r.Headers == nil {
-		r.Headers = make(map[string]string)
-	}
-	r.Headers[key] = value
-}
-
-// ToAPIGatewayProxyResponse creates a new events.APIGatewayProxyResponse object.
-func (r *response) ToAPIGatewayProxyResponse() events.APIGatewayProxyResponse {
-	body, _ := json.Marshal(r)
-	if r.Headers == nil {
-		r.Headers = make(map[string]string)
-	}
-	if _, ok := r.Headers["Content-Type"]; !ok {
-		r.Headers["Content-Type"] = "application/json"
+func response(statusCode int, body interface{}) (events.APIGatewayProxyResponse, error) {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, err
 	}
 	return events.APIGatewayProxyResponse{
-		StatusCode: int(r.StatusCode),
-		Headers:    r.Headers,
-		Body:       string(body),
-	}
+		StatusCode: statusCode,
+		Headers:    map[string]string{"Content-Type": "application/json"},
+		Body:       string(jsonBody),
+	}, nil
 }
 
-// NewResponse creates a new response object.
-func NewResponse(statusCode int32, data any) *response {
-	return &response{
-		Headers:    make(map[string]string),
-		StatusCode: statusCode,
-		Message:    http.StatusText(int(statusCode)),
-		Data:       data,
+func errResponse(statusCode int) (events.APIGatewayProxyResponse, error) {
+	body := map[string]string{
+		"error": http.StatusText(statusCode),
 	}
+	return response(statusCode, body)
 }
+
+func okResponse(data interface{}) (events.APIGatewayProxyResponse, error) {
+	body := map[string]interface{}{
+		"data": data,
+	}
+	return response(http.StatusOK, body)
+}
+
+////go:generate msgp

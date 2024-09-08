@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 type handlePresignRequest struct {
@@ -16,21 +18,30 @@ type handlePresignResponse struct {
 	Url string `json:"url"`
 }
 
-func handlePresign(_ context.Context, _ *zap.Logger, data json.RawMessage) (any, error) {
+func handlePresign(_ context.Context, _ *zap.Logger, data json.RawMessage) (any, *lambda.HandleError) {
 	var (
 		s3  = cloud.NewBucket(sess)
 		req handlePresignRequest
 	)
 	if err := json.Unmarshal(data, &req); err != nil {
-		return nil, err
+		return nil, &lambda.HandleError{
+			Status: http.StatusBadRequest,
+			Err:    err,
+		}
 	}
 	if err := validate.Struct(&req); err != nil {
-		return nil, err
+		return nil, &lambda.HandleError{
+			Status: http.StatusBadRequest,
+			Err:    err,
+		}
 	}
 
 	res, err := s3.Presign(req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
-		return nil, err
+		return nil, &lambda.HandleError{
+			Status: http.StatusInternalServerError,
+			Err:    err,
+		}
 	}
 	return handlePresignResponse{
 		Url: res,
