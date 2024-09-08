@@ -3,6 +3,7 @@ package lambda
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -20,7 +21,7 @@ type BaseRequest struct {
 }
 
 // HandleFunc is the type for action handlers.
-type HandleFunc func(context.Context, json.RawMessage) (any, error)
+type HandleFunc func(context.Context, *zap.Logger, json.RawMessage) (any, error)
 
 type lambda struct {
 	logger   *zap.Logger
@@ -55,18 +56,18 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 
 	if err = json.Unmarshal(event, &base); err != nil {
 		logMsg = "Invalid request format"
-		return NewResponse(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(http.StatusBadRequest, nil).ToAPIGatewayProxyResponse(), err
 	}
 	handler, ok := l.handlers[base.Action]
 	if !ok {
 		logMsg = "Unknown action"
-		return NewResponse(http.StatusNotFound, http.StatusText(http.StatusNotFound), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(http.StatusNotFound, nil).ToAPIGatewayProxyResponse(), errors.New("ActionNotSupport")
 	}
-	result, err := handler(ctx, base.Data)
+	result, err := handler(ctx, l.logger, base.Data)
 	if err != nil {
 		logMsg = "Error processing request"
-		return NewResponse(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), nil).ToAPIGatewayProxyResponse()
+		return NewResponse(http.StatusInternalServerError, nil).ToAPIGatewayProxyResponse(), err
 	}
 	logMsg = "Request processed successfully"
-	return NewResponse(http.StatusOK, http.StatusText(http.StatusOK), result).ToAPIGatewayProxyResponse()
+	return NewResponse(http.StatusOK, result).ToAPIGatewayProxyResponse(), nil
 }

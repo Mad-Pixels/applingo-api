@@ -1,24 +1,23 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"github.com/Mad-Pixels/lingocards-api/pkg/amz"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"os"
-
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/go-playground/validator/v10"
+	"os"
 )
 
 var (
-	//
+	// service vars.
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
-	//serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
+	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
+	serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
-	//
+	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")
+	validate  *validator.Validate
 	sess      *session.Session
 )
 
@@ -31,25 +30,14 @@ func init() {
 		SharedConfigState: session.SharedConfigEnable,
 		Config:            aws.Config{Region: aws.String(awsRegion)},
 	}))
-}
-
-func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
-	obj := amz.NewS3(sess)
-	result, err := obj.PutRequest("fname", serviceDictionaryBucket, "json")
-	if err != nil {
-		return nil, err
-	}
-
-	return Response{
-		Message: result,
-	}, nil
+	validate = validator.New()
 }
 
 func main() {
 	aws_lambda.Start(
 		lambda.NewLambda(
 			map[string]lambda.HandleFunc{
-				"putRequest": putRequestHandler,
+				"presign": handlePresign,
 			},
 		).Handle,
 	)

@@ -25,6 +25,7 @@ module "lambda_functions" {
 
   environments = {
     SERVICE_DICTIONARY_BUCKET : data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name,
+    SERVICE_PROCESSING_BUCKET : data.terraform_remote_state.infra.outputs.s3-processing-bucket_name,
     SERVICE_DICTIONARY_DYNAMO : data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_name
   }
 }

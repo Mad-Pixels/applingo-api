@@ -2,6 +2,7 @@ package lambda
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 )
@@ -24,32 +25,27 @@ func (r *response) SetHeader(key, value string) {
 }
 
 // ToAPIGatewayProxyResponse creates a new events.APIGatewayProxyResponse object.
-func (r *response) ToAPIGatewayProxyResponse() (events.APIGatewayProxyResponse, error) {
-	body, err := json.Marshal(r)
-	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, err
-	}
-
+func (r *response) ToAPIGatewayProxyResponse() events.APIGatewayProxyResponse {
+	body, _ := json.Marshal(r)
 	if r.Headers == nil {
 		r.Headers = make(map[string]string)
 	}
 	if _, ok := r.Headers["Content-Type"]; !ok {
 		r.Headers["Content-Type"] = "application/json"
 	}
-
 	return events.APIGatewayProxyResponse{
 		StatusCode: int(r.StatusCode),
 		Headers:    r.Headers,
 		Body:       string(body),
-	}, nil
+	}
 }
 
 // NewResponse creates a new response object.
-func NewResponse(statusCode int32, message string, data any) *response {
+func NewResponse(statusCode int32, data any) *response {
 	return &response{
 		Headers:    make(map[string]string),
 		StatusCode: statusCode,
-		Message:    message,
+		Message:    http.StatusText(int(statusCode)),
 		Data:       data,
 	}
 }
