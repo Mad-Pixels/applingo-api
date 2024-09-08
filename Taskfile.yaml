@@ -15,7 +15,6 @@ vars:
   terraform: 1.9.5
   terraform_docs: v0.18.0
   api_image_name: lingocards-api
-  localstack_ecr_url: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
 
 tasks:
   default:
@@ -323,7 +322,7 @@ tasks:
       - task: _docker/build/all
       - task: _docker/push/all
         vars:
-          REPO_URL: '{{ .localstack_ecr_url }}'
+          REPO_URL: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
       - task: _terraform/apply
         vars:
           DIR:        "{{.git_root}}/terraform/provisioners/service"
