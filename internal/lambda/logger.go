@@ -1,47 +1,45 @@
 package lambda
 
 import (
-	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"strings"
 )
 
 func initLogger() (*zap.Logger, error) {
-	logLevel := os.Getenv(EnvLogLevel)
-	level := zap.InfoLevel
-	if logLevel != "" {
-		err := level.UnmarshalText([]byte(logLevel))
-		if err != nil {
-			return nil, fmt.Errorf("invalid log level: %v", err)
-		}
+	var (
+		stacktrace bool
+		develop    bool
+		level      = zap.InfoLevel
+	)
+	switch strings.ToLower(os.Getenv(EnvLogLevel)) {
+	case "debug":
+		develop, stacktrace, level = true, true, zap.DebugLevel
+	case "info":
+		develop, stacktrace, level = true, true, zap.InfoLevel
+	case "warn", "warning":
+		develop, stacktrace, level = false, false, zap.WarnLevel
+	case "error", "dpanic", "panic", "fatal":
+		develop, stacktrace, level = false, false, zap.ErrorLevel
 	}
 
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "timestamp",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
+		EncodeLevel:    func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) { enc.AppendString(l.String()) },
+		EncodeDuration: zapcore.StringDurationEncoder,
 		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
+		LevelKey:       "level",
 	}
-
 	config := zap.Config{
 		Level:             zap.NewAtomicLevelAt(level),
-		Development:       false,
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Sampling:          nil,
-		Encoding:          "json",
-		EncoderConfig:     encoderConfig,
 		OutputPaths:       []string{"stdout"},
 		ErrorOutputPaths:  []string{"stderr"},
+		EncoderConfig:     encoderConfig,
+		DisableStacktrace: !stacktrace,
+		Development:       develop,
+		Encoding:          "json",
+		DisableCaller:     true,
+		Sampling:          nil,
 	}
-
-	return config.Build(zap.AddCallerSkip(1))
+	return config.Build()
 }
