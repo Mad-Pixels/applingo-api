@@ -3,38 +3,41 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/Mad-Pixels/lingocards-api/pkg/amz"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"os"
 
-	lambda2 "github.com/Mad-Pixels/lingocards-api/internal/lambda"
-	"github.com/Mad-Pixels/lingocards-api/pkg/amz"
-	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
+	aws_lambda "github.com/aws/aws-lambda-go/lambda"
 )
 
 var (
+	//
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
-	serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
-)
+	//serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
-type Request struct {
-	Name string `json:"name"`
-}
+	//
+	awsRegion = os.Getenv("AWS_REGION")
+	sess      *session.Session
+)
 
 type Response struct {
 	Message string `json:"message"`
 }
 
-func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
-	var req Request
-	if err := json.Unmarshal(data, &req); err != nil {
-		return nil, fmt.Errorf("invalid request format: %w", err)
-	}
+func init() {
+	sess = session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+		Config:            aws.Config{Region: aws.String(awsRegion)},
+	}))
+}
 
-	l := lambda2.MustLambda(nil)
-	obj := amz.NewS3(l.AwsSes)
-	result, err := obj.PutRequest("fname", "lingocards.dictionary", "json")
+func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
+	obj := amz.NewS3(sess)
+	result, err := obj.PutRequest("fname", serviceDictionaryBucket, "json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to put request: %w", err)
+		return nil, err
 	}
 
 	return Response{
@@ -43,9 +46,11 @@ func putRequestHandler(ctx context.Context, data json.RawMessage) (any, error) {
 }
 
 func main() {
-	handlers := map[string]lambda2.HandleFunc{
-		"putRequest": putRequestHandler,
-	}
-	l := lambda2.MustLambda(handlers)
-	lambda.Start(l.Route)
+	aws_lambda.Start(
+		lambda.NewLambda(
+			map[string]lambda.HandleFunc{
+				"putRequest": putRequestHandler,
+			},
+		).Handle,
+	)
 }

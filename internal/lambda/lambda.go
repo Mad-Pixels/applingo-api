@@ -3,7 +3,6 @@ package lambda
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -29,15 +28,13 @@ type lambda struct {
 }
 
 // NewLambda creates a new Lambda object.
-func NewLambda(handlers map[string]HandleFunc) (*lambda, error) {
-	logger, err := initLogger()
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize logger: %v", err)
-	}
+func NewLambda(handlers map[string]HandleFunc) *lambda {
+	logger, _ := initLogger()
+
 	return &lambda{
 		handlers: handlers,
 		logger:   logger,
-	}, nil
+	}
 }
 
 // Handle processes the incoming Lambda event

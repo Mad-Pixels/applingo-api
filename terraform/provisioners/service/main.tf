@@ -1,4 +1,4 @@
-data "terraform_remote_state" "ecr" {
+data "terraform_remote_state" "infra" {
   backend = var.use_localstack ? "local" : "s3"
 
   config = var.use_localstack ? {
@@ -16,8 +16,12 @@ module "lambda_functions" {
 
   function_name = each.key
   project       = "lingocards"
-  image         = "${data.terraform_remote_state.ecr.outputs.repository_url}:${each.key}"
-  memory_size   = try(each.value.memory_size, 128)
-  timeout       = try(each.value.timeout, 30)
-  policy        = try(jsonencode(each.value.policy), "")
+  image         = "${data.terraform_remote_state.infra.outputs.lambda_lingocards_repository_url}:${each.key}"
+  environments = {
+    "SERVICE_DICTIONARY_BUCKET" : "${data.terraform_remote_state.infra.outputs.bucket_lingocards_name}"
+    "SERVICE_DICTIONARY_DYNAMO" : "${data.terraform_remote_state.infra.outputs.dynamo_lingocards_table}"
+  }
+  memory_size = try(each.value.memory_size, 128)
+  timeout     = try(each.value.timeout, 30)
+  policy      = try(jsonencode(each.value.policy), "")
 }
