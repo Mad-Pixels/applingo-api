@@ -10,14 +10,11 @@ import (
 // bufPool is a pool of byte buffers used to reduce memory allocations.
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		return new(bytes.Buffer)
+		return bytes.NewBuffer(make([]byte, 0, 1024))
 	},
 }
 
 // MarshalJSON serializes the given value into a JSON-encoded byte slice.
-// It uses a pool of buffers to reduce memory allocations and disables HTML escaping
-// for better performance.
-//
 // Example:
 //
 //	type Person struct {
@@ -33,6 +30,10 @@ var bufPool = sync.Pool{
 //	fmt.Println(string(data))
 //	// Output: {"name":"John Doe","age":30}
 func MarshalJSON(v interface{}) ([]byte, error) {
+	if v == nil {
+		return []byte("null"), nil
+	}
+
 	buf := bufPool.Get().(*bytes.Buffer)
 	defer func() {
 		buf.Reset()
@@ -48,8 +49,6 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 }
 
 // UnmarshalJSON deserializes the JSON-encoded data into the given value.
-// It uses a JSON decoder for efficient parsing of the input data.
-//
 // Example:
 //
 //	data := []byte(`{"name":"Jane Doe","age":25}`)
@@ -61,6 +60,11 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 //	fmt.Printf("%+v\n", p)
 //	// Output: {Name:Jane Doe Age:25}
 func UnmarshalJSON(data []byte, v interface{}) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	return dec.Decode(v)
+	buf := bufPool.Get().(*bytes.Buffer)
+	defer func() {
+		buf.Reset()
+		bufPool.Put(buf)
+	}()
+	buf.Write(data)
+	return json.NewDecoder(buf).Decode(v)
 }

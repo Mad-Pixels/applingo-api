@@ -1,7 +1,6 @@
 package serializer
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -98,41 +97,5 @@ func TestUnmarshalJSON(t *testing.T) {
 				assert.Equal(t, tt.want, *(got.(*struct{ Person struct{ Age int } })))
 			}
 		})
-	}
-}
-
-func BenchmarkMarshalJSON(b *testing.B) {
-	data := struct {
-		Name string
-		Age  int
-		Tags []string
-	}{
-		Name: "John Doe",
-		Age:  30,
-		Tags: []string{"go", "programming", "json"},
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := MarshalJSON(data)
-		require.NoError(b, err)
-	}
-}
-
-func BenchmarkStandardMarshalJSON(b *testing.B) {
-	data := struct {
-		Name string
-		Age  int
-		Tags []string
-	}{
-		Name: "John Doe",
-		Age:  30,
-		Tags: []string{"go", "programming", "json"},
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := json.Marshal(data)
-		require.NoError(b, err)
 	}
 }

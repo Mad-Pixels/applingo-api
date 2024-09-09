@@ -36,7 +36,7 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 // Example API Gateway event:
 //
 //	{
-//		"queryStringParameters": { "action": "presign" },
+//		"queryStringParameters": { "action": "example" },
 //		"body": "{\"param1\":\"val1\",\"param2\":\"val2\"}"
 //	}
 //
@@ -80,6 +80,8 @@ func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) 
 		Str("path", req.Path).
 		Str("httpMethod", req.HTTPMethod).
 		Str("domainName", req.RequestContext.DomainName).
+		Str("sourceIp", req.RequestContext.Identity.SourceIP).
+		Str("userAgent", req.RequestContext.Identity.UserAgent).
 		Msg("Received API Gateway event")
 
 	action := req.QueryStringParameters["action"]
