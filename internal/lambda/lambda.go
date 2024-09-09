@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
 	"net/http"
@@ -51,7 +52,7 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 		}
 	}()
 
-	if err = json.Unmarshal(event, &base); err != nil {
+	if err = serializer.UnmarshalJSON(event, &base); err != nil {
 		l.logger.Error().Err(err).Str("action", base.Action).Msg("Invalid request format")
 		return errResponse(http.StatusInternalServerError)
 	}

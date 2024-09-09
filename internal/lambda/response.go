@@ -1,13 +1,13 @@
 package lambda
 
 import (
-	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/aws/aws-lambda-go/events"
 	"net/http"
 )
 
 func response(statusCode int, body interface{}) (events.APIGatewayProxyResponse, error) {
-	jsonBody, err := json.Marshal(body)
+	jsonBody, err := serializer.MarshalJSON(body)
 	if err != nil {
 		return events.APIGatewayProxyResponse{}, err
 	}
@@ -19,17 +19,9 @@ func response(statusCode int, body interface{}) (events.APIGatewayProxyResponse,
 }
 
 func errResponse(statusCode int) (events.APIGatewayProxyResponse, error) {
-	body := map[string]string{
-		"error": http.StatusText(statusCode),
-	}
-	return response(statusCode, body)
+	return response(statusCode, map[string]string{"error": http.StatusText(statusCode)})
 }
 
-func okResponse(data interface{}) (events.APIGatewayProxyResponse, error) {
-	body := map[string]interface{}{
-		"data": data,
-	}
-	return response(http.StatusOK, body)
+func okResponse(data any) (events.APIGatewayProxyResponse, error) {
+	return response(http.StatusOK, map[string]any{"data": data})
 }
-
-////go:generate msgp
