@@ -38,7 +38,47 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 	}
 }
 
-// Handle processes the incoming Lambda event
+// Handle processes Lambda events by routing them to specific handlers based on the "action" field.
+// It expects a JSON event with "action" and "data" fields, where "action" determines the handler to use.
+//
+// Expected event format:
+//
+//	{
+//	    "action": "actionName",
+//	    "data": {
+//	        // Action-specific payload
+//	    }
+//	}
+//
+// Example usage:
+//
+//	lambdaHandler := lambda.NewLambda(map[string]lambda.HandleFunc{
+//		"createUser": func(ctx context.Context, logger zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+//			var user struct {
+//				Name  string `json:"name"`
+//				Email string `json:"email"`
+//			}
+//			if err := json.Unmarshal(data, &user); err != nil {
+//				return nil, &lambda.HandleError{Err: err, Status: http.StatusBadRequest}
+//			}
+//			// User creation logic here
+//			return user, nil
+//		},
+//		"getUser": func(ctx context.Context, logger zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+//			var request struct {
+//				ID string `json:"id"`
+//			}
+//			if err := json.Unmarshal(data, &request); err != nil {
+//				return nil, &lambda.HandleError{Err: err, Status: http.StatusBadRequest}
+//			}
+//			// User retrieval logic here
+//			return map[string]string{"id": request.ID, "name": "John Doe"}, nil
+//		},
+//	})
+//
+// Invocation examples:
+//   - Create user: {"action": "createUser", "data": {"name": "John Doe", "email": "john@example.com"}}
+//   - Get user: {"action": "getUser", "data": {"id": "123"}}
 func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events.APIGatewayProxyResponse, err error) {
 	l.logger.Info().RawJSON("event", event).Msg("Received event")
 
