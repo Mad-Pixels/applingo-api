@@ -64,12 +64,12 @@ func TestUnmarshalJSON(t *testing.T) {
 		{
 			name:  "simple struct",
 			input: `{"Name":"John"}`,
-			want:  testStruct{Name: "John"},
+			want:  &testStruct{Name: "John"},
 		},
 		{
 			name:  "nested struct",
 			input: `{"Person":{"Age":30}}`,
-			want:  nestedStruct{Person: struct{ Age int }{Age: 30}},
+			want:  &nestedStruct{Person: struct{ Age int }{Age: 30}},
 		},
 		{
 			name:    "invalid input",
@@ -81,11 +81,12 @@ func TestUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got interface{}
-			if tt.name == "simple struct" {
+			switch tt.name {
+			case "simple struct":
 				got = &testStruct{}
-			} else if tt.name == "nested struct" {
+			case "nested struct":
 				got = &nestedStruct{}
-			} else {
+			default:
 				got = &map[string]interface{}{}
 			}
 
@@ -94,7 +95,7 @@ func TestUnmarshalJSON(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.want, *(got.(*struct{ Person struct{ Age int } })))
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
