@@ -229,7 +229,7 @@ tasks:
           exit 1
         fi
         terraform init -reconfigure
-        terraform plan -var="use_localstack=${LOCALSTACK}" -var="aws_region=${REGION}"
+        terraform plan -var="use_localstack=${LOCALSTACK}" -var="aws_region=${REGION}" -var="arch={{ARCH}}"
     env:
       AWS_DEFAULT_REGION:    '${REGION}'
       AWS_ACCESS_KEY_ID:     '${KEY_ID}'
@@ -253,7 +253,7 @@ tasks:
           exit 1
         fi
         terraform init -reconfigure
-        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}"
+        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{ARCH}}"
     env:
       AWS_DEFAULT_REGION:    '{{.REGION}}'
       AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'

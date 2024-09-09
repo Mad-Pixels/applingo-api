@@ -18,6 +18,7 @@ module "lambda_functions" {
   project       = local.project
   image         = "${data.terraform_remote_state.infra.outputs.ecr-repository-api_url}:${each.key}"
   log_level     = var.use_localstack ? "DEBUG" : "ERROR"
+  arch          = var.arch
 
   timeout     = try(each.value.timeout, 3)
   memory_size = try(each.value.memory_size, 128)

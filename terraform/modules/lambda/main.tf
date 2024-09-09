@@ -6,7 +6,7 @@ resource "aws_lambda_function" "this" {
   memory_size   = var.memory_size
 
   package_type  = "Image"
-  architectures = ["arm64"]
+  architectures = [var.arch]
 
   environment {
     variables = merge(
@@ -30,6 +30,8 @@ resource "aws_lambda_function" "this" {
     var.shared_tags,
     {
       "TF"      = "true",
+      "Type"    = "image",
+      "Arch"    = var.arch,
       "Project" = var.project,
       "Github"  = "github.com/Mad-Pixels/lingocards-api",
     }

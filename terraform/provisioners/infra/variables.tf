@@ -14,3 +14,8 @@ variable "aws_region" {
   description = "AWS region"
   type        = string
 }
+
+variable "arch" {
+  description = "Set architecture which will be use in lambda services"
+  type        = string
+}

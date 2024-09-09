@@ -40,6 +40,12 @@ variable "policy" {
   default     = ""
 }
 
+variable "arch" {
+  description = "Optional set architecture for Lambda function"
+  type        = string
+  default     = "arm64"
+}
+
 variable "environments" {
   description = "Additional ENVs for the Lambda function"
   default     = {}
