@@ -12,9 +12,9 @@ func response(statusCode int, body interface{}) (events.APIGatewayProxyResponse,
 		return events.APIGatewayProxyResponse{}, err
 	}
 	return events.APIGatewayProxyResponse{
-		StatusCode: statusCode,
 		Headers:    map[string]string{"Content-Type": "application/json"},
 		Body:       string(jsonBody),
+		StatusCode: statusCode,
 	}, nil
 }
 

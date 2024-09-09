@@ -62,10 +62,8 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 		l.logger.Error().Err(errors.New("requested action not implemented")).Str("action", base.Action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
-
-	handlerLogger := l.logger.With().Str("action", base.Action).Logger()
-
-	result, handleError := handler(ctx, handlerLogger, base.Data)
+	
+	result, handleError := handler(ctx, l.logger, base.Data)
 	if handleError != nil {
 		l.logger.Error().Err(handleError.Err).Str("action", base.Action).Msg("Handle error")
 		return errResponse(handleError.Status)
