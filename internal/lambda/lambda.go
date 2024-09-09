@@ -3,18 +3,10 @@ package lambda
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
 	"net/http"
 )
-
-// BaseRequest represents the structure of incoming requests.
-type BaseRequest struct {
-	Data   json.RawMessage `json:"data"`
-	Action string          `json:"action"`
-}
 
 // HandleFunc is the type for action handlers.
 type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage) (any, *HandleError)
@@ -38,16 +30,14 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 	}
 }
 
-// Handle processes Lambda events by routing them to specific handlers based on the "action" field.
-// It expects a JSON event with "action" and "data" fields, where "action" determines the handler to use.
+// Handle processes API Gateway proxy events, routing them to specific handlers based on the "action" field.
+// The action is extracted from query parameters, while the handler-specific data is in the request body.
 //
-// Expected event format:
+// Example API Gateway event:
 //
 //	{
-//	    "action": "actionName",
-//	    "data": {
-//	        // Action-specific payload
-//	    }
+//		"queryStringParameters": { "action": "presign" },
+//		"body": "{\"param1\":\"val1\",\"param2\":\"val2\"}"
 //	}
 //
 // Example usage:
@@ -76,31 +66,35 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 //		},
 //	})
 //
-// Invocation examples:
-//   - Create user: {"action": "createUser", "data": {"name": "John Doe", "email": "john@example.com"}}
-//   - Get user: {"action": "getUser", "data": {"id": "123"}}
-func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events.APIGatewayProxyResponse, err error) {
-	l.logger.Info().RawJSON("event", event).Msg("Received event")
+//	func main() {
+//		lambda.Start(lambdaHandler.Handle)
+//	}
+//
+// Invocation examples (API Gateway request body):
+//   - Create user: {"name": "John Doe", "email": "john@example.com"}
+//   - Get user: {"id": "123"}
+//
+// Note: The "action" is specified in the query parameters
+func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (resp events.APIGatewayProxyResponse, err error) {
+	l.logger.Info().
+		Str("path", req.Path).
+		Str("httpMethod", req.HTTPMethod).
+		Str("domainName", req.RequestContext.DomainName).
+		Msg("Received API Gateway event")
 
-	var base BaseRequest
-	defer func() {
-		if err != nil {
-			l.logger.Error().Err(err).Str("action", base.Action).Msg("Prepare response error")
-			err = nil
-		}
-	}()
-	if err = serializer.UnmarshalJSON(event, &base); err != nil {
-		l.logger.Error().Err(err).Str("action", base.Action).Msg("Invalid request format")
-		return errResponse(http.StatusInternalServerError)
+	action := req.QueryStringParameters["action"]
+	if action == "" {
+		l.logger.Error().Msg("Action not specified in query parameters")
+		return errResponse(http.StatusBadRequest)
 	}
-	handler, ok := l.handlers[base.Action]
+	handler, ok := l.handlers[action]
 	if !ok {
-		l.logger.Error().Err(errors.New("requested action not implemented")).Str("action", base.Action).Msg("Unknown action")
+		l.logger.Error().Str("action", action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
-	result, handleError := handler(ctx, l.logger, base.Data)
+	result, handleError := handler(ctx, l.logger, json.RawMessage(req.Body))
 	if handleError != nil {
-		l.logger.Error().Err(handleError.Err).Str("action", base.Action).Msg("Handle error")
+		l.logger.Error().Err(handleError.Err).Str("action", action).Msg("Handle error")
 		return errResponse(handleError.Status)
 	}
 	return okResponse(result)
