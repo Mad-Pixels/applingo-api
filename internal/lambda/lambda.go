@@ -40,7 +40,7 @@ func NewLambda(handlers map[string]HandleFunc) *lambda {
 
 // Handle processes the incoming Lambda event
 func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events.APIGatewayProxyResponse, err error) {
-	l.logger.Debug().RawJSON("event", event).Msg("Received event")
+	l.logger.Info().RawJSON("event", event).Msg("Received event")
 
 	var base BaseRequest
 	defer func() {
@@ -49,18 +49,15 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 			err = nil
 		}
 	}()
-
 	if err = serializer.UnmarshalJSON(event, &base); err != nil {
 		l.logger.Error().Err(err).Str("action", base.Action).Msg("Invalid request format")
 		return errResponse(http.StatusInternalServerError)
 	}
-
 	handler, ok := l.handlers[base.Action]
 	if !ok {
 		l.logger.Error().Err(errors.New("requested action not implemented")).Str("action", base.Action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
-
 	result, handleError := handler(ctx, l.logger, base.Data)
 	if handleError != nil {
 		l.logger.Error().Err(handleError.Err).Str("action", base.Action).Msg("Handle error")
