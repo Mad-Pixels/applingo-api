@@ -32,11 +32,9 @@ type lambda struct {
 
 // NewLambda creates a new Lambda object.
 func NewLambda(handlers map[string]HandleFunc) *lambda {
-	logger := initLogger()
-
 	return &lambda{
 		handlers: handlers,
-		logger:   logger,
+		logger:   initLogger(),
 	}
 }
 
@@ -62,12 +60,11 @@ func (l *lambda) Handle(ctx context.Context, event json.RawMessage) (resp events
 		l.logger.Error().Err(errors.New("requested action not implemented")).Str("action", base.Action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
-	
+
 	result, handleError := handler(ctx, l.logger, base.Data)
 	if handleError != nil {
 		l.logger.Error().Err(handleError.Err).Str("action", base.Action).Msg("Handle error")
 		return errResponse(handleError.Status)
 	}
-
 	return okResponse(result)
 }

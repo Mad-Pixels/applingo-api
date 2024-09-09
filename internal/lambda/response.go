@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func response(statusCode int, body interface{}) (events.APIGatewayProxyResponse, error) {
+func response(statusCode int, body any) (events.APIGatewayProxyResponse, error) {
 	jsonBody, err := serializer.MarshalJSON(body)
 	if err != nil {
 		return events.APIGatewayProxyResponse{}, err
