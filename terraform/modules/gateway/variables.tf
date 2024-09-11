@@ -8,6 +8,12 @@ variable "api_name" {
   type        = string
 }
 
+variable "acm_certificate_arn" {
+  description = "AWS ACM certificate for api gateway custom domain"
+  type        = string
+  default     = ""
+}
+
 variable "custom_domain" {
   description = "GatewayAPI custom domain name"
   type        = string

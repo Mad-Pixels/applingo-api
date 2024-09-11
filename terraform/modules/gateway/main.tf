@@ -1,4 +1,5 @@
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 data "template_file" "manifest" {
   template = templatefile("${path.module}/tpl/openapi.yaml", {

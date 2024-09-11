@@ -30,7 +30,7 @@ resource "aws_iam_role_policy" "invocation_policy" {
     {
       "Action": "lambda:InvokeFunction",
       "Effect": "Allow",
-      "Resource": ["arn:${local.arn_partition}:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"]
+      "Resource": ["arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
     }
   ]
 }
@@ -76,7 +76,7 @@ resource "aws_iam_role_policy" "cloudwatch_policy" {
                 "logs:GetLogEvents",
                 "logs:FilterLogEvents"
             ],
-            "Resource": "arn:${local.arn_partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+            "Resource": "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"
         }
     ]
 }
