@@ -1,10 +1,44 @@
 openapi: "3.0.1"
 info:
-  title: "cnapp-export"
-  description: "cnapp-export API Gateway"
+  title: "${project}"
+  description: "${project}-${name} endpoint"
   version: "1.0"
 paths:
-  /api/v1/exports/{proxy+}:
+  /api/v1/upload/presign:
+    get:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: "The pre-signed URL for uploading a file"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "${invoke_lambdas_arns["dictionary"].arn}"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
     options:
       responses:
         "200":
@@ -35,64 +69,6 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,PUT'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         passthroughBehavior: "when_no_match"
-
-    x-amazon-apigateway-any-method:
-      parameters:
-        - name: "proxy"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "${invoke_lambdas_arns["dictionary"].arn}"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-
-  /api/v1/exports:
-    options:
-      responses:
-        "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-          content: {}
-      x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,PUT'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        passthroughBehavior: "when_no_match"
-
-    x-amazon-apigateway-any-method:
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "${invoke_lambdas_arns["dictionary"].arn}"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
 
 components: {}
 x-amazon-apigateway-gateway-responses:
