@@ -14,6 +14,10 @@ variable "custom_domain" {
   default     = ""
 }
 
+variable "wafv2_web_acl_arn" {
+  description = "WAF web acl arn"
+}
+
 variable "stage_name" {
   description = "Option set API Gateway stage name"
   type        = string

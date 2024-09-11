@@ -113,6 +113,8 @@ resource "aws_api_gateway_base_path_mapping" "this" {
 }
 
 resource "aws_wafv2_web_acl_association" "this" {
+  count = var.wafv2_web_acl_arn != "" ? 1 : 0
+
   resource_arn = aws_api_gateway_stage.this.arn
   web_acl_arn  = var.wafv2_web_acl_arn
 }
