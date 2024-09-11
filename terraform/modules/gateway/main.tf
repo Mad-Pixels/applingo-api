@@ -3,7 +3,9 @@ data "aws_region" "current" {}
 
 data "template_file" "manifest" {
   template = templatefile("${path.module}/tpl/openapi.yaml", {
-
+    router_invoke_arn = var.router_invoke_arn
+    region            = data.aws_region.current.name
+    //account_id        = data.aws_caller_identity.current.account_id
   })
 }
 
@@ -110,7 +112,7 @@ resource "aws_api_gateway_base_path_mapping" "this" {
 
   api_id      = aws_api_gateway_rest_api.this.id
   stage_name  = aws_api_gateway_stage.this.stage_name
-  domain_name = aws_api_gateway_domain_name.this.domain_name
+  domain_name = aws_api_gateway_domain_name.this[0].domain_name
 }
 
 resource "aws_wafv2_web_acl_association" "this" {

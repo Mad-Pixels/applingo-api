@@ -30,3 +30,13 @@ module "lambda_functions" {
     SERVICE_DICTIONARY_DYNAMO : data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_name
   }
 }
+
+module "gateway" {
+  source = "../../modules/gateway"
+
+  project  = local.project
+  api_name = "api"
+
+  router_invoke_arn = module.lambda_functions.dictionary.function_arn
+  depends_on        = [module.lambda_functions]
+}

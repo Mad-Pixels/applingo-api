@@ -8,6 +8,11 @@ variable "api_name" {
   type        = string
 }
 
+variable "router_invoke_arn" {
+  description = ""
+  type        = string
+}
+
 variable "acm_certificate_arn" {
   description = "AWS ACM certificate for api gateway custom domain"
   type        = string
@@ -22,6 +27,8 @@ variable "custom_domain" {
 
 variable "wafv2_web_acl_arn" {
   description = "WAF web acl arn"
+  type        = string
+  default     = ""
 }
 
 variable "stage_name" {
