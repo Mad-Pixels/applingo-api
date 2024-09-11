@@ -45,7 +45,7 @@ paths:
             type: "string"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "${router_invoke_arn}"
+        uri: "${invoke_lambdas_arns["dictionary"].arn}"
         responses:
           default:
             statusCode: "200"
@@ -87,7 +87,7 @@ paths:
     x-amazon-apigateway-any-method:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "${router_invoke_arn}"
+        uri: "${invoke_lambdas_arns["dictionary"].arn}"
         responses:
           default:
             statusCode: "200"

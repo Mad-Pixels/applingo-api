@@ -8,9 +8,12 @@ variable "api_name" {
   type        = string
 }
 
-variable "router_invoke_arn" {
-  description = ""
-  type        = string
+variable "invoke_lambdas_arns" {
+  description = "Map of Lambda function ARNs and names"
+  type = map(object({
+    arn  = string
+    name = string
+  }))
 }
 
 variable "acm_certificate_arn" {

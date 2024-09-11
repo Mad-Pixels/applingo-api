@@ -37,6 +37,12 @@ module "gateway" {
   project  = local.project
   api_name = "api"
 
-  router_invoke_arn = module.lambda_functions.dictionary.function_arn
-  depends_on        = [module.lambda_functions]
+  invoke_lambdas_arns = {
+    for name, lambda in module.lambda_functions : name => {
+      arn  = lambda.function_arn
+      name = lambda.function_name
+    }
+  }
+
+  depends_on = [module.lambda_functions]
 }

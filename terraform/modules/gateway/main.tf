@@ -3,9 +3,9 @@ data "aws_region" "current" {}
 
 data "template_file" "manifest" {
   template = templatefile("${path.module}/tpl/openapi.yaml", {
-    router_invoke_arn = var.router_invoke_arn
-    region            = data.aws_region.current.name
-    account_id        = try(data.aws_caller_identity.current.account_id, "*")
+    invoke_lambdas_arns = var.invoke_lambdas_arns
+    region              = data.aws_region.current.name
+    account_id          = try(data.aws_caller_identity.current.account_id, "*")
   })
 }
 
