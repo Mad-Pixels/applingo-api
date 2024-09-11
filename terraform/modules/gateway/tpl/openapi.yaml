@@ -108,4 +108,4 @@ x-amazon-apigateway-policy:
     - Effect: "Allow"
       Principal: "*"
       Action: "execute-api:Invoke"
-      Resource: "arn:aws:execute-api:${region}:*:*/*"
+      Resource: "arn:aws:execute-api:${region}:${account_id}:*/*"
