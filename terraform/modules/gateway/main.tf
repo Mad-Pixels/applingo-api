@@ -12,7 +12,7 @@ data "template_file" "manifest" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  name              = "${var.project}-${var.api_name}-access-logs"
+  name              = "/aws/gateway/${var.project}-${var.api_name}-access-logs"
   retention_in_days = var.log_retention_days
 }
 
