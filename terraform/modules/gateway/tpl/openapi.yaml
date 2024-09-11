@@ -4,8 +4,14 @@ info:
   description: "${project}-${name} endpoint"
   version: "1.0"
 paths:
-  /api/v1/upload/presign:
+  /api/v1/upload/{action}:
     post:
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: "CORS support"
@@ -33,14 +39,6 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "${invoke_lambdas_arns["dictionary"].arn}"
-        requestTemplates:
-          application/json: |
-            {
-              "queryStringParameters": {
-                "action": "presign"
-              },
-              "body": $input.body
-            }
         responses:
           default:
             statusCode: "200"

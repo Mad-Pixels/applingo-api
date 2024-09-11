@@ -84,9 +84,9 @@ func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) 
 		Str("userAgent", req.RequestContext.Identity.UserAgent).
 		Msg("Received API Gateway event")
 
-	action := req.QueryStringParameters["action"]
+	action := req.PathParameters["action"]
 	if action == "" {
-		l.logger.Error().Msg("Action not specified in query parameters")
+		l.logger.Error().Msg("Action not specified in path parameters")
 		return errResponse(http.StatusBadRequest)
 	}
 	handler, ok := l.handlers[action]
