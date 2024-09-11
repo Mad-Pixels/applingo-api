@@ -11,11 +11,6 @@ data "template_file" "manifest" {
   })
 }
 
-resource "aws_cloudwatch_log_group" "this" {
-  name              = "/aws/gateway/${var.project}-${var.api_name}-access-logs"
-  retention_in_days = var.log_retention_days
-}
-
 resource "aws_api_gateway_rest_api" "this" {
   name = "${var.project}-${var.api_name}"
   body = data.template_file.manifest.rendered
