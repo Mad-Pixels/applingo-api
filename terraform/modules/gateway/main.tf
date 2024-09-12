@@ -1,8 +1,8 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "template_file" "manifest" {
-  template = templatefile("${path.module}/tpl/openapi.yaml", {
+locals {
+  manifest = templatefile("${path.module}/tpl/openapi.yaml", {
     project             = var.project
     name                = var.api_name
     invoke_lambdas_arns = var.invoke_lambdas_arns
@@ -13,7 +13,7 @@ data "template_file" "manifest" {
 
 resource "aws_api_gateway_rest_api" "this" {
   name = "${var.project}-${var.api_name}"
-  body = data.template_file.manifest.rendered
+  body = local.manifest
 
   endpoint_configuration {
     types = ["REGIONAL"]
