@@ -302,15 +302,27 @@ tasks:
         done
     silent: true
 
+  _localstack/install:
+    desc: Install "localstack".
+    cmds:
+      - python3 -m venv {{.HOME}}/.pyenv
+      - ~/.pyenv/bin/python3 -m pip install localstack
+    sources:
+      - "{{.HOME}}/.pyenv/bin/localstack"
+    silent: true
+    internal: true
+
   env/localstack/start:
     desc: Run localstack environment.
+    deps:
+      - _localstack/install
     cmds:
       - |
         if [ -z "$LOCALSTACK_AUTH_TOKEN" ]; then
           echo "Error: LOCALSTACK_AUTH_TOKEN is not set. Please set this environment variable before running LocalStack."
           exit 1
         fi
-      - ~/venv/bin/localstack start -d
+      - "{{.HOME}}/.pyenv/bin/localstack start -d"
       - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
