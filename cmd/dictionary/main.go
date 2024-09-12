@@ -34,7 +34,7 @@ func main() {
 	aws_lambda.Start(
 		lambda.NewLambda(
 			map[string]lambda.HandleFunc{
-				"presign": handlePresign,
+				"file_presign": handlePresign,
 			},
 		).Handle,
 	)

@@ -40,7 +40,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
 
-  /api/v1/upload/{action}:
+  /api/v1/dictionary/{action}:
     post:
       parameters:
         - name: action
