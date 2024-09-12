@@ -21,6 +21,7 @@ var (
 	awsRegion = os.Getenv("AWS_REGION")
 	validate  *validator.Validate
 	s3Bucket  *cloud.Bucket
+	dbDynamo  *cloud.Dynamo
 )
 
 func init() {
@@ -29,6 +30,7 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
+	dbDynamo = cloud.NewDynamo(cfg)
 	validate = validator.New()
 }
 

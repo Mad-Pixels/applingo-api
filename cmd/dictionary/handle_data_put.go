@@ -7,6 +7,7 @@ import (
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
 )
 
@@ -24,7 +25,7 @@ type handleDataPutResponse struct {
 	Msg string `json:"msg"`
 }
 
-func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+func handleDataPut(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
 	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &lambda.HandleError{
@@ -39,6 +40,21 @@ func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (a
 		}
 	}
 
+	item := map[string]types.AttributeValue{
+		"id":            &types.AttributeValueMemberS{Value: "123"},
+		"name":          &types.AttributeValueMemberS{Value: req.Name},
+		"author":        &types.AttributeValueMemberS{Value: req.Author},
+		"category_main": &types.AttributeValueMemberS{Value: req.Category},
+		"description":   &types.AttributeValueMemberS{Value: req.Description},
+		"sub_category":  &types.AttributeValueMemberS{Value: req.SubCategory},
+		"is_private":    &types.AttributeValueMemberN{Value: "0"},
+	}
+	if err := dbDynamo.Put(ctx, serviceDictionaryDynamo, item); err != nil {
+		return nil, &lambda.HandleError{
+			Status: http.StatusInternalServerError,
+			Err:    err,
+		}
+	}
 	return handleDataPutResponse{
 		Msg: "OK",
 	}, nil
