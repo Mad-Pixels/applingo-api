@@ -11,9 +11,17 @@ import (
 )
 
 type handleDataPutRequest struct {
+	Description string `json:"description" validate:"required"`
+	Dictionary  string `json:"dictionary" validate:"required"`
+	Name        string `json:"name" validate:"required,min=4,max=32"`
+	Author      string `json:"author" validate:"required"`
+	Category    string `json:"category" validate:"required"`
+	SubCategory string `json:"sub_category" validate:"required"`
+	Private     bool   `json:"private"`
 }
 
 type handleDataPutResponse struct {
+	Msg string `json:"msg"`
 }
 
 func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
@@ -33,5 +41,7 @@ func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (a
 		}
 	}
 
-	return handleDataPutResponse{}, nil
+	return handleDataPutResponse{
+		Msg: "OK",
+	}, nil
 }
