@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
+	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -14,19 +15,20 @@ var (
 	// service vars.
 	//serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	//serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
+	serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
 	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")
 	validate  *validator.Validate
-	sess      *session.Session
+	s3Bucket  *cloud.Bucket
 )
 
 func init() {
-	sess = session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Config:            aws.Config{Region: aws.String(awsRegion)},
-	}))
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
+	if err != nil {
+		panic("unable to load AWS SDK config: " + err.Error())
+	}
+	s3Bucket = cloud.NewBucket(cfg)
 	validate = validator.New()
 }
 

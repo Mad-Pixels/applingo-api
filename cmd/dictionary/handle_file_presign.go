@@ -7,7 +7,6 @@ import (
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/rs/zerolog"
 )
 
@@ -20,11 +19,8 @@ type handleFilePresignResponse struct {
 	Url string `json:"url"`
 }
 
-func handleFilePresign(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
-	var (
-		s3  = cloud.NewBucket(sess)
-		req handleFilePresignRequest
-	)
+func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+	var req handleFilePresignRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &lambda.HandleError{
 			Status: http.StatusBadRequest,
@@ -38,7 +34,7 @@ func handleFilePresign(_ context.Context, _ zerolog.Logger, data json.RawMessage
 		}
 	}
 
-	res, err := s3.Presign(req.Name, serviceProcessingBucket, req.ContentType)
+	url, err := s3Bucket.Presign(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
 		return nil, &lambda.HandleError{
 			Status: http.StatusInternalServerError,
@@ -46,6 +42,6 @@ func handleFilePresign(_ context.Context, _ zerolog.Logger, data json.RawMessage
 		}
 	}
 	return handleFilePresignResponse{
-		Url: res,
+		Url: url,
 	}, nil
 }
