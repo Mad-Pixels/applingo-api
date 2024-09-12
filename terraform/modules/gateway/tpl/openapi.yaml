@@ -4,6 +4,42 @@ info:
   description: "${project}-${name} endpoint"
   version: "1.0"
 paths:
+
+  /api/v1/category/get:
+    get:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category_data:
+                    type: string
+                    description: "The category data retrieved"
+      x-amazon-apigateway-integration:
+        httpMethod: "GET"
+        uri: "${invoke_lambdas_arns["category"].arn}"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
   /api/v1/upload/{action}:
     post:
       parameters:

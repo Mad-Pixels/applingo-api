@@ -12,19 +12,15 @@ import (
 
 var (
 	// service vars.
-	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+	//serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
+	//serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
 	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")
 	validate  *validator.Validate
 	sess      *session.Session
 )
-
-type Response struct {
-	Message string `json:"message"`
-}
 
 func init() {
 	sess = session.Must(session.NewSessionWithOptions(session.Options{
