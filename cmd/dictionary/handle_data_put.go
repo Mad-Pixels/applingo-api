@@ -25,9 +25,7 @@ type handleDataPutResponse struct {
 }
 
 func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
-	var (
-		req handleDataPutRequest
-	)
+	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &lambda.HandleError{
 			Status: http.StatusBadRequest,
