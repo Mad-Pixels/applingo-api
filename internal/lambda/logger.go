@@ -1,9 +1,10 @@
 package lambda
 
 import (
-	"github.com/rs/zerolog"
 	"os"
 	"strings"
+
+	"github.com/rs/zerolog"
 )
 
 const (

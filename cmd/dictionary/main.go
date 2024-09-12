@@ -1,12 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-playground/validator/v10"
-	"os"
 )
 
 var (

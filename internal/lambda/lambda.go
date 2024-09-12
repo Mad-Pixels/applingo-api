@@ -3,9 +3,10 @@ package lambda
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
-	"net/http"
 )
 
 // HandleFunc is the type for action handlers.

@@ -1,9 +1,10 @@
 package lambda
 
 import (
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/aws/aws-lambda-go/events"
-	"net/http"
 )
 
 func response(statusCode int, body any) (events.APIGatewayProxyResponse, error) {
