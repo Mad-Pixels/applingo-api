@@ -10,20 +10,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type handleGetRequest struct{}
-
-type handleGetResponse struct {
-	Categories []category `json:"categories"`
+type handleDataPutRequest struct {
 }
 
-type category struct {
-	Name          string   `json:"name"`
-	SubCategories []string `json:"sub_categories"`
+type handleDataPutResponse struct {
 }
 
-func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+func handleDataPut(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
 	var (
-		req handleGetRequest
+		req handleDataPutRequest
 	)
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &lambda.HandleError{
@@ -37,12 +32,6 @@ func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, 
 			Err:    err,
 		}
 	}
-	return handleGetResponse{
-		Categories: []category{
-			{
-				Name:          "language",
-				SubCategories: []string{"ru-en", "en-ru"},
-			},
-		},
-	}, nil
+
+	return handleDataPutResponse{}, nil
 }
