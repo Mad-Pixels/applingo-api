@@ -39,6 +39,7 @@ func main() {
 		lambda.NewLambda(
 			map[string]lambda.HandleFunc{
 				"file_presign": handleFilePresign,
+				"data_get":     handleDataGet,
 				"data_put":     handleDataPut,
 			},
 		).Handle,

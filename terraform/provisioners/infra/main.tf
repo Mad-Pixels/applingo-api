@@ -32,6 +32,7 @@ module "dynamo-dictionary-table" {
     { name = "name", type = "S" },
     { name = "author", type = "S" },
     { name = "category_main", type = "S" },
+    { name = "category_sub", type = "S" },
     { name = "is_private", type = "N" },
     { name = "is_publish", type = "N" }
   ]
@@ -50,18 +51,24 @@ module "dynamo-dictionary-table" {
       projection_type = "ALL"
     },
     {
+      name            = "CategorySubIndex"
+      hash_key        = "category_sub"
+      range_key       = "name"
+      projection_type = "ALL"
+    },
+    {
       name               = "IsPrivateIndex"
       hash_key           = "is_private"
       range_key          = "name"
       projection_type    = "INCLUDE"
-      non_key_attributes = ["author", "category_main"]
+      non_key_attributes = ["author", "category_main", "category_sub"]
     },
     {
       name               = "IsPublishIndex"
       hash_key           = "is_publish"
       range_key          = "name"
       projection_type    = "INCLUDE"
-      non_key_attributes = ["author", "category_main"]
+      non_key_attributes = ["author", "category_main", "category_sub"]
     }
   ]
 }
