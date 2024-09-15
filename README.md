@@ -27,4 +27,6 @@ curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v
 curl -X GET http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/category/get \
   -d '{"content_type": "text/csv", "name": "file.csv"}' \
   -H "Content-Type: application/json"
+  
+curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/data_get   -H "Content-Type: application/json"   -d '{"author": "author", "is_private":false}'
 ```
