@@ -19,7 +19,7 @@ type handleDataPutRequest struct {
 	Author      string `json:"author" validate:"required"`
 	Category    string `json:"category" validate:"required"`
 	SubCategory string `json:"sub_category" validate:"required"`
-	Private     bool   `json:"private" validate:"required"`
+	Private     bool   `json:"private"`
 }
 
 func (r handleDataPutRequest) priveteAttributeValue() string {
