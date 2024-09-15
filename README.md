@@ -13,3 +13,18 @@ graph TD
     E -->|If failed| J[Delete from Temp Bucket]
     C -->|Return presigned URL| K[Client]
     K -->|Upload directly| D
+
+
+```bash
+curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/file_presign \
+  -d '{"content_type": "text/csv", "name": "file.csv"}' \
+  -H "Content-Type: application/json"
+
+curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/data_put \
+  -d '{"description": "description", "dictionary": "dictionary", "name": "name", "author": "author", "category": "category", "sub_category": "sub_category", "private": false}' \
+  -H "Content-Type: application/json"
+
+curl -X GET http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/category/get \
+  -d '{"content_type": "text/csv", "name": "file.csv"}' \
+  -H "Content-Type: application/json"
+```

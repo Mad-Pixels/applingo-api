@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/pkg/tools"
 	"net/http"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
@@ -18,7 +19,14 @@ type handleDataPutRequest struct {
 	Author      string `json:"author" validate:"required"`
 	Category    string `json:"category" validate:"required"`
 	SubCategory string `json:"sub_category" validate:"required"`
-	Private     bool   `json:"private"`
+	Private     bool   `json:"private" validate:"required"`
+}
+
+func (r handleDataPutRequest) priveteAttributeValue() string {
+	if r.Private {
+		return "0"
+	}
+	return "1"
 }
 
 type handleDataPutResponse struct {
@@ -41,13 +49,13 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, data json.RawMessage) 
 	}
 
 	item := map[string]types.AttributeValue{
-		"id":            &types.AttributeValueMemberS{Value: "123"},
+		"id":            &types.AttributeValueMemberS{Value: tools.NewPersistentID(req.Author).UniqueID},
 		"name":          &types.AttributeValueMemberS{Value: req.Name},
 		"author":        &types.AttributeValueMemberS{Value: req.Author},
 		"category_main": &types.AttributeValueMemberS{Value: req.Category},
 		"description":   &types.AttributeValueMemberS{Value: req.Description},
 		"sub_category":  &types.AttributeValueMemberS{Value: req.SubCategory},
-		"is_private":    &types.AttributeValueMemberN{Value: "0"},
+		"is_private":    &types.AttributeValueMemberN{Value: req.priveteAttributeValue()},
 	}
 	if err := dbDynamo.Put(ctx, serviceDictionaryDynamo, item); err != nil {
 		return nil, &lambda.HandleError{
