@@ -13,16 +13,16 @@ import (
 )
 
 type handleDataPutRequest struct {
-	Description string `json:"description" validate:"required"`
-	Dictionary  string `json:"dictionary" validate:"required"`
-	Name        string `json:"name" validate:"required,min=4,max=32"`
-	Author      string `json:"author" validate:"required"`
-	Category    string `json:"category" validate:"required"`
-	SubCategory string `json:"sub_category" validate:"required"`
-	Private     bool   `json:"private"`
+	Description  string `json:"description" validate:"required"`
+	Dictionary   string `json:"dictionary" validate:"required"`
+	Name         string `json:"name" validate:"required,min=4,max=32"`
+	Author       string `json:"author" validate:"required"`
+	CategoryMain string `json:"category_main" validate:"required"`
+	CategorySub  string `json:"category_sub" validate:"required"`
+	Private      bool   `json:"private"`
 }
 
-func (r handleDataPutRequest) priveteAttributeValue() string {
+func (r handleDataPutRequest) privateAttributeValue() string {
 	if r.Private {
 		return "0"
 	}
@@ -52,10 +52,10 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, data json.RawMessage) 
 		"id":            &types.AttributeValueMemberS{Value: tools.NewPersistentID(req.Author).UniqueID},
 		"name":          &types.AttributeValueMemberS{Value: req.Name},
 		"author":        &types.AttributeValueMemberS{Value: req.Author},
-		"category_main": &types.AttributeValueMemberS{Value: req.Category},
+		"category_main": &types.AttributeValueMemberS{Value: req.CategoryMain},
+		"category_sub":  &types.AttributeValueMemberS{Value: req.CategorySub},
 		"description":   &types.AttributeValueMemberS{Value: req.Description},
-		"sub_category":  &types.AttributeValueMemberS{Value: req.SubCategory},
-		"is_private":    &types.AttributeValueMemberN{Value: req.priveteAttributeValue()},
+		"is_private":    &types.AttributeValueMemberN{Value: req.privateAttributeValue()},
 	}
 	if err := dbDynamo.Put(ctx, serviceDictionaryDynamo, item); err != nil {
 		return nil, &lambda.HandleError{

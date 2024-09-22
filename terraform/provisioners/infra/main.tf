@@ -22,53 +22,10 @@ module "s3-processing-bucket" {
 module "dynamo-dictionary-table" {
   source = "../../modules/dynamo"
 
-  project    = local.project
-  table_name = "dictionary"
-  hash_key   = "id"
-  range_key  = "name"
-
-  attributes = [
-    { name = "id", type = "S" },
-    { name = "name", type = "S" },
-    { name = "author", type = "S" },
-    { name = "category_main", type = "S" },
-    { name = "category_sub", type = "S" },
-    { name = "is_private", type = "N" },
-    { name = "is_publish", type = "N" }
-  ]
-
-  secondary_index_list = [
-    {
-      name            = "AuthorIndex"
-      hash_key        = "author"
-      range_key       = "name"
-      projection_type = "ALL"
-    },
-    {
-      name            = "CategoryMainIndex"
-      hash_key        = "category_main"
-      range_key       = "name"
-      projection_type = "ALL"
-    },
-    {
-      name            = "CategorySubIndex"
-      hash_key        = "category_sub"
-      range_key       = "name"
-      projection_type = "ALL"
-    },
-    {
-      name               = "IsPrivateIndex"
-      hash_key           = "is_private"
-      range_key          = "name"
-      projection_type    = "INCLUDE"
-      non_key_attributes = ["author", "category_main", "category_sub"]
-    },
-    {
-      name               = "IsPublishIndex"
-      hash_key           = "is_publish"
-      range_key          = "name"
-      projection_type    = "INCLUDE"
-      non_key_attributes = ["author", "category_main", "category_sub"]
-    }
-  ]
+  project              = local.project
+  table_name           = local.dictionary_dynamo_schema.table_name
+  hash_key             = local.dictionary_dynamo_schema.hash_key
+  range_key            = local.dictionary_dynamo_schema.range_key
+  attributes           = local.dictionary_dynamo_schema.attributes
+  secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
 }
