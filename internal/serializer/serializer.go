@@ -45,7 +45,8 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 	if err := enc.Encode(v); err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	// Remove the trailing newline added by enc.Encode
+	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
 // UnmarshalJSON deserializes the JSON-encoded data into the given value.
@@ -67,4 +68,32 @@ func UnmarshalJSON(data []byte, v interface{}) error {
 	}()
 	buf.Write(data)
 	return json.NewDecoder(buf).Decode(v)
+}
+
+// Bool is a custom boolean type that tracks if a value was set.
+type Bool struct {
+	Set   bool
+	Value bool
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Bool.
+func (b *Bool) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		b.Set = false
+		return nil
+	}
+	err := json.Unmarshal(data, &b.Value)
+	if err != nil {
+		return err
+	}
+	b.Set = true
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface for Bool.
+func (b Bool) MarshalJSON() ([]byte, error) {
+	if !b.Set {
+		return []byte("null"), nil
+	}
+	return json.Marshal(b.Value)
 }

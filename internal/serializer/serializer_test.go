@@ -29,6 +29,16 @@ func TestMarshalJSON(t *testing.T) {
 			input:   make(chan int),
 			wantErr: true,
 		},
+		{
+			name:  "custom Bool - set",
+			input: struct{ Active Bool }{Active: Bool{Set: true, Value: true}},
+			want:  `{"Active":true}`,
+		},
+		{
+			name:  "custom Bool - not set",
+			input: struct{ Active Bool }{Active: Bool{Set: false}},
+			want:  `{"Active":null}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -55,6 +65,10 @@ func TestUnmarshalJSON(t *testing.T) {
 		}
 	}
 
+	type boolStruct struct {
+		Active Bool
+	}
+
 	tests := []struct {
 		name    string
 		input   string
@@ -76,16 +90,33 @@ func TestUnmarshalJSON(t *testing.T) {
 			input:   `{"Name":"John"`,
 			wantErr: true,
 		},
+		{
+			name:  "custom Bool - true",
+			input: `{"Active":true}`,
+			want:  &boolStruct{Active: Bool{Set: true, Value: true}},
+		},
+		{
+			name:  "custom Bool - false",
+			input: `{"Active":false}`,
+			want:  &boolStruct{Active: Bool{Set: true, Value: false}},
+		},
+		{
+			name:  "custom Bool - null",
+			input: `{"Active":null}`,
+			want:  &boolStruct{Active: Bool{Set: false}},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got interface{}
-			switch tt.name {
-			case "simple struct":
+			switch tt.want.(type) {
+			case *testStruct:
 				got = &testStruct{}
-			case "nested struct":
+			case *nestedStruct:
 				got = &nestedStruct{}
+			case *boolStruct:
+				got = &boolStruct{}
 			default:
 				got = &map[string]interface{}{}
 			}

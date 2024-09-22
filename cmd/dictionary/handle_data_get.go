@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -15,17 +16,17 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 20
+const pageLimit = 2
 
 type handleDataGetRequest struct {
-	ID            *string `json:"id,omitempty"`
-	Name          *string `json:"name,omitempty"`
-	CategoryMain  *string `json:"category_main,omitempty"`
-	CategorySub   *string `json:"category_sub,omitempty"`
-	Author        *string `json:"author,omitempty"`
-	IsPrivate     *bool   `json:"is_private,omitempty"`
-	IsPublish     *bool   `json:"is_publish,omitempty"`
-	LastEvaluated *string `json:"last_evaluated,omitempty"`
+	ID            string          `json:"id,omitempty"`
+	Name          string          `json:"name,omitempty"`
+	CategoryMain  string          `json:"category_main,omitempty"`
+	CategorySub   string          `json:"category_sub,omitempty"`
+	Author        string          `json:"author,omitempty"`
+	IsPrivate     serializer.Bool `json:"is_private,omitempty"`
+	IsPublish     serializer.Bool `json:"is_publish,omitempty"`
+	LastEvaluated string          `json:"last_evaluated,omitempty"`
 }
 
 type handleDataGetResponse struct {
@@ -65,11 +66,21 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 		response.Items = append(response.Items, mappedItem)
 	}
 	if result.LastEvaluatedKey != nil {
-		var lastEvaluated []byte
-
-		if lastEvaluated, err = serializer.MarshalJSON(result.LastEvaluatedKey); err == nil {
-			response.LastEvaluated = string(lastEvaluated)
+		// Преобразуем LastEvaluatedKey в map[string]interface{}
+		var lastEvaluatedKeyMap map[string]interface{}
+		err := attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap)
+		if err != nil {
+			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
+
+		// Маршалим map в JSON
+		lastEvaluatedKeyJSON, err := serializer.MarshalJSON(lastEvaluatedKeyMap)
+		if err != nil {
+			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+		}
+
+		// Кодируем в base64
+		response.LastEvaluated = base64.StdEncoding.EncodeToString(lastEvaluatedKeyJSON)
 	}
 	return response, nil
 }
@@ -77,26 +88,26 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 	qb := data.NewQueryBuilder()
 
-	if req.ID != nil && *req.ID != "" {
-		qb.WithId(*req.ID)
+	if req.ID != "" {
+		qb.WithId(req.ID)
 	}
-	if req.Name != nil && *req.Name != "" {
-		qb.WithName(*req.Name)
+	if req.Name != "" {
+		qb.WithName(req.Name)
 	}
-	if req.Author != nil && *req.Author != "" {
-		qb.WithAuthor(*req.Author)
+	if req.Author != "" {
+		qb.WithAuthor(req.Author)
 	}
-	if req.CategoryMain != nil && *req.CategoryMain != "" {
-		qb.WithCategoryMain(*req.CategoryMain)
+	if req.CategoryMain != "" {
+		qb.WithCategoryMain(req.CategoryMain)
 	}
-	if req.CategorySub != nil && *req.CategorySub != "" {
-		qb.WithCategorySub(*req.CategorySub)
+	if req.CategorySub != "" {
+		qb.WithCategorySub(req.CategorySub)
 	}
-	if req.IsPrivate != nil {
-		qb.WithIsPrivate(boolToInt(*req.IsPrivate))
+	if req.IsPrivate.Set {
+		qb.WithIsPrivate(boolToInt(req.IsPrivate.Value))
 	}
-	if req.IsPublish != nil {
-		qb.WithIsPublish(boolToInt(*req.IsPublish))
+	if req.IsPublish.Set {
+		qb.WithIsPublish(boolToInt(req.IsPublish.Value))
 	}
 
 	indexName, keyCondition, filterCondition := qb.Build()
@@ -106,9 +117,23 @@ func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 	}
 
 	var exclusiveStartKey map[string]types.AttributeValue
-	if req.LastEvaluated != nil && *req.LastEvaluated != "" {
-		if err := serializer.UnmarshalJSON([]byte(*req.LastEvaluated), &exclusiveStartKey); err != nil {
-			return nil, errors.New("invalid last_evaluated key")
+	if req.LastEvaluated != "" {
+		// Декодируем base64
+		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(req.LastEvaluated)
+		if err != nil {
+			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
+		}
+
+		// Демаршалим JSON в map[string]interface{}
+		var lastEvaluatedKeyMap map[string]interface{}
+		if err := serializer.UnmarshalJSON(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
+			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
+		}
+
+		// Преобразуем map[string]interface{} обратно в map[string]types.AttributeValue
+		exclusiveStartKey, err = attributevalue.MarshalMap(lastEvaluatedKeyMap)
+		if err != nil {
+			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
 
