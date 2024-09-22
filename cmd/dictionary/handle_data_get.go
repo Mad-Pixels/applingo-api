@@ -18,6 +18,8 @@ import (
 const pageLimit = 20
 
 type handleDataGetRequest struct {
+	ID            *string `json:"id,omitempty"`
+	Name          *string `json:"name,omitempty"`
 	CategoryMain  *string `json:"category_main,omitempty"`
 	CategorySub   *string `json:"category_sub,omitempty"`
 	Author        *string `json:"author,omitempty"`
@@ -74,38 +76,56 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 
 func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 	qb := data.NewQueryBuilder()
-	switch {
-	case req.Author != nil && *req.Author != "":
+
+	if req.ID != nil && *req.ID != "" {
+		qb.WithId(*req.ID)
+	}
+	if req.Name != nil && *req.Name != "" {
+		qb.WithName(*req.Name)
+	}
+	if req.Author != nil && *req.Author != "" {
 		qb.WithAuthor(*req.Author)
-	case req.CategoryMain != nil && *req.CategoryMain != "":
+	}
+	if req.CategoryMain != nil && *req.CategoryMain != "" {
 		qb.WithCategoryMain(*req.CategoryMain)
-	case req.CategorySub != nil && *req.CategorySub != "":
+	}
+	if req.CategorySub != nil && *req.CategorySub != "" {
 		qb.WithCategorySub(*req.CategorySub)
-	case req.IsPrivate != nil:
-		qb.WithIsPrivate(*req.IsPrivate)
-	case req.IsPublish != nil:
-		qb.WithIsPublish(*req.IsPublish)
-	default:
-		return nil, errors.New("at least one query parameter is required")
+	}
+	if req.IsPrivate != nil {
+		qb.WithIsPrivate(boolToInt(*req.IsPrivate))
+	}
+	if req.IsPublish != nil {
+		qb.WithIsPublish(boolToInt(*req.IsPublish))
 	}
 
-	if req.IsPrivate != nil && qb.IndexName != data.IndexIsPrivateIndex {
-		qb.WithIsPrivateFilter(*req.IsPrivate)
+	indexName, keyCondition, filterCondition := qb.Build()
+
+	if indexName == "" && !filterCondition.IsSet() {
+		return nil, errors.New("at least one query parameter is required")
 	}
 
 	var exclusiveStartKey map[string]types.AttributeValue
 	if req.LastEvaluated != nil && *req.LastEvaluated != "" {
-		if err := json.Unmarshal([]byte(*req.LastEvaluated), &exclusiveStartKey); err != nil {
+		if err := serializer.UnmarshalJSON([]byte(*req.LastEvaluated), &exclusiveStartKey); err != nil {
 			return nil, errors.New("invalid last_evaluated key")
 		}
 	}
+
 	return &cloud.QueryInput{
-		IndexName:         qb.IndexName,
-		KeyCondition:      qb.KeyCondition,
-		FilterCondition:   qb.FilterCondition,
-		ProjectionFields:  data.IndexProjections[qb.IndexName],
+		IndexName:         indexName,
+		KeyCondition:      keyCondition,
+		FilterCondition:   filterCondition,
+		ProjectionFields:  data.IndexProjections[indexName],
 		Limit:             pageLimit,
 		ScanForward:       true,
 		ExclusiveStartKey: exclusiveStartKey,
 	}, nil
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

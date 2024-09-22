@@ -126,27 +126,42 @@ type QueryBuilder struct {
 	IndexName       string
 	KeyCondition    expression.KeyConditionBuilder
 	FilterCondition expression.ConditionBuilder
+	UsedKeys        map[string]bool
 }
 
 func NewQueryBuilder() *QueryBuilder {
-	return &QueryBuilder{}
+	return &QueryBuilder{
+		UsedKeys: make(map[string]bool),
+	}
 }
 
-{{range .SecondaryIndexes}}
-func (qb *QueryBuilder) With{{.HashKey | ToCamelCase}}({{.HashKey | ToLowerCamelCase}} {{if eq .HashKey "is_private" | or (eq .HashKey "is_publish")}}bool{{else}}string{{end}}) *QueryBuilder {
-	qb.IndexName = Index{{.Name}}
-	{{if eq .HashKey "is_private" | or (eq .HashKey "is_publish")}}
-	qb.KeyCondition = expression.Key("{{.HashKey}}").Equal(expression.Value(boolToInt({{.HashKey | ToLowerCamelCase}})))
-	{{else}}
-	qb.KeyCondition = expression.Key("{{.HashKey}}").Equal(expression.Value({{.HashKey | ToLowerCamelCase}}))
-	{{end}}
+
+{{range .Attributes}}
+func (qb *QueryBuilder) With{{.Name | ToCamelCase}}({{.Name | ToLowerCamelCase}} {{if eq .Type "N"}}int{{else if eq .Type "B"}}bool{{else}}string{{end}}) *QueryBuilder {
+	{{- $attrName := .Name}}
+	{{- range $.SecondaryIndexes}}
+	{{- if eq .HashKey $attrName}}
+	if qb.IndexName == "" {
+		qb.IndexName = Index{{.Name}}
+		qb.KeyCondition = expression.Key("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}}))
+		qb.UsedKeys["{{$attrName}}"] = true
+		return qb
+	}
+	{{- end}}
+	{{- end}}
+	if !qb.UsedKeys["{{$attrName}}"] {
+		if qb.FilterCondition.IsSet() {
+			qb.FilterCondition = qb.FilterCondition.And(expression.Name("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}})))
+		} else {
+			qb.FilterCondition = expression.Name("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}}))
+		}
+	}
 	return qb
 }
 {{end}}
 
-func (qb *QueryBuilder) WithIsPrivateFilter(isPrivate bool) *QueryBuilder {
-	qb.FilterCondition = expression.Name("is_private").Equal(expression.Value(boolToInt(isPrivate)))
-	return qb
+func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, expression.ConditionBuilder) {
+	return qb.IndexName, qb.KeyCondition, qb.FilterCondition
 }
 
 func boolToInt(b bool) int {
