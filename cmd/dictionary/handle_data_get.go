@@ -7,6 +7,7 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -48,9 +49,26 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
-	return handleDataGetResponse{
+	response := handleDataGetResponse{
 		Items: make([]map[string]interface{}, 0, len(result.Items)),
-	}, nil
+	}
+	for _, item := range result.Items {
+		var mappedItem map[string]interface{}
+
+		if err = attributevalue.UnmarshalMap(item, &mappedItem); err != nil {
+			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
+			continue
+		}
+		response.Items = append(response.Items, mappedItem)
+	}
+	if result.LastEvaluatedKey != nil {
+		var lastEvaluated []byte
+
+		if lastEvaluated, err = serializer.MarshalJSON(result.LastEvaluatedKey); err == nil {
+			response.LastEvaluated = string(lastEvaluated)
+		}
+	}
+	return response, nil
 }
 
 func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
@@ -80,7 +98,6 @@ func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key")
 		}
 	}
-
 	return &cloud.QueryInput{
 		IndexName:         qb.IndexName,
 		KeyCondition:      qb.KeyCondition,
