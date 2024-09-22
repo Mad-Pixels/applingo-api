@@ -22,26 +22,15 @@ type handleFilePresignResponse struct {
 func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
 	var req handleFilePresignRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
-		return nil, &lambda.HandleError{
-			Status: http.StatusBadRequest,
-			Err:    err,
-		}
+		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := validate.Struct(&req); err != nil {
-		return nil, &lambda.HandleError{
-			Status: http.StatusBadRequest,
-			Err:    err,
-		}
+		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	url, err := s3Bucket.Presign(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
-		return nil, &lambda.HandleError{
-			Status: http.StatusInternalServerError,
-			Err:    err,
-		}
+		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleFilePresignResponse{
-		Url: url,
-	}, nil
+	return handleFilePresignResponse{Url: url}, nil
 }

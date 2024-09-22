@@ -16,17 +16,23 @@ graph TD
 
 
 ```bash
-curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/file_presign \
+curl -X POST http://localhost:4566/restapis/4663mz3v89/prod/_user_request_/api/v1/dictionary/file_presign \
   -d '{"content_type": "text/csv", "name": "file.csv"}' \
   -H "Content-Type: application/json"
 
-curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/data_put \
-  -d '{"description": "description", "dictionary": "dictionary", "name": "name", "author": "author", "category": "category", "sub_category": "sub_category", "private": false}' \
+curl -X POST http://localhost:4566/restapis/4663mz3v89/prod/_user_request_/api/v1/dictionary/data_put \
+  -d '{"description": "description", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
   -H "Content-Type: application/json"
 
-curl -X GET http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/category/get \
+curl -X GET http://localhost:4566/restapis/4663mz3v89/prod/_user_request_/api/v1/category/get \
   -d '{"content_type": "text/csv", "name": "file.csv"}' \
   -H "Content-Type: application/json"
   
-curl -X POST http://localhost:4566/restapis/l60qosmxou/prod/_user_request_/api/v1/dictionary/data_get   -H "Content-Type: application/json"   -d '{"author": "author", "is_private":false}'
+curl -X POST http://localhost:4566/restapis/4663mz3v89/prod/_user_request_/api/v1/dictionary/data_get \
+  -H "Content-Type: application/json"   -d '{"author": "author", "is_private":false}'
+```
+
+```bash
+cd /data/gen
+go run dynamo_dictionary_table.go
 ```

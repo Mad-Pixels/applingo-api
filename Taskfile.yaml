@@ -23,6 +23,19 @@ tasks:
       - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
     silent: true
 
+  go/generate:
+    desc: Run codegen.
+    dir: "{{.git_root}}/data"
+    cmds:
+      - |
+        for dir in */; do
+          if [ -f "${dir}gen.go" ]; then
+            echo "Running codegen for ${dir%/}"
+            go run "${dir}gen.go"
+          fi
+        done
+    silent: true
+
   _go/version/check:
     desc: Check actual golang version.
     dir: "{{.git_root}}"
@@ -50,6 +63,7 @@ tasks:
     dir: "{{.git_root}}"
     deps:
       - _go/version/check
+      - go/generate
     cmds:
       - |
         if [ -d "{{.git_root}}/vendor" ]; then

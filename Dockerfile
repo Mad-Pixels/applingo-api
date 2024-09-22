@@ -8,7 +8,7 @@ ARG GC_FLAGS="-trimpath"
 ARG LD_FLAGS="-w -s -extldflags '-static'"
 
 # amd64
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-amd64
+FROM --platform=linux/amd64 golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-amd64
 ARG FUNC_NAME
 ARG ASM_FLAGS
 ARG GC_FLAGS
@@ -21,6 +21,7 @@ COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./internal ./internal
+COPY ./data ./data
 COPY go.mod go.sum ./
 
 ENV GOARCH=amd64
@@ -39,7 +40,7 @@ COPY --from=builder-amd64 /bin/bootstrap /bootstrap
 ENTRYPOINT ["/bootstrap"]
 
 # arm64
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-arm64
+FROM --platform=linux/arm64/v8 golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-arm64
 ARG FUNC_NAME
 ARG ASM_FLAGS
 ARG GC_FLAGS
@@ -52,6 +53,7 @@ COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./internal ./internal
+COPY ./data ./data
 COPY go.mod go.sum ./
 
 ENV GOARCH=arm64

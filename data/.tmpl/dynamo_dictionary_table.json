@@ -1,5 +1,5 @@
 {
-  "table_name": "dictionary",
+  "table_name": "lingocards-dictionary",
   "hash_key": "id",
   "range_key": "name",
   "attributes": [
