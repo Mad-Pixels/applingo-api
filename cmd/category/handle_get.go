@@ -22,9 +22,7 @@ type category struct {
 }
 
 func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
-	var (
-		req handleGetRequest
-	)
+	var req handleGetRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &lambda.HandleError{
 			Status: http.StatusBadRequest,

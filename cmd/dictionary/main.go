@@ -8,14 +8,14 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/go-playground/validator/v10"
+	validator "github.com/go-playground/validator/v10"
 )
 
 var (
 	// service vars.
-	//serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+	// serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
+	// serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
 	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")

@@ -3,16 +3,14 @@ package main
 import (
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
-	"github.com/go-playground/validator/v10"
+	validator "github.com/go-playground/validator/v10"
 )
 
-var (
-	// service vars.
-	// ...
+// service vars.
+// ...
 
-	// system vars.
-	validate *validator.Validate
-)
+// system vars.
+var validate *validator.Validate
 
 func init() {
 	validate = validator.New()

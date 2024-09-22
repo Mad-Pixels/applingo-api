@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/data"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/tools"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
-	"net/http"
 )
 
 type handleDataPutRequest struct {
