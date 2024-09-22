@@ -92,3 +92,6 @@ crash.log
 
 # Air live reload tool
 tmp/
+
+# Codegen
+data/*.go
