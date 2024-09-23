@@ -272,6 +272,8 @@ tasks:
       AWS_DEFAULT_REGION:    '{{.REGION}}'
       AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'
       AWS_SECRET_ACCESS_KEY: '{{.ACCESS_KEY}}'
+      # service specific envs
+      TF_VAR_token:          '{{.AUTH_TOKEN}}'
     silent: true
     internal: true
 
@@ -356,6 +358,7 @@ tasks:
           LOCALSTACK: "true"
           KEY_ID:     test
           ACCESS_KEY: test
+          AUTH_TOKEN: "000XXX000"
     silent: true
 
   env/localstack/stop:

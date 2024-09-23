@@ -19,3 +19,7 @@ variable "arch" {
   description = "Set architecture which will be use in lambda services"
   type        = string
 }
+
+variable "token" {
+  description = "Token which use for lambda request validate"
+}

@@ -4,50 +4,73 @@
 # localstack
 url="http://localhost:4566/restapis/4663mz3v89/prod/_user_request_"
 
+secret_token="your_secret_token"
+path="/api/v1/dictionary/data_get"
+timestamp=$(date -u +%s)
+signature=$(echo -n "${timestamp}${path}" | openssl dgst -sha256 -hmac "${secret_token}" | sed 's/^.* //')
+
 # Query by author
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"author": "author_name"}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by category_main
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"category_main": "main_category"}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by category_sub
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"category_sub": "subcategory"}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by is_private (true)
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"is_private": true}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by is_publish (true)
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"is_publish": true}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by author and is_private
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"author": "author_name", "is_private": true}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by category_main and is_private
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"category_main": "main_category", "is_private": false}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query by category_sub and is_publish
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"category_sub": "subcategory", "is_publish": true}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 
 # Query with pagination using last_evaluated
-curl -X POST ${url}/api/v1/dictionary/data_get \
+curl -X POST ${url}${path} \
   -d '{"author": "author_name", "last_evaluated": "eyJhdXRob3IiOnsiVmFsdWUiOiJhdXRob3IifSwiaWQiOnsiVmFsd..."}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 ```
 
 # Request

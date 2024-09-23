@@ -4,9 +4,16 @@
 # localstack
 url="http://localhost:4566/restapis/4663mz3v89/prod/_user_request_"
 
-curl -X POST ${url}/api/v1/dictionary/data_put \
+secret_token="your_secret_token"
+path="/api/v1/dictionary/data_put"
+timestamp=$(date -u +%s)
+signature=$(echo -n "${timestamp}${path}" | openssl dgst -sha256 -hmac "${secret_token}" | sed 's/^.* //')
+
+curl -X POST ${url}${path} \
   -d '{"description": "description", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Timestamp: ${timestamp}" \
+  -H "X-Signature: ${signature}"
 ```
 
 # Request
