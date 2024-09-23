@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 	"net/http"
+
+	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
