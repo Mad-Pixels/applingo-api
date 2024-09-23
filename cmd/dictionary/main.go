@@ -41,7 +41,7 @@ func main() {
 			map[string]lambda.HandleFunc{
 				"file_presign": handleFilePresign,
 				"data_delete":  handleDataDelete,
-				"data_get":     handleDataGet,
+				"data_query":   handleDataQuery,
 				"data_put":     handleDataPut,
 			},
 		).Handle,

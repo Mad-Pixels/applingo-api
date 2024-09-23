@@ -19,7 +19,7 @@ import (
 
 const pageLimit = 20
 
-type handleDataGetRequest struct {
+type handleDataQueryRequest struct {
 	ID            string          `json:"id,omitempty"`
 	Name          string          `json:"name,omitempty"`
 	CategoryMain  string          `json:"category_main,omitempty"`
@@ -30,13 +30,13 @@ type handleDataGetRequest struct {
 	LastEvaluated string          `json:"last_evaluated,omitempty"`
 }
 
-type handleDataGetResponse struct {
+type handleDataQueryResponse struct {
 	Items         []map[string]interface{} `json:"items"`
 	LastEvaluated string                   `json:"last_evaluated,omitempty"`
 }
 
-func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
-	var req handleDataGetRequest
+func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
+	var req handleDataQueryRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -54,7 +54,7 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
-	response := handleDataGetResponse{
+	response := handleDataQueryResponse{
 		Items: make([]map[string]interface{}, 0, len(result.Items)),
 	}
 	for _, item := range result.Items {
@@ -81,7 +81,7 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 	return response, nil
 }
 
-func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
+func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	qb := gen_lingocards_dictionary.NewQueryBuilder()
 
 	if req.ID != "" {
