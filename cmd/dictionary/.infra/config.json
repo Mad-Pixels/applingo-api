@@ -6,12 +6,26 @@
         "Effect": "Allow",
         "Action": [
           "dynamodb:GetItem",
-          "dynamodb:PutItem"
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:ListTables"
         ],
         "Resource": "arn:aws:dynamodb:*:*:table/lingocards-dictionary"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        "Resource": "arn:aws:s3:::lingocards.dictionary/*"
       }
     ]
   },
-  "memory_size": 256,
-  "timeout": 60
+  "memory_size": 128,
+  "timeout": 2
 }
