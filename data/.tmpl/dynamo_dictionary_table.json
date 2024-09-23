@@ -6,12 +6,19 @@
     { "name": "id", "type": "S" },
     { "name": "name", "type": "S" },
     { "name": "author", "type": "S" },
+    { "name": "name_author", "type": "S" },
     { "name": "category_main", "type": "S" },
     { "name": "category_sub", "type": "S" },
     { "name": "is_private", "type": "N" },
     { "name": "is_publish", "type": "N" }
   ],
   "secondary_indexes": [
+    {
+      "name": "NameAuthorIndex",
+      "hash_key": "name_author",
+      "range_key": "name",
+      "projection_type": "ALL"
+    },
     {
       "name": "AuthorIndex",
       "hash_key": "author",

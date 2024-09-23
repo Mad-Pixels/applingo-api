@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 
@@ -60,6 +62,8 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 			item[attr.Name] = &types.AttributeValueMemberS{Value: req.Description}
 		case "is_private":
 			item[attr.Name] = &types.AttributeValueMemberN{Value: req.privateAttributeValue()}
+		case "name_author":
+			item[attr.Name] = &types.AttributeValueMemberS{Value: hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))}
 		}
 	}
 	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item); err != nil {
