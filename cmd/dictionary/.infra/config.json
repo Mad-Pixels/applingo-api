@@ -18,11 +18,17 @@
       {
         "Effect": "Allow",
         "Action": [
-          "s3:GetObject",
-          "s3:PutObject",
           "s3:DeleteObject"
         ],
         "Resource": "arn:aws:s3:::lingocards.dictionary/*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject"
+        ],
+        "Resource": "arn:aws:s3:::lingocards.processing/*"
       }
     ]
   },
