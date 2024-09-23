@@ -87,3 +87,12 @@ func (d *Dynamo) Query(ctx context.Context, table string, input *dynamodb.QueryI
 	input.TableName = &table
 	return d.client.Query(ctx, input)
 }
+
+// Delete an item from DynamoDB table by key.
+func (d *Dynamo) Delete(ctx context.Context, table string, key map[string]types.AttributeValue) error {
+	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: &table,
+		Key:       key,
+	})
+	return err
+}

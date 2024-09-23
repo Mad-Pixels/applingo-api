@@ -13,9 +13,8 @@ import (
 
 var (
 	// service vars.
-	// serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	// serviceDictionaryDynamo = os.Getenv("SERVICE_DICTIONARY_DYNAMO")
 
 	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")
@@ -41,6 +40,7 @@ func main() {
 			lambda.Config{Token: token},
 			map[string]lambda.HandleFunc{
 				"file_presign": handleFilePresign,
+				"data_delete":  handleDataDelete,
 				"data_get":     handleDataGet,
 				"data_put":     handleDataPut,
 			},

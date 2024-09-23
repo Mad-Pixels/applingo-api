@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	presignTimeout = 1
+	presignTimeout = 5
 )
 
 type Bucket struct {
@@ -36,4 +36,13 @@ func (b *Bucket) Presign(ctx context.Context, key, bucket, contentType string) (
 		return "", err
 	}
 	return req.URL, nil
+}
+
+// Delete an object from the bucket.
+func (b *Bucket) Delete(ctx context.Context, key, bucket string) error {
+	_, err := b.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	return err
 }
