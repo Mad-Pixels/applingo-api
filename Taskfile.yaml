@@ -29,7 +29,7 @@ tasks:
     cmds:
       - |
         for dir in */; do
-          if [ -f "${dir}gen.go" ]; then
+          if [[ "${dir}" != gen_* && -f "${dir}gen.go" ]]; then
             echo "Running codegen for ${dir%/}"
             go run "${dir}gen.go"
           fi

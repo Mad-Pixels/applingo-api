@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/data"
+	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/tools"
@@ -44,7 +44,7 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 	}
 
 	item := make(map[string]types.AttributeValue)
-	for _, attr := range data.DictionaryTableSchema.Attributes {
+	for _, attr := range gen_lingocards_dictionary.TableSchema.Attributes {
 		switch attr.Name {
 		case "id":
 			item[attr.Name] = &types.AttributeValueMemberS{Value: tools.NewPersistentID(req.Author).UniqueID}
@@ -62,7 +62,7 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 			item[attr.Name] = &types.AttributeValueMemberN{Value: req.privateAttributeValue()}
 		}
 	}
-	if err := dbDynamo.Put(ctx, data.DictionaryTableSchema.TableName, item); err != nil {
+	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return handleDataPutResponse{

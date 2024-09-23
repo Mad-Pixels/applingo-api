@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/data"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 2
+const pageLimit = 20
 
 type handleDataGetRequest struct {
 	ID            string          `json:"id,omitempty"`
@@ -48,7 +48,7 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 	if err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	result, err := dbDynamo.Query(ctx, data.TableName, dynamoQueryInput)
+	result, err := dbDynamo.Query(ctx, gen_lingocards_dictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
@@ -66,27 +66,22 @@ func handleDataGet(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 		response.Items = append(response.Items, mappedItem)
 	}
 	if result.LastEvaluatedKey != nil {
-		// Преобразуем LastEvaluatedKey в map[string]interface{}
 		var lastEvaluatedKeyMap map[string]interface{}
-		err := attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap)
-		if err != nil {
+
+		if err = attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap); err != nil {
 			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
-
-		// Маршалим map в JSON
 		lastEvaluatedKeyJSON, err := serializer.MarshalJSON(lastEvaluatedKeyMap)
 		if err != nil {
 			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
-
-		// Кодируем в base64
 		response.LastEvaluated = base64.StdEncoding.EncodeToString(lastEvaluatedKeyJSON)
 	}
 	return response, nil
 }
 
 func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
-	qb := data.NewQueryBuilder()
+	qb := gen_lingocards_dictionary.NewQueryBuilder()
 
 	if req.ID != "" {
 		qb.WithId(req.ID)
@@ -118,19 +113,14 @@ func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 
 	var exclusiveStartKey map[string]types.AttributeValue
 	if req.LastEvaluated != "" {
-		// Декодируем base64
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(req.LastEvaluated)
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
 		}
-
-		// Демаршалим JSON в map[string]interface{}
 		var lastEvaluatedKeyMap map[string]interface{}
 		if err := serializer.UnmarshalJSON(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
 		}
-
-		// Преобразуем map[string]interface{} обратно в map[string]types.AttributeValue
 		exclusiveStartKey, err = attributevalue.MarshalMap(lastEvaluatedKeyMap)
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
@@ -141,7 +131,7 @@ func buildQueryInput(req *handleDataGetRequest) (*cloud.QueryInput, error) {
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
 		FilterCondition:   filterCondition,
-		ProjectionFields:  data.IndexProjections[indexName],
+		ProjectionFields:  gen_lingocards_dictionary.IndexProjections[indexName],
 		Limit:             pageLimit,
 		ScanForward:       true,
 		ExclusiveStartKey: exclusiveStartKey,
