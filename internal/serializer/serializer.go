@@ -45,7 +45,6 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 	if err := enc.Encode(v); err != nil {
 		return nil, err
 	}
-	// Remove the trailing newline added by enc.Encode
 	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
