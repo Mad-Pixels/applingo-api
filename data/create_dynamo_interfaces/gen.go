@@ -14,6 +14,7 @@ type DynamoSchema struct {
 	HashKey          string           `json:"hash_key"`
 	RangeKey         string           `json:"range_key"`
 	Attributes       []Attribute      `json:"attributes"`
+	CommonAttributes []Attribute      `json:"common_attributes"`
 	SecondaryIndexes []SecondaryIndex `json:"secondary_indexes"`
 }
 
@@ -36,7 +37,10 @@ const codeTemplate = `
 package {{.PackageName}}
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -48,7 +52,7 @@ const (
 
 var (
 	AttributeNames = []string{
-		{{- range .Attributes}}
+		{{- range .AllAttributes}}
 		"{{.Name}}",
 		{{- end}}
 	}
@@ -57,7 +61,7 @@ var (
 		{{- range .SecondaryIndexes}}
 		Index{{.Name}}: {
 			{{- if eq .ProjectionType "ALL"}}
-			{{- range $.Attributes}}
+			{{- range $.AllAttributes}}
 			"{{.Name}}",
 			{{- end}}
 			{{- else}}
@@ -76,6 +80,7 @@ type DynamoSchema struct {
 	HashKey          string
 	RangeKey         string
 	Attributes       []Attribute
+	CommonAttributes []Attribute
 	SecondaryIndexes []SecondaryIndex
 }
 
@@ -85,11 +90,18 @@ type Attribute struct {
 }
 
 type SecondaryIndex struct {
-	Name              string
-	HashKey           string
-	RangeKey          string
-	ProjectionType    string
-	NonKeyAttributes  []string
+	Name             string
+	HashKey          string
+	RangeKey         string
+	ProjectionType   string
+	NonKeyAttributes []string
+}
+
+// SchemaItem represents the structure of the item in the table "{{.TableName}}"
+type SchemaItem struct {
+	{{range .AllAttributes}}
+	{{.Name | ToCamelCase}} {{if eq .Type "S"}}string{{else if eq .Type "N"}}int{{else if eq .Type "B"}}bool{{else}}interface{}{{end}} ` + "`json:\"{{.Name}}\"`" + `
+	{{end}}
 }
 
 var TableSchema = DynamoSchema{
@@ -98,6 +110,11 @@ var TableSchema = DynamoSchema{
 	RangeKey:  "{{.RangeKey}}",
 	Attributes: []Attribute{
 		{{- range .Attributes}}
+		{Name: "{{.Name}}", Type: "{{.Type}}"},
+		{{- end}}
+	},
+	CommonAttributes: []Attribute{
+		{{- range .CommonAttributes}}
 		{Name: "{{.Name}}", Type: "{{.Type}}"},
 		{{- end}}
 	},
@@ -133,8 +150,7 @@ func NewQueryBuilder() *QueryBuilder {
 	}
 }
 
-
-{{range .Attributes}}
+{{range .AllAttributes}}
 func (qb *QueryBuilder) With{{.Name | ToCamelCase}}({{.Name | ToLowerCamelCase}} {{if eq .Type "N"}}int{{else if eq .Type "B"}}bool{{else}}string{{end}}) *QueryBuilder {
 	{{- $attrName := .Name}}
 	{{- range $.SecondaryIndexes}}
@@ -153,6 +169,7 @@ func (qb *QueryBuilder) With{{.Name | ToCamelCase}}({{.Name | ToLowerCamelCase}}
 		} else {
 			qb.FilterCondition = expression.Name("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}}))
 		}
+		qb.UsedKeys["{{$attrName}}"] = true
 	}
 	return qb
 }
@@ -162,7 +179,24 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, express
 	return qb.IndexName, qb.KeyCondition, qb.FilterCondition
 }
 
-func boolToInt(b bool) int {
+// PutItem builds a map of AttributeValues for a DynamoDB PutItem operation
+func PutItem(item SchemaItem) (map[string]types.AttributeValue, error) {
+	attributeValues := make(map[string]types.AttributeValue)
+	{{range .AllAttributes}}
+	{{if eq .Type "N"}}
+		attributeValues["{{.Name}}"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", item.{{.Name | ToCamelCase}})}
+	{{else if eq .Type "B"}}
+		attributeValues["{{.Name}}"] = &types.AttributeValueMemberBOOL{Value: item.{{.Name | ToCamelCase}}}
+	{{else if eq .Type "S"}}
+		if item.{{.Name | ToCamelCase}} != "" {
+			attributeValues["{{.Name}}"] = &types.AttributeValueMemberS{Value: item.{{.Name | ToCamelCase}}}
+		}
+	{{end}}
+	{{end}}
+	return attributeValues, nil
+}
+
+func BoolToInt(b bool) int {
 	if b {
 		return 1
 	}
@@ -217,19 +251,23 @@ func processSchemaFile(jsonPath, rootDir string) {
 		"ToCamelCase":      toCamelCase,
 		"ToLowerCamelCase": toLowerCamelCase,
 	}
+	allAttributes := append(schema.Attributes, schema.CommonAttributes...)
 
-	tmpl, err := template.New("schema").Funcs(funcMap).Parse(codeTemplate)
-	if err != nil {
-		fmt.Printf("Error parsing template: %v\n", err)
-		return
-	}
 	schemaMap := map[string]interface{}{
 		"PackageName":      packageName,
 		"TableName":        schema.TableName,
 		"HashKey":          schema.HashKey,
 		"RangeKey":         schema.RangeKey,
 		"Attributes":       schema.Attributes,
+		"CommonAttributes": schema.CommonAttributes,
+		"AllAttributes":    allAttributes,
 		"SecondaryIndexes": schema.SecondaryIndexes,
+	}
+
+	tmpl, err := template.New("schema").Funcs(funcMap).Parse(codeTemplate)
+	if err != nil {
+		fmt.Printf("Error parsing template: %v\n", err)
+		return
 	}
 
 	outputFile, err := os.Create(outputPath)

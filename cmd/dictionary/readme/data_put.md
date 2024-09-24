@@ -2,7 +2,7 @@
 
 ```bash
 # localstack
-url="http://localhost:4566/restapis/4663mz3v89/prod/_user_request_"
+url="http://localhost:4566/restapis/2qnu3vgdyl/prod/_user_request_"
 
 secret_token="your_secret_token"
 path="/api/v1/dictionary/data_put"

@@ -12,6 +12,10 @@
     { "name": "is_private", "type": "N" },
     { "name": "is_publish", "type": "N" }
   ],
+  "common_attributes": [
+    { "name": "description", "type": "S" },
+    { "name": "dictionary", "type": "S" } 
+  ],
   "secondary_indexes": [
     {
       "name": "NameAuthorIndex",

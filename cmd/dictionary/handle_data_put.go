@@ -11,7 +11,6 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/tools"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
 )
 
@@ -23,13 +22,6 @@ type handleDataPutRequest struct {
 	CategoryMain string `json:"category_main" validate:"required"`
 	CategorySub  string `json:"category_sub" validate:"required"`
 	Private      bool   `json:"private"`
-}
-
-func (r handleDataPutRequest) privateAttributeValue() string {
-	if r.Private {
-		return "0"
-	}
-	return "1"
 }
 
 type handleDataPutResponse struct {
@@ -45,26 +37,20 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	item := make(map[string]types.AttributeValue)
-	for _, attr := range gen_lingocards_dictionary.TableSchema.Attributes {
-		switch attr.Name {
-		case "id":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: tools.NewPersistentID(req.Author).UniqueID}
-		case "name":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: req.Name}
-		case "author":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: req.Author}
-		case "category_main":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: req.CategoryMain}
-		case "category_sub":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: req.CategorySub}
-		case "description":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: req.Description}
-		case "is_private":
-			item[attr.Name] = &types.AttributeValueMemberN{Value: req.privateAttributeValue()}
-		case "name_author":
-			item[attr.Name] = &types.AttributeValueMemberS{Value: hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))}
-		}
+	item, err := gen_lingocards_dictionary.PutItem(gen_lingocards_dictionary.SchemaItem{
+		NameAuthor: hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author))),
+		IsPrivate:  gen_lingocards_dictionary.BoolToInt(req.Private),
+		Id:         tools.NewPersistentID(req.Author).UniqueID,
+
+		Name:         req.Name,
+		Author:       req.Author,
+		CategoryMain: req.CategoryMain,
+		CategorySub:  req.CategorySub,
+		Description:  req.Description,
+		Dictionary:   req.Dictionary,
+	})
+	if err != nil {
+		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
