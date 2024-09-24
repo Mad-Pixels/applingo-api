@@ -10,7 +10,8 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
-	"github.com/Mad-Pixels/lingocards-api/pkg/tools"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -28,7 +29,7 @@ type handleDataPutResponse struct {
 	Msg string `json:"msg"`
 }
 
-func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
+func handleDataPut(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
 	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
@@ -36,12 +37,19 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 	if err := validate.Struct(&req); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
+	id := hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
+
+	exists, err := checkIfDictionaryExist(ctx, id, req.Name)
+	if err != nil {
+		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+	}
+	if exists {
+		return nil, &lambda.HandleError{Status: http.StatusConflict, Err: errors.New("dictionary with id: '" + id + "' already exist")}
+	}
 
 	item, err := gen_lingocards_dictionary.PutItem(gen_lingocards_dictionary.SchemaItem{
-		NameAuthor: hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author))),
-		IsPrivate:  gen_lingocards_dictionary.BoolToInt(req.Private),
-		Id:         tools.NewPersistentID(req.Author).UniqueID,
-
+		IsPrivate:    gen_lingocards_dictionary.BoolToInt(req.Private),
+		Id:           id,
 		Name:         req.Name,
 		Author:       req.Author,
 		CategoryMain: req.CategoryMain,
@@ -50,12 +58,29 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		Dictionary:   req.Dictionary,
 	})
 	if err != nil {
+		logger.Error().Err(err).Msg("Error creating item for DynamoDB")
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item); err != nil {
+		logger.Error().Err(err).Msg("Error inserting item into DynamoDB")
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return handleDataPutResponse{
 		Msg: "OK",
 	}, nil
+}
+
+func checkIfDictionaryExist(ctx context.Context, id, name string) (bool, error) {
+	result, err := dbDynamo.Get(
+		ctx,
+		gen_lingocards_dictionary.TableSchema.TableName,
+		map[string]types.AttributeValue{
+			"id":   &types.AttributeValueMemberS{Value: id},
+			"name": &types.AttributeValueMemberS{Value: name},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return len(result.Item) > 0, nil
 }

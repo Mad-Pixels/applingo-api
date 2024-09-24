@@ -82,6 +82,14 @@ func (d *Dynamo) Put(ctx context.Context, table string, item map[string]types.At
 	return err
 }
 
+// Get retrieves an item from DynamoDB table by its key.
+func (d *Dynamo) Get(ctx context.Context, table string, key map[string]types.AttributeValue) (*dynamodb.GetItemOutput, error) {
+	return d.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: &table,
+		Key:       key,
+	})
+}
+
 // Query executes a query operation on DynamoDB table.
 func (d *Dynamo) Query(ctx context.Context, table string, input *dynamodb.QueryInput) (*dynamodb.QueryOutput, error) {
 	input.TableName = &table
