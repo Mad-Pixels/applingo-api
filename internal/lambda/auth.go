@@ -4,10 +4,11 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/pkg/errors"
 	"strconv"
 	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/pkg/errors"
 )
 
 const timestampDelay = 60

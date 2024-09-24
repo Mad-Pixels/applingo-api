@@ -31,8 +31,17 @@ type handleDataQueryRequest struct {
 }
 
 type handleDataQueryResponse struct {
-	Items         []map[string]interface{} `json:"items"`
-	LastEvaluated string                   `json:"last_evaluated,omitempty"`
+	Items         []dataQueryItem `json:"items"`
+	LastEvaluated string          `json:"last_evaluated,omitempty"`
+}
+
+type dataQueryItem struct {
+	Name         string `json:"name" dynamodbav:"name"`
+	CategoryMain string `json:"category_main" dynamodbav:"category_main"`
+	CategorySub  string `json:"category_sub" dynamodbav:"category_sub"`
+	Author       string `json:"author" dynamodbav:"author"`
+	Dictionary   string `json:"dictionary" dynamodbav:"dictionary"`
+	Description  string `json:"description" dynamodbav:"description"`
 }
 
 func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
@@ -55,16 +64,18 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	}
 
 	response := handleDataQueryResponse{
-		Items: make([]map[string]interface{}, 0, len(result.Items)),
+		Items: make([]dataQueryItem, 0, len(result.Items)),
 	}
-	for _, item := range result.Items {
-		var mappedItem map[string]interface{}
+	for _, dynamoItem := range result.Items {
+		var item dataQueryItem
 
-		if err = attributevalue.UnmarshalMap(item, &mappedItem); err != nil {
+		logger.Info().Interface("DynamoDBItem", dynamoItem).Msg("DynamoDB item")
+
+		if err = attributevalue.UnmarshalMap(dynamoItem, &item); err != nil {
 			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 			continue
 		}
-		response.Items = append(response.Items, mappedItem)
+		response.Items = append(response.Items, item)
 	}
 	if result.LastEvaluatedKey != nil {
 		var lastEvaluatedKeyMap map[string]interface{}
