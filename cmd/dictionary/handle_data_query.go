@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
-
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
