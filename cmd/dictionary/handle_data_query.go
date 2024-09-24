@@ -36,12 +36,12 @@ type handleDataQueryResponse struct {
 }
 
 type dataQueryItem struct {
-	Name         string `json:"name" dynamodbav:"name"`
-	CategoryMain string `json:"category_main" dynamodbav:"category_main"`
-	CategorySub  string `json:"category_sub" dynamodbav:"category_sub"`
-	Author       string `json:"author" dynamodbav:"author"`
-	Dictionary   string `json:"dictionary" dynamodbav:"dictionary"`
-	Description  string `json:"description" dynamodbav:"description"`
+	Name          string `json:"name" dynamodbav:"name"`
+	CategoryMain  string `json:"category_main" dynamodbav:"category_main"`
+	CategorySub   string `json:"category_sub" dynamodbav:"category_sub"`
+	Author        string `json:"author" dynamodbav:"author"`
+	DictionaryUrl string `json:"dictionary_url" dynamodbav:"dictionary_url"`
+	Description   string `json:"description" dynamodbav:"description"`
 }
 
 func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {

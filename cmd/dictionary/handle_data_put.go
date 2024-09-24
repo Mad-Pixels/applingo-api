@@ -48,14 +48,14 @@ func handleDataPut(ctx context.Context, logger zerolog.Logger, raw json.RawMessa
 	}
 
 	item, err := gen_lingocards_dictionary.PutItem(gen_lingocards_dictionary.SchemaItem{
-		IsPrivate:    gen_lingocards_dictionary.BoolToInt(req.Private),
-		Id:           id,
-		Name:         req.Name,
-		Author:       req.Author,
-		CategoryMain: req.CategoryMain,
-		CategorySub:  req.CategorySub,
-		Description:  req.Description,
-		Dictionary:   req.Dictionary,
+		IsPrivate:          gen_lingocards_dictionary.BoolToInt(req.Private),
+		Id:                 id,
+		Name:               req.Name,
+		Author:             req.Author,
+		CategoryMain:       req.CategoryMain,
+		CategorySub:        req.CategorySub,
+		Description:        req.Description,
+		DictionaryFilename: req.Dictionary,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("Error creating item for DynamoDB")

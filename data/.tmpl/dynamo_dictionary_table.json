@@ -13,7 +13,8 @@
   ],
   "common_attributes": [
     { "name": "description", "type": "S" },
-    { "name": "dictionary", "type": "S" } 
+    { "name": "dictionary_filename", "type": "S" }, 
+    { "name": "dictionary_url", "type": "S" } 
   ],
   "secondary_indexes": [
     {
