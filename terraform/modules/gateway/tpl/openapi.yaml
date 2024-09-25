@@ -79,6 +79,8 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+      security:
+        - DeviceAuthorizer: []
 
     options:
       responses:
@@ -111,7 +113,21 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         passthroughBehavior: "when_no_match"
 
-components: {}
+components:
+  securitySchemes:
+    DeviceAuthorizer:
+      type: "apiKey"
+      name: "X-Timestamp"
+      in: "header"
+      x-amazon-apigateway-authtype: "custom"
+      x-amazon-apigateway-authorizer:
+        type: "request"
+        authorizerUri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["auth_device"].arn}/invocations"
+        identitySource:
+          - "method.request.header.X-Timestamp"
+          - "method.request.header.X-Signature"
+        authorizerResultTtlInSeconds: 5
+
 x-amazon-apigateway-gateway-responses:
   DEFAULT_4XX:
     statusCode: 200

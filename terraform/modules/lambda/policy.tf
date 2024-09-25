@@ -4,7 +4,7 @@ resource "aws_iam_role_policy_attachment" "base" {
 }
 
 resource "aws_iam_role_policy" "cloudwatch_metrics" {
-  name = "${var.project}-${var.function_name}-cloudwatch-metrics"
+  name = "${var.project}-${replace(var.function_name, "_", "-")}-cloudwatch-metrics"
   role = aws_iam_role.this.id
 
   policy = jsonencode({
@@ -26,7 +26,7 @@ resource "aws_iam_role_policy" "cloudwatch_metrics" {
 resource "aws_iam_role_policy" "additional" {
   count = var.policy != "" ? 1 : 0
 
-  name   = "${var.project}-${var.function_name}-lambda-policy"
+  name   = "${var.project}-${replace(var.function_name, "_", "-")}-lambda-policy"
   role   = aws_iam_role.this.id
   policy = var.policy
 }

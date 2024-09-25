@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "this" {
-  function_name = "${var.project}-${var.function_name}"
+  function_name = "${var.project}-${replace(var.function_name, "_", "-")}"
   role          = aws_iam_role.this.arn
   image_uri     = var.image
   timeout       = var.timeout
@@ -41,7 +41,7 @@ resource "aws_lambda_function" "this" {
 }
 
 resource "aws_iam_role" "this" {
-  name = "${var.project}-${var.function_name}-lambda-role"
+  name = "${var.project}-${replace(var.function_name, "_", "-")}-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

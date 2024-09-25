@@ -33,5 +33,9 @@
     ]
   },
   "memory_size": 128,
-  "timeout": 2
+  "timeout": 2,
+  "envs": {
+    "SERVICE_DICTIONARY_BUCKET": "${service_dictionary_bucket}",
+    "SERVICE_PROCESSING_BUCKET": "${service_processing_bucket}"
+  }
 }

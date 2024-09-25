@@ -20,16 +20,10 @@ module "lambda_functions" {
   log_level     = var.use_localstack ? "DEBUG" : "ERROR"
   arch          = var.arch
 
-  timeout     = try(each.value.timeout, 3)
-  memory_size = try(each.value.memory_size, 128)
-  policy      = try(jsonencode(each.value.policy), "")
-
-  environments = {
-    SERVICE_DICTIONARY_BUCKET : data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name,
-    SERVICE_PROCESSING_BUCKET : data.terraform_remote_state.infra.outputs.s3-processing-bucket_name,
-    SERVICE_DICTIONARY_DYNAMO : data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_name,
-    AUTH_TOKEN : var.token
-  }
+  timeout      = try(each.value.timeout, 3)
+  memory_size  = try(each.value.memory_size, 128)
+  policy       = try(jsonencode(each.value.policy), "")
+  environments = try(each.value.envs, {})
 }
 
 module "gateway" {

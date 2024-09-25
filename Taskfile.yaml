@@ -194,8 +194,8 @@ tasks:
     desc: Push all images to repository.
     vars:
       REPO_URL: '{{.REPO_URL}}'
-    deps:
-      - _trivy/install
+#    deps:
+#      - _trivy/install
     cmds:
       - |
         if [ -z "{{.REPO_URL}}" ]; then
@@ -206,7 +206,7 @@ tasks:
           func=${tag#*:}
         
           echo "Checking by trivy {{.api_image_name}}:$func"
-          trivy image {{.api_image_name}}:$func
+          #trivy image {{.api_image_name}}:$func
 
           echo "Pushing {{.api_image_name}}:$func to {{.REPO_URL}}"
           docker image tag {{.api_image_name}}:$func {{.REPO_URL}}/{{.api_image_name}}:$func

@@ -19,9 +19,7 @@ type HandleError struct {
 }
 
 // Config for lambda object.
-type Config struct {
-	Token string
-}
+type Config struct{}
 
 type lambda struct {
 	cfg      Config
@@ -34,7 +32,7 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *lambda {
 	return &lambda{
 		cfg:      cfg,
 		handlers: handlers,
-		logger:   initLogger(),
+		logger:   InitLogger(),
 	}
 }
 
@@ -81,13 +79,6 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *lambda {
 // Invocation examples (API Gateway request body):
 //   - Create user: {"name": "John Doe", "email": "john@example.com"}
 //   - Get user: {"id": "123"}
-//
-// Note: The "action" is specified in the query parameters
-//
-// Handle include request signature check before invoke.
-// Required API Token and common Headers:
-//   - X-Timestamp
-//   - X-Signature
 func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (resp events.APIGatewayProxyResponse, err error) {
 	l.logger.Info().
 		Str("path", req.Path).
@@ -106,10 +97,6 @@ func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) 
 	if !ok {
 		l.logger.Error().Str("action", action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
-	}
-	if err = validateRequest(req, l.cfg.Token); err != nil {
-		l.logger.Error().Err(err).Msg("Fail check signature")
-		return errResponse(http.StatusUnauthorized)
 	}
 
 	result, handleError := handler(ctx, l.logger, json.RawMessage(req.Body))

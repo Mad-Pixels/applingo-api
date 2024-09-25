@@ -18,7 +18,6 @@ var (
 
 	// system vars.
 	awsRegion = os.Getenv("AWS_REGION")
-	token     = os.Getenv("AUTH_TOKEN")
 	validate  *validator.Validate
 	s3Bucket  *cloud.Bucket
 	dbDynamo  *cloud.Dynamo
@@ -37,7 +36,7 @@ func init() {
 func main() {
 	aws_lambda.Start(
 		lambda.NewLambda(
-			lambda.Config{Token: token},
+			lambda.Config{},
 			map[string]lambda.HandleFunc{
 				"file_presign": handleFilePresign,
 				"data_delete":  handleDataDelete,

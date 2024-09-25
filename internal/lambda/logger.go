@@ -11,7 +11,7 @@ const (
 	EnvLogLevel = "LOG_LEVEL"
 )
 
-func initLogger() zerolog.Logger {
+func InitLogger() zerolog.Logger {
 	output := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		NoColor:    true,
