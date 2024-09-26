@@ -68,8 +68,6 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	for _, dynamoItem := range result.Items {
 		var item dataQueryItem
 
-		logger.Info().Interface("DynamoDBItem", dynamoItem).Msg("DynamoDB item")
-
 		if err = attributevalue.UnmarshalMap(dynamoItem, &item); err != nil {
 			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 			continue
