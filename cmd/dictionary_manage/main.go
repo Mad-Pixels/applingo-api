@@ -38,10 +38,9 @@ func main() {
 		lambda.NewLambda(
 			lambda.Config{},
 			map[string]lambda.HandleFunc{
-				"file_presign": handleFilePresign,
-				"data_delete":  handleDataDelete,
-				"data_query":   handleDataQuery,
-				"data_put":     handleDataPut,
+				"presign": handleFilePresign,
+				"delete":  handleDataDelete,
+				"put":     handleDataPut,
 			},
 		).Handle,
 	)

@@ -1,7 +1,0 @@
-{
-  "memory_size": 128,
-  "timeout": 1,
-  "envs": {
-    "AUTH_TOKEN": "${var_token}"
-  }
-}

@@ -5,17 +5,18 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/aws/aws-lambda-go/events"
 	aws_lambda "github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
-	timestampDelay = 60
+	timestampDelay = 30
 
 	headerTimestamp = "X-Timestamp"
 	headerSignature = "X-Signature"

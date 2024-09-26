@@ -23,7 +23,7 @@ func main() {
 		lambda.NewLambda(
 			lambda.Config{},
 			map[string]lambda.HandleFunc{
-				"get": handleGet,
+				"query": handleGet,
 			},
 		).Handle,
 	)
