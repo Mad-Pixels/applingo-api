@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 type DynamoSchema struct {
@@ -65,7 +66,7 @@ var (
 			"{{.Name}}",
 			{{- end}}
 			{{- else}}
-			"{{.HashKey}}", "{{.RangeKey}}",
+			"{{.HashKey}}", {{if .RangeKey}}"{{.RangeKey}}",{{end}}
 			{{- range .NonKeyAttributes}}
 			"{{.}}",
 			{{- end}}
@@ -97,10 +98,10 @@ type SecondaryIndex struct {
 	NonKeyAttributes []string
 }
 
-// SchemaItem represents the structure of the item in the table "{{.TableName}}"
+// SchemaItem implement struct for "{{.TableName}}"
 type SchemaItem struct {
 	{{range .AllAttributes}}
-	{{.Name | ToCamelCase}} {{if eq .Type "S"}}string{{else if eq .Type "N"}}int{{else if eq .Type "B"}}bool{{else}}interface{}{{end}} ` + "`json:\"{{.Name}}\"`" + `
+	{{SafeName .Name | ToCamelCase}} {{TypeGo .Type}} ` + "`json:\"{{.Name}}\"`" + `
 	{{end}}
 }
 
@@ -151,25 +152,29 @@ func NewQueryBuilder() *QueryBuilder {
 }
 
 {{range .AllAttributes}}
-func (qb *QueryBuilder) With{{.Name | ToCamelCase}}({{.Name | ToLowerCamelCase}} {{if eq .Type "N"}}int{{else if eq .Type "B"}}bool{{else}}string{{end}}) *QueryBuilder {
+func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}({{SafeName .Name | ToLowerCamelCase}} {{TypeGo .Type}}) *QueryBuilder {
+	attrName := "{{.Name}}"
 	{{- $attrName := .Name}}
+	{{- $goType := TypeGo .Type}}
+	{{- $safeName := SafeName .Name}}
 	{{- range $.SecondaryIndexes}}
 	{{- if eq .HashKey $attrName}}
 	if qb.IndexName == "" {
 		qb.IndexName = Index{{.Name}}
-		qb.KeyCondition = expression.Key("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}}))
-		qb.UsedKeys["{{$attrName}}"] = true
+		qb.KeyCondition = expression.Key(attrName).Equal(expression.Value({{$safeName | ToLowerCamelCase}}))
+		qb.UsedKeys[attrName] = true
 		return qb
 	}
 	{{- end}}
 	{{- end}}
-	if !qb.UsedKeys["{{$attrName}}"] {
+	if !qb.UsedKeys[attrName] {
+		cond := expression.Name(attrName).Equal(expression.Value({{$safeName | ToLowerCamelCase}}))
 		if qb.FilterCondition.IsSet() {
-			qb.FilterCondition = qb.FilterCondition.And(expression.Name("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}})))
+			qb.FilterCondition = qb.FilterCondition.And(cond)
 		} else {
-			qb.FilterCondition = expression.Name("{{$attrName}}").Equal(expression.Value({{$attrName | ToLowerCamelCase}}))
+			qb.FilterCondition = cond
 		}
-		qb.UsedKeys["{{$attrName}}"] = true
+		qb.UsedKeys[attrName] = true
 	}
 	return qb
 }
@@ -179,19 +184,24 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, express
 	return qb.IndexName, qb.KeyCondition, qb.FilterCondition
 }
 
-// PutItem builds a map of AttributeValues for a DynamoDB PutItem operation
+// PutItem create an AttributeValues map for PutItem in DynamoDB
 func PutItem(item SchemaItem) (map[string]types.AttributeValue, error) {
 	attributeValues := make(map[string]types.AttributeValue)
 	{{range .AllAttributes}}
-	{{if eq .Type "N"}}
-		attributeValues["{{.Name}}"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", item.{{.Name | ToCamelCase}})}
-	{{else if eq .Type "B"}}
-		attributeValues["{{.Name}}"] = &types.AttributeValueMemberBOOL{Value: item.{{.Name | ToCamelCase}}}
-	{{else if eq .Type "S"}}
-		if item.{{.Name | ToCamelCase}} != "" {
-			attributeValues["{{.Name}}"] = &types.AttributeValueMemberS{Value: item.{{.Name | ToCamelCase}}}
+	{{- $attrName := .Name}}
+	{{- $safeName := SafeName .Name}}
+	{{- $goType := TypeGo .Type}}
+	{{- if eq .Type "N"}}
+		attributeValues["{{.Name}}"] = &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", item.{{$safeName | ToCamelCase}})}
+	{{- else if eq .Type "B"}}
+		attributeValues["{{.Name}}"] = &types.AttributeValueMemberBOOL{Value: item.{{$safeName | ToCamelCase}}}
+	{{- else if eq .Type "S"}}
+		if item.{{$safeName | ToCamelCase}} != "" {
+			attributeValues["{{.Name}}"] = &types.AttributeValueMemberS{Value: item.{{$safeName | ToCamelCase}}}
 		}
-	{{end}}
+	{{- else}}
+		
+	{{- end}}
 	{{end}}
 	return attributeValues, nil
 }
@@ -207,14 +217,14 @@ func BoolToInt(b bool) int {
 func main() {
 	rootDir, err := filepath.Abs(".")
 	if err != nil {
-		fmt.Printf("Error getting project root directory: %v\n", err)
+		fmt.Printf("Cannot find root directory: %v\n", err)
 		return
 	}
 	tmplDir := filepath.Join(rootDir, ".tmpl")
 
 	files, err := os.ReadDir(tmplDir)
 	if err != nil {
-		fmt.Printf("Error reading template directory %s: %v\n", tmplDir, err)
+		fmt.Printf("Read template directory failed %s: %v\n", tmplDir, err)
 		return
 	}
 	for _, file := range files {
@@ -227,22 +237,22 @@ func main() {
 func processSchemaFile(jsonPath, rootDir string) {
 	jsonFile, err := os.ReadFile(jsonPath)
 	if err != nil {
-		fmt.Printf("Error reading JSON file %s: %v\n", jsonPath, err)
+		fmt.Printf("Failed read json %s: %v\n", jsonPath, err)
 		return
 	}
 
 	var schema DynamoSchema
 	err = json.Unmarshal(jsonFile, &schema)
 	if err != nil {
-		fmt.Printf("Error unmarshaling JSON from %s: %v\n", jsonPath, err)
+		fmt.Printf("Parse json failed %s: %v\n", jsonPath, err)
 		return
 	}
 
 	packageName := "gen_" + strings.ReplaceAll(schema.TableName, "-", "_")
-	packageDir := filepath.Join(rootDir, "gen_"+strings.ReplaceAll(schema.TableName, "-", "_"))
+	packageDir := filepath.Join(rootDir, packageName)
 
 	if err := os.MkdirAll(packageDir, os.ModePerm); err != nil {
-		fmt.Printf("Error creating directory %s: %v\n", packageDir, err)
+		fmt.Printf("Create dictionary failed %s: %v\n", packageDir, err)
 		return
 	}
 	outputPath := filepath.Join(packageDir, packageName+".go")
@@ -250,6 +260,8 @@ func processSchemaFile(jsonPath, rootDir string) {
 	funcMap := template.FuncMap{
 		"ToCamelCase":      toCamelCase,
 		"ToLowerCamelCase": toLowerCamelCase,
+		"SafeName":         safeName,
+		"TypeGo":           typeGo,
 	}
 	allAttributes := append(schema.Attributes, schema.CommonAttributes...)
 
@@ -266,34 +278,93 @@ func processSchemaFile(jsonPath, rootDir string) {
 
 	tmpl, err := template.New("schema").Funcs(funcMap).Parse(codeTemplate)
 	if err != nil {
-		fmt.Printf("Error parsing template: %v\n", err)
+		fmt.Printf("Parse template failed: %v\n", err)
 		return
 	}
 
 	outputFile, err := os.Create(outputPath)
 	if err != nil {
-		fmt.Printf("Error creating output file %s: %v\n", outputPath, err)
+		fmt.Printf("Creation file error %s: %v\n", outputPath, err)
 		return
 	}
 	defer outputFile.Close()
 
 	err = tmpl.Execute(outputFile, schemaMap)
 	if err != nil {
-		fmt.Printf("Error executing template for %s: %v\n", outputPath, err)
+		fmt.Printf("Template execution failed %s: %v\n", outputPath, err)
 		return
 	}
-	fmt.Printf("Generated code for %s successfully!\n", schema.TableName)
+	fmt.Printf("%s sucessful generated!\n", schema.TableName)
 }
 
 func toCamelCase(s string) string {
-	parts := strings.Split(s, "_")
-	for i := range parts {
-		parts[i] = strings.Title(parts[i])
+	var result string
+	capitalizeNext := true
+	for _, r := range s {
+		if r == '_' || r == '-' {
+			capitalizeNext = true
+		} else if capitalizeNext {
+			result += string(unicode.ToUpper(r))
+			capitalizeNext = false
+		} else {
+			result += string(r)
+		}
 	}
-	return strings.Join(parts, "")
+	return result
 }
 
 func toLowerCamelCase(s string) string {
+	if s == "" {
+		return ""
+	}
 	s = toCamelCase(s)
 	return strings.ToLower(s[:1]) + s[1:]
+}
+
+var reservedWords = map[string]bool{
+	"break":       true,
+	"default":     true,
+	"func":        true,
+	"interface":   true,
+	"select":      true,
+	"case":        true,
+	"defer":       true,
+	"go":          true,
+	"map":         true,
+	"struct":      true,
+	"chan":        true,
+	"else":        true,
+	"goto":        true,
+	"package":     true,
+	"switch":      true,
+	"const":       true,
+	"fallthrough": true,
+	"if":          true,
+	"range":       true,
+	"type":        true,
+	"continue":    true,
+	"for":         true,
+	"import":      true,
+	"return":      true,
+	"var":         true,
+}
+
+func safeName(s string) string {
+	if reservedWords[s] {
+		return s + "_"
+	}
+	return s
+}
+
+func typeGo(dynamoType string) string {
+	switch dynamoType {
+	case "S":
+		return "string"
+	case "N":
+		return "int"
+	case "B":
+		return "bool"
+	default:
+		return "interface{}"
+	}
 }
