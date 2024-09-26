@@ -110,10 +110,10 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		qb.WithCategorySub(req.CategorySub)
 	}
 	if req.IsPrivate.Set {
-		qb.WithIsPrivate(boolToInt(req.IsPrivate.Value))
+		qb.WithIsPrivate(gen_lingocards_dictionary.BoolToInt(req.IsPrivate.Value))
 	}
 	if req.IsPublish.Set {
-		qb.WithIsPublish(boolToInt(req.IsPublish.Value))
+		qb.WithIsPublish(gen_lingocards_dictionary.BoolToInt(req.IsPublish.Value))
 	}
 
 	indexName, keyCondition, filterCondition := qb.Build()
@@ -147,11 +147,4 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		ScanForward:       true,
 		ExclusiveStartKey: exclusiveStartKey,
 	}, nil
-}
-
-func boolToInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }
