@@ -13,14 +13,17 @@
             "dynamodb:Query",
             "dynamodb:ListTables"
           ],
-          "Resource": "arn:aws:dynamodb:*:*:table/lingocards-dictionary"
+          "Resource": "${dictionary_table_arn}"
         },
         {
           "Effect": "Allow",
           "Action": [
             "s3:DeleteObject"
           ],
-          "Resource": "arn:aws:s3:::lingocards.dictionary/*"
+          "Resource": [
+            "${dictionary_bucket_arn}/*",
+            "${dictionary_bucket_arn}"
+          ]
         },
         {
           "Effect": "Allow",
@@ -28,14 +31,17 @@
             "s3:GetObject",
             "s3:PutObject"
           ],
-          "Resource": "arn:aws:s3:::lingocards.processing/*"
+          "Resource": [
+            "${processing_bucket_arn}/*",
+            "${processing_bucket_arn}"
+          ]
         }
       ]
     },
     "memory_size": 128,
     "timeout": 2,
     "envs": {
-      "SERVICE_DICTIONARY_BUCKET": "${service_dictionary_bucket}",
-      "SERVICE_PROCESSING_BUCKET": "${service_processing_bucket}"
+      "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}",
+      "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
     }
   }

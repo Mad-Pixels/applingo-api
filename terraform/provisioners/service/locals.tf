@@ -22,8 +22,11 @@ locals {
 
   // template variables which use in ./infra/config.json of each lambda.
   template_vars = {
-    var_token                 = var.token
-    service_dictionary_bucket = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
-    service_processing_bucket = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
+    var_token              = var.token
+    dictionary_bucket_name = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
+    processing_bucket_name = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
+    dictionary_bucket_arn  = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_arn
+    processing_bucket_arn  = data.terraform_remote_state.infra.outputs.s3-processing-bucket_arn
+    dictionary_table_arn   = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
   }
 }
