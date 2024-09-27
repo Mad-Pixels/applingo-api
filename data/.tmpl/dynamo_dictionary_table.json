@@ -7,14 +7,14 @@
     { "name": "name", "type": "S" },
     { "name": "category_main", "type": "S" },
     { "name": "category_sub", "type": "S" },
-    { "name": "is_public", "type": "N" },
-    { "name": "code", "type": "S" }
+    { "name": "is_public", "type": "N" }
   ],
   "common_attributes": [
     { "name": "author", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "dictionary_filename", "type": "S" },
-    { "name": "dictionary_url", "type": "S" }
+    { "name": "dictionary_url", "type": "S" },
+    { "name": "code", "type": "S" }
   ],
   "secondary_indexes": [
     {
@@ -42,32 +42,6 @@
         "dictionary_url",
         "is_public",
         "code"
-      ]
-    },
-    {
-      "name": "CategoryMainIsPublicIndex",
-      "hash_key": "category_main",
-      "range_key": "is_public",
-      "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "category_sub",
-        "name",
-        "description",
-        "author",
-        "dictionary_url"
-      ]
-    },
-    {
-      "name": "CategoryMainCodeIndex",
-      "hash_key": "category_main",
-      "range_key": "code",
-      "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "category_sub",
-        "name",
-        "description",
-        "author",
-        "dictionary_url"
       ]
     },
     {
