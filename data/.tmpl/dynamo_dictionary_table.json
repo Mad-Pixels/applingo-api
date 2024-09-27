@@ -5,49 +5,84 @@
   "attributes": [
     { "name": "id", "type": "S" },
     { "name": "name", "type": "S" },
-    { "name": "author", "type": "S" },
     { "name": "category_main", "type": "S" },
     { "name": "category_sub", "type": "S" },
-    { "name": "is_private", "type": "N" },
-    { "name": "is_publish", "type": "N" }
+    { "name": "is_public", "type": "N" },
+    { "name": "code", "type": "S" }
   ],
   "common_attributes": [
+    { "name": "author", "type": "S" },
     { "name": "description", "type": "S" },
-    { "name": "dictionary_filename", "type": "S" }, 
-    { "name": "dictionary_url", "type": "S" } 
+    { "name": "dictionary_filename", "type": "S" },
+    { "name": "dictionary_url", "type": "S" }
   ],
   "secondary_indexes": [
     {
-      "name": "AuthorIndex",
-      "hash_key": "author",
-      "range_key": "name",
-      "projection_type": "ALL"
-    },
-    {
       "name": "CategoryMainIndex",
       "hash_key": "category_main",
-      "range_key": "name",
-      "projection_type": "ALL"
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "name",
+        "description",
+        "author",
+        "dictionary_url",
+        "category_sub",
+        "is_public",
+        "code"
+      ]
     },
     {
       "name": "CategorySubIndex",
       "hash_key": "category_sub",
-      "range_key": "name",
-      "projection_type": "ALL"
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "name",
+        "description",
+        "author",
+        "dictionary_url",
+        "is_public",
+        "code"
+      ]
     },
     {
-      "name": "IsPrivateIndex",
-      "hash_key": "is_private",
-      "range_key": "name",
+      "name": "CategoryMainIsPublicIndex",
+      "hash_key": "category_main",
+      "range_key": "is_public",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["author", "category_main", "category_sub"]
+      "non_key_attributes": [
+        "category_sub",
+        "name",
+        "description",
+        "author",
+        "dictionary_url"
+      ]
     },
     {
-      "name": "IsPublishIndex",
-      "hash_key": "is_publish",
-      "range_key": "name",
+      "name": "CategoryMainCodeIndex",
+      "hash_key": "category_main",
+      "range_key": "code",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["author", "category_main", "category_sub"]
+      "non_key_attributes": [
+        "category_sub",
+        "name",
+        "description",
+        "author",
+        "dictionary_url"
+      ]
+    },
+    {
+      "name": "IsPublicIndex",
+      "hash_key": "is_public",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "category_main",
+        "category_sub",
+        "name",
+        "description",
+        "author",
+        "dictionary_url",
+        "code"
+      ]
     }
   ]
 }

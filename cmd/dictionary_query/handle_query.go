@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -24,8 +25,8 @@ type handleDataQueryRequest struct {
 	CategoryMain  string          `json:"category_main,omitempty"`
 	CategorySub   string          `json:"category_sub,omitempty"`
 	Author        string          `json:"author,omitempty"`
-	IsPrivate     serializer.Bool `json:"is_private,omitempty"`
-	IsPublish     serializer.Bool `json:"is_publish,omitempty"`
+	IsPublic      serializer.Bool `json:"is_public,omitempty"`
+	Code          string          `json:"code,omitempty"`
 	LastEvaluated string          `json:"last_evaluated,omitempty"`
 }
 
@@ -47,6 +48,9 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	var req handleDataQueryRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+	}
+	if req.Code == "" {
+		req.IsPublic = serializer.Bool{Set: true, Value: true}
 	}
 
 	queryInput, err := buildQueryInput(&req)
@@ -107,17 +111,27 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	if req.CategorySub != "" {
 		qb.WithCategorySub(req.CategorySub)
 	}
-	if req.IsPrivate.Set {
-		qb.WithIsPrivate(gen_lingocards_dictionary.BoolToInt(req.IsPrivate.Value))
+	if req.Code != "" {
+		qb.WithCode(req.Code)
 	}
-	if req.IsPublish.Set {
-		qb.WithIsPublish(gen_lingocards_dictionary.BoolToInt(req.IsPublish.Value))
+	if req.IsPublic.Set {
+		qb.WithIsPublic(gen_lingocards_dictionary.BoolToInt(req.IsPublic.Value))
+	}
+	indexName, keyCondition, filterCondition, err := qb.Build()
+	if err != nil {
+		return nil, err
 	}
 
-	indexName, keyCondition, filterCondition := qb.Build()
+	additionalFilter := expression.Name("dictionary_url").AttributeExists().And(
+		expression.Name("dictionary_url").NotEqual(expression.Value("")),
+	)
 
-	if indexName == "" && !filterCondition.IsSet() {
-		return nil, errors.New("at least one query parameter is required")
+	var filterCond expression.ConditionBuilder
+	if filterCondition != nil {
+		combinedFilter := filterCondition.And(additionalFilter)
+		filterCond = combinedFilter
+	} else {
+		filterCond = additionalFilter
 	}
 
 	var exclusiveStartKey map[string]types.AttributeValue
@@ -135,12 +149,13 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
+	projectionFields := gen_lingocards_dictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
-		FilterCondition:   filterCondition,
-		ProjectionFields:  gen_lingocards_dictionary.IndexProjections[indexName],
+		FilterCondition:   filterCond,
+		ProjectionFields:  projectionFields,
 		Limit:             pageLimit,
 		ScanForward:       true,
 		ExclusiveStartKey: exclusiveStartKey,

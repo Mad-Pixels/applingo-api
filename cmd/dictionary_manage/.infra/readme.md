@@ -2,7 +2,7 @@
 ## Define variables
 
 ```bash
-api="lg2iwpskaq"
+api="ej6xoo4l3y"
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 
 api_path_put="api/v1/dictionary/manage/put"
@@ -13,7 +13,7 @@ api_path_presign="api/v1/dictionary/manage/presign"
 ## api/v1/dictionary/manage/put
 ```bash
 curl -X POST ${url}/${api_path_put} \
-    -d '{"description": "description", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
+    -d '{"description": "description", "code":"", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
     -H "Content-Type: application/json" 
 ```
  

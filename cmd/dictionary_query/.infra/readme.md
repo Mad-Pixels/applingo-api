@@ -2,7 +2,7 @@
 ## Define variables
 
 ```bash
-api="lg2iwpskaq"
+api="ej6xoo4l3y"
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 token="000XXX000"
 
@@ -12,29 +12,33 @@ api_path_query="api/v1/dictionary/query"
 
 ## Define body
 ```bash
-# Query by author
-body='{"author": "author"}'
-
-# Query by category_main
+# Query by category_main (public)
 body='{"category_main": "category_main"}'
 
-# Query by category_sub
+# Query by category_main (private)
+body='{"category_main": "category_main", "code": "666"}'
+
+# Query by category_sub (public)
 body='{"category_sub": "category_sub"}'
 
-# Query by is_private (true)
-body='{"is_private": true}'
+# Query by category_sub (private)
+body='{"category_sub": "category_sub", "code": "666"}'
 
-# Query by is_publish (true)
-body='{"is_publish": true}'
+# Query by public raws
+body='{"is_public": true}'
+body='{}'
 
-# Query by author and is_private
-body='{"author": "author", "is_private": true}'
+# Query by private raws
+body='{"is_public": false, "code": "666"}'
 
-# Query by category_main and is_private
-body='{"category_main": "category_main", "is_private": false}'
+# Query by name, author
+body='{"name": "name","author": "author"}'
 
-# Query by category_sub and is_publish
-body='{"category_sub": "category_sub", "is_publish": true}'
+# Query by name
+body='{"name": "name"}'
+
+# Query by author
+body='{"author": "author"}'
 ```
 
 ## device/v1/dictionary/query

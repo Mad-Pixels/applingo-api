@@ -74,11 +74,22 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 }
 
 // Put item to DynamoDB table.
-func (d *Dynamo) Put(ctx context.Context, table string, item map[string]types.AttributeValue) error {
-	_, err := d.client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: &table,
+func (d *Dynamo) Put(ctx context.Context, table string, item map[string]types.AttributeValue, condition expression.ConditionBuilder) error {
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(table),
 		Item:      item,
-	})
+	}
+
+	if condition.IsSet() {
+		expr, err := expression.NewBuilder().WithCondition(condition).Build()
+		if err != nil {
+			return err
+		}
+		input.ConditionExpression = expr.Condition()
+		input.ExpressionAttributeNames = expr.Names()
+		input.ExpressionAttributeValues = expr.Values()
+	}
+	_, err := d.client.PutItem(ctx, input)
 	return err
 }
 

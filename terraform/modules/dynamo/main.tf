@@ -20,6 +20,7 @@ resource "aws_dynamodb_table" "this" {
       projection_type    = global_secondary_index.value.projection_type
       read_capacity      = global_secondary_index.value.read_capacity
       write_capacity     = global_secondary_index.value.write_capacity
+      range_key          = lookup(global_secondary_index.value, "range_key", null)
       non_key_attributes = global_secondary_index.value.projection_type == "INCLUDE" ? global_secondary_index.value.non_key_attributes : null
     }
   }
