@@ -23,12 +23,13 @@
       "projection_type": "INCLUDE",
       "non_key_attributes": [
         "name",
-        "description",
         "author",
+        "description",
         "dictionary_url",
-        "category_sub",
         "is_public",
-        "code"
+        "code",
+        "is_public",
+        "category_sub"
       ]
     },
     {
@@ -37,11 +38,11 @@
       "projection_type": "INCLUDE",
       "non_key_attributes": [
         "name",
-        "description",
         "author",
+        "description",
         "dictionary_url",
-        "is_public",
-        "code"
+        "code",
+        "is_public"
       ]
     },
     {
@@ -49,13 +50,13 @@
       "hash_key": "is_public",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
-        "category_main",
-        "category_sub",
         "name",
-        "description",
         "author",
+        "description",
         "dictionary_url",
-        "code"
+        "code",
+        "category_sub",
+        "category_main"
       ]
     }
   ]
