@@ -1,19 +1,22 @@
 {
-    "policy": {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "Effect": "Allow",
-          "Action": [
-            "dynamodb:Scan",
-            "dynamodb:Query",
-            "dynamodb:ListTables"
-          ],
-          "Resource": "${dictionary_table_arn}"
-        }
-      ]
-    },
-    "memory_size": 128,
-    "timeout": 2,
-    "envs": {}
-  }
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${dictionary_table_arn}",
+          "${dictionary_table_arn}/index/*" 
+        ]
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 2,
+  "envs": {}
+}

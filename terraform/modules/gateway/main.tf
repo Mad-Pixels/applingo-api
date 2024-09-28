@@ -29,13 +29,8 @@ resource "aws_api_gateway_rest_api" "this" {
   )
 }
 
-resource "aws_api_gateway_account" "this" {
-  cloudwatch_role_arn = aws_iam_role.cloudwatch_role.arn
-}
-
 resource "aws_api_gateway_deployment" "this" {
   rest_api_id = aws_api_gateway_rest_api.this.id
-  description = "cloud_api_gw deployment"
 
   triggers = {
     redeployment = sha1(jsonencode(aws_api_gateway_rest_api.this.body))
@@ -47,9 +42,10 @@ resource "aws_api_gateway_deployment" "this" {
 }
 
 resource "aws_api_gateway_stage" "this" {
-  deployment_id        = aws_api_gateway_deployment.this.id
-  rest_api_id          = aws_api_gateway_rest_api.this.id
-  stage_name           = var.stage_name
+  deployment_id = aws_api_gateway_deployment.this.id
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  stage_name    = var.stage_name
+
   xray_tracing_enabled = false
 
   tags = merge(
@@ -80,7 +76,6 @@ resource "aws_api_gateway_method_settings" "this" {
     throttling_rate_limit  = 1000
     throttling_burst_limit = 500
   }
-  depends_on = [aws_api_gateway_account.this]
 }
 
 resource "aws_api_gateway_domain_name" "this" {
@@ -117,4 +112,8 @@ resource "aws_wafv2_web_acl_association" "this" {
 
   resource_arn = aws_api_gateway_stage.this.arn
   web_acl_arn  = var.wafv2_web_acl_arn
+}
+
+resource "aws_api_gateway_account" "this" {
+  cloudwatch_role_arn = aws_iam_role.cloudwatch_role.arn
 }

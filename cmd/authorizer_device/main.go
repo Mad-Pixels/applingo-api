@@ -16,10 +16,9 @@ import (
 )
 
 const (
-	timestampDelay = 30
-
-	headerTimestamp = "X-Timestamp"
-	headerSignature = "X-Signature"
+	timestampDelay  = 30
+	headerTimestamp = "x-timestamp"
+	headerSignature = "x-signature"
 )
 
 var (
@@ -27,17 +26,16 @@ var (
 	logger = lambda.InitLogger()
 )
 
+func generateSignature(ts, token string) string {
+	h := hmac.New(sha256.New, []byte(token))
+	h.Write([]byte(ts))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 func validateRequest(req events.APIGatewayCustomAuthorizerRequestTypeRequest, token string) error {
 	var (
 		timestamp = req.Headers[headerTimestamp]
 		signature = req.Headers[headerSignature]
-
-		generateSignature = func(ts, arn, t string) string {
-			h := hmac.New(sha256.New, []byte(t))
-			h.Write([]byte(ts))
-			h.Write([]byte(arn))
-			return hex.EncodeToString(h.Sum(nil))
-		}
 	)
 	if timestamp == "" || signature == "" {
 		return errors.New("missing required headers")
@@ -54,7 +52,9 @@ func validateRequest(req events.APIGatewayCustomAuthorizerRequestTypeRequest, to
 	if currentTime-ts > timestampDelay || ts > currentTime+timestampDelay {
 		return errors.New("timestamp expired or not yet valid")
 	}
-	if !hmac.Equal([]byte(signature), []byte(generateSignature(timestamp, req.MethodArn, token))) {
+	expectedSignature := generateSignature(timestamp, token)
+
+	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 		return errors.New("invalid signature")
 	}
 	return nil
@@ -64,7 +64,6 @@ func generatePolicy(principalID, effect, resource string) (events.APIGatewayCust
 	if effect != "Allow" && effect != "Deny" {
 		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("invalid effect")
 	}
-
 	policy := events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: principalID,
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{

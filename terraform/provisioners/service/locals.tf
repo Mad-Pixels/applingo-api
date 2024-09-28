@@ -17,12 +17,12 @@ locals {
 
   lambdas      = { for func in local._lambda_functions : func => local._lambda_configs[func] }
   project      = "lingocards"
-  state_bucket = "tfstates-${local.project}"
-  tfstate_file = "service.tfstates"
+  state_bucket = "tfstates-madpixels"
+  tfstate_file = "lingocards-api/infra.tfstate"
 
   // template variables which use in ./infra/config.json of each lambda.
   template_vars = {
-    var_token              = var.token
+    var_device_api_token   = var.device_api_token
     dictionary_bucket_name = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
     processing_bucket_name = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
     dictionary_bucket_arn  = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_arn

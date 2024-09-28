@@ -4,7 +4,6 @@ resource "aws_lambda_function" "this" {
   image_uri     = var.image
   timeout       = var.timeout
   memory_size   = var.memory_size
-
   package_type  = "Image"
   architectures = [var.arch]
 
@@ -38,6 +37,13 @@ resource "aws_lambda_function" "this" {
   )
 
   depends_on = [aws_cloudwatch_log_group.logs]
+}
+
+resource "aws_lambda_permission" "allow_all" {
+  statement_id  = "AllowExecutionFromAnywhere"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.this.function_name
+  principal     = "*"
 }
 
 resource "aws_iam_role" "this" {

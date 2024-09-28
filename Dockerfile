@@ -26,7 +26,7 @@ COPY go.mod go.sum ./
 
 ENV GOARCH=amd64
 RUN go mod vendor
-RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=amd64 \
+RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
       go build \
         -mod=vendor \
         -asmflags="${ASM_FLAGS}" \
@@ -34,9 +34,11 @@ RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=amd64 \
         -gcflags="${GC_FLAGS}"   \
         -o /bin/bootstrap           
 RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap
+RUN wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
 
 FROM scratch AS amd64
 COPY --from=builder-amd64 /bin/bootstrap /bootstrap
+COPY --from=builder-amd64 /tmp/aws-ca-bundle.pem /etc/ssl/certs/aws-ca-bundle.pem
 ENTRYPOINT ["/bootstrap"]
 
 # arm64
@@ -58,7 +60,7 @@ COPY go.mod go.sum ./
 
 ENV GOARCH=arm64
 RUN go mod vendor
-RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=arm64 \
+RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
       go build \
         -mod=vendor \
         -asmflags="${ASM_FLAGS}" \
@@ -66,7 +68,9 @@ RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=arm64 \
         -gcflags="${GC_FLAGS}"   \
         -o /bin/bootstrap             
 RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap
+RUN wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
 
 FROM scratch AS arm64
 COPY --from=builder-arm64 /bin/bootstrap /bootstrap
-ENTRYPOINT ["/bootstrap"] 
+COPY --from=builder-arm64 /tmp/aws-ca-bundle.pem /etc/ssl/certs/aws-ca-bundle.pem
+ENTRYPOINT ["/bootstrap"]

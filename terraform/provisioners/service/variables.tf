@@ -20,6 +20,7 @@ variable "arch" {
   type        = string
 }
 
-variable "token" {
-  description = "Token which use for lambda request validate"
+variable "device_api_token" {
+  description = "Token which use for lambda request validate from device"
+  type        = string
 }

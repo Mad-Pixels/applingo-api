@@ -6,3 +6,7 @@ output "lambda_functions" {
     }
   }
 }
+
+output "execution_gateway_arn" {
+  value = module.gateway.api_gateway_execution_arn
+}

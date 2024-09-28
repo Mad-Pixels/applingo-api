@@ -202,16 +202,28 @@ tasks:
           echo "Error: REPO_URL is not set"
           exit 1
         fi
-        for tag in $(docker images --format '{{`{{.Repository}}:{{ .Tag }}`}}' | grep "^{{.api_image_name}}:"); do
-          func=${tag#*:}
-        
-          echo "Checking by trivy {{.api_image_name}}:$func"
-          #trivy image {{.api_image_name}}:$func
+        if [[ "{{.REPO_URL}}" == *.amazonaws.com ]]; then
+          aws ecr get-login-password --region {{.REGION}} | docker login --username AWS --password-stdin {{.REPO_URL}}
+        fi
+        for f in {{.git_root}}/cmd/*; do
+          if [ -d "$f" ]; then
+            func=$(basename "$f")
+            image="{{.api_image_name}}:$func"
 
-          echo "Pushing {{.api_image_name}}:$func to {{.REPO_URL}}"
-          docker image tag {{.api_image_name}}:$func {{.REPO_URL}}/{{.api_image_name}}:$func
-          docker push {{.REPO_URL}}/{{.api_image_name}}:$func
+            if docker image inspect "${image}" >/dev/null 2>&1; then
+              echo "Checking by trivy ${image}"
+              #trivy image "${image}"
+
+              echo "Pushing ${image} to {{.REPO_URL}}"
+              docker image tag "${image}" "{{.REPO_URL}}/${image}"
+              docker push "{{.REPO_URL}}/${image}"
+            fi
+          fi
         done
+    env:
+      AWS_DEFAULT_REGION:    '{{.REGION}}'
+      AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'
+      AWS_SECRET_ACCESS_KEY: '{{.ACCESS_KEY}}'
     silent: true
     internal: true
 
@@ -266,14 +278,18 @@ tasks:
           echo "Error: REGION is not set"
           exit 1
         fi
-        terraform init -reconfigure
+        if [ "{{.LOCALSTACK}}" = "true" ]; then
+          terraform init -reconfigure -backend=false -upgrade
+        else
+          terraform init -reconfigure -upgrade
+        fi
         terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{ARCH}}"
     env:
-      AWS_DEFAULT_REGION:    '{{.REGION}}'
-      AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'
-      AWS_SECRET_ACCESS_KEY: '{{.ACCESS_KEY}}'
+      AWS_DEFAULT_REGION:      '{{.REGION}}'
+      AWS_ACCESS_KEY_ID:       '{{.KEY_ID}}'
+      AWS_SECRET_ACCESS_KEY:   '{{.ACCESS_KEY}}'
       # service specific envs
-      TF_VAR_token:          '{{.AUTH_TOKEN}}'
+      TF_VAR_device_api_token: '{{.DEVICE_API_TOKEN}}'
     silent: true
     internal: true
 
@@ -339,7 +355,6 @@ tasks:
           exit 1
         fi
       - "{{.HOME}}/.pyenv/bin/localstack start -d"
-      - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
           DIR:        "{{.git_root}}/terraform/provisioners/infra"
@@ -353,12 +368,12 @@ tasks:
           REPO_URL: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
       - task: _terraform/apply
         vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/service"
-          REGION:     us-east-1
-          LOCALSTACK: "true"
-          KEY_ID:     test
-          ACCESS_KEY: test
-          AUTH_TOKEN: "000XXX000"
+          DIR:              "{{.git_root}}/terraform/provisioners/service"
+          REGION:           us-east-1
+          LOCALSTACK:       "true"
+          KEY_ID:           test
+          ACCESS_KEY:       test
+          DEVICE_API_TOKEN: "000XXX000"
     silent: true
 
   env/localstack/stop:
@@ -366,4 +381,53 @@ tasks:
     cmds:
       - docker stop $(docker ps -q --filter name=localstack) 
       - docker rm $(docker ps -aq --filter name=localstack) || true
+    silent: true
+
+  aws/deploy:
+    desc: Deploy to AWS
+    cmds:
+      - |
+        if [ -z "$AWS_DEFAULT_REGION" ]; then
+          echo "Error: AWS_DEFAULT_REGION is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+          echo "Error: AWS_ACCESS_KEY_ID is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+          echo "Error: AWS_SECRET_ACCESS_KEY is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_ACCOUNT_ID" ]; then
+          echo "Error: AWS_ACCOUNT_ID is not set."
+          exit 1
+        fi
+        if [ -z "$DEVICE_API_TOKEN" ]; then
+          echo "Error: DEVICE_API_TOKEN is not set."
+          exit 1
+        fi
+      - task: _terraform/fmt/check
+      - task: _terraform/apply
+        vars:
+          DIR:        "{{.git_root}}/terraform/provisioners/infra"
+          LOCALSTACK: "false"
+          REGION:     '{{.AWS_DEFAULT_REGION}}'
+          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
+          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
+      - task: _docker/build/all
+      - task: _docker/push/all
+        vars:
+          REPO_URL:   '{{.AWS_ACCOUNT_ID}}.dkr.ecr.us-east-1.amazonaws.com'
+          REGION:     '{{.AWS_DEFAULT_REGION}}'
+          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
+          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
+      - task: _terraform/apply
+        vars:
+          DIR:              "{{.git_root}}/terraform/provisioners/service"
+          LOCALSTACK:       "false"
+          REGION:           '{{.AWS_DEFAULT_REGION}}'
+          KEY_ID:           '{{.AWS_ACCESS_KEY_ID}}'
+          ACCESS_KEY:       '{{.AWS_SECRET_ACCESS_KEY}}'
+          DEVICE_API_TOKEN: '{{.DEVICE_API_TOKEN}}'
     silent: true
