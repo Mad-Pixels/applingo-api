@@ -2,7 +2,7 @@
 ## Define variables
 
 ```bash
-api="lg2iwpskaq"
+api="xn7kq3fu5p"
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 token="000XXX000"
 
@@ -21,7 +21,7 @@ body='{}'
 arn_get="arn:aws:execute-api:us-east-1:000000000000:${api}/prod/GET/${device_path_query}"
 timestamp=$(date -u +%s)
 
-signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
+signature=$(echo -n "${timestamp}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
 curl -X GET ${url}/${device_path_query} \
     -d "${body}" \
     -H "Content-Type: application/json" \

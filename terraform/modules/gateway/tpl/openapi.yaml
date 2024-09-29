@@ -74,7 +74,6 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["dictionary_query"].arn}/invocations"
-        #uri: "${invoke_lambdas_arns["dictionary_query"].arn}"
         responses:
           default:
             statusCode: "200"
@@ -108,7 +107,6 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["category_query"].arn}/invocations"
-        #uri: "${invoke_lambdas_arns["category_query"].arn}"
         responses:
           default:
             statusCode: "200"
@@ -140,7 +138,6 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["dictionary_query"].arn}/invocations"
-        #uri: "${invoke_lambdas_arns["dictionary_query"].arn}"
         responses:
           default:
             statusCode: "200"
@@ -172,7 +169,6 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["dictionary_manage"].arn}/invocations"
-        #uri: "${invoke_lambdas_arns["dictionary_manage"].arn}"
         responses:
           default:
             statusCode: "200"
@@ -220,10 +216,7 @@ components:
       x-amazon-apigateway-authorizer:
         type: "request"
         authorizerUri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["authorizer_device"].arn}/invocations"
-        # identitySource:
-         # - "method.request.header.X-Timestamp"
-         #- "method.request.header.X-Signature"
-        identitySource: "method.request.header.X-Timestamp,method.request.header.X-Signature"
+        identitySource: ${use_localstack ? join(",", ["method.request.header.X-Timestamp", "method.request.header.X-Signature"]) : "method.request.header.X-Timestamp,method.request.header.X-Signature"}
         authorizerResultTtlInSeconds: 30
 
 x-amazon-apigateway-policy:

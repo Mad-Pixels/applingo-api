@@ -50,3 +50,9 @@ variable "shared_tags" {
   description = "Tags to add to all resources"
   default     = {}
 }
+
+variable "use_localstack" {
+  description = "Whether to use LocalStack"
+  type        = bool
+  default     = false
+}

@@ -279,9 +279,9 @@ tasks:
           exit 1
         fi
         if [ "{{.LOCALSTACK}}" = "true" ]; then
-          terraform init -reconfigure -backend=false -upgrade
+          terraform init -reconfigure -backend=false
         else
-          terraform init -reconfigure -upgrade
+          terraform init -reconfigure -backend-config=backend_aws.hcl
         fi
         terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{ARCH}}"
     env:
@@ -418,7 +418,7 @@ tasks:
       - task: _docker/build/all
       - task: _docker/push/all
         vars:
-          REPO_URL:   '{{.AWS_ACCOUNT_ID}}.dkr.ecr.us-east-1.amazonaws.com'
+          REPO_URL:   '{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_DEFAULT_REGION}}.amazonaws.com'
           REGION:     '{{.AWS_DEFAULT_REGION}}'
           KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
           ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'

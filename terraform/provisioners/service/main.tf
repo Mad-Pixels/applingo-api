@@ -29,8 +29,10 @@ module "lambda_functions" {
 module "gateway" {
   source = "../../modules/gateway"
 
-  project  = local.project
-  api_name = "api"
+  project        = local.project
+  api_name       = "api"
+  use_localstack = var.use_localstack
+
   invoke_lambdas_arns = {
     for name, lambda in module.lambda_functions : name => {
       arn  = lambda.function_arn
