@@ -279,7 +279,7 @@ tasks:
           exit 1
         fi
         if [ "{{.LOCALSTACK}}" = "true" ]; then
-          terraform init -reconfigure -backend=false
+          terraform init -reconfigure 
         else
           terraform init -reconfigure -backend-config=backend_aws.hcl
         fi

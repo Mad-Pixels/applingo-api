@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
@@ -69,15 +70,31 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	response := handleDataQueryResponse{
 		Items: make([]dataQueryItem, 0, len(result.Items)),
 	}
-	for _, dynamoItem := range result.Items {
-		var item dataQueryItem
 
-		if err = attributevalue.UnmarshalMap(dynamoItem, &item); err != nil {
-			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
-			continue
-		}
+	var wg sync.WaitGroup
+	itemsCh := make(chan dataQueryItem, len(result.Items))
+	for _, dynamoItem := range result.Items {
+		wg.Add(1)
+
+		go func(dynamoItem map[string]types.AttributeValue) {
+			defer wg.Done()
+			var item dataQueryItem
+
+			if err := attributevalue.UnmarshalMap(dynamoItem, &item); err != nil {
+				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
+				return
+			}
+			itemsCh <- item
+		}(dynamoItem)
+	}
+	go func() {
+		wg.Wait()
+		close(itemsCh)
+	}()
+	for item := range itemsCh {
 		response.Items = append(response.Items, item)
 	}
+
 	if result.LastEvaluatedKey != nil {
 		var lastEvaluatedKeyMap map[string]interface{}
 
