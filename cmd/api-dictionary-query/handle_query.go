@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/lingocardsdictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 	"sync"
 
-	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen_lingocards_dictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -62,7 +62,7 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	result, err := dbDynamo.Query(ctx, gen_lingocards_dictionary.TableName, dynamoQueryInput)
+	result, err := dbDynamo.Query(ctx, lingocardsdictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
@@ -111,7 +111,7 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 }
 
 func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
-	qb := gen_lingocards_dictionary.NewQueryBuilder()
+	qb := lingocardsdictionary.NewQueryBuilder()
 
 	if req.ID != "" {
 		qb.WithId(req.ID)
@@ -132,7 +132,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		qb.WithCode(req.Code)
 	}
 	if req.IsPublic {
-		qb.WithIsPublic(gen_lingocards_dictionary.BoolToInt(req.IsPublic))
+		qb.WithIsPublic(lingocardsdictionary.BoolToInt(req.IsPublic))
 	}
 	indexName, keyCondition, filterCondition, err := qb.Build()
 	if err != nil {
@@ -166,7 +166,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
-	projectionFields := gen_lingocards_dictionary.IndexProjections[indexName]
+	projectionFields := lingocardsdictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
 		IndexName:         indexName,

@@ -281,7 +281,7 @@ func processSchemaFile(jsonPath, rootDir string) {
 		return
 	}
 
-	packageName := "gen_" + strings.ReplaceAll(schema.TableName, "-", "_")
+	packageName := strings.ReplaceAll(schema.TableName, "-", "")
 	packageDir := filepath.Join(rootDir, packageName)
 
 	if err := os.MkdirAll(packageDir, os.ModePerm); err != nil {

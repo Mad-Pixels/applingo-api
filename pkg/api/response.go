@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/aws/aws-lambda-go/events"
 )
 

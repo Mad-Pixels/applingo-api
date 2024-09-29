@@ -10,7 +10,7 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen_lingocards_dictionary"
+	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/lingocardsdictionary"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
@@ -44,7 +44,7 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 	}
 	id := hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
 
-	schemaItem := gen_lingocards_dictionary.SchemaItem{
+	schemaItem := lingocardsdictionary.SchemaItem{
 		Id:           id,
 		Name:         req.Name,
 		Author:       req.Author,
@@ -59,11 +59,11 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		schemaItem.IsPublic = 0
 	}
 
-	item, err := gen_lingocards_dictionary.PutItem(schemaItem)
+	item, err := lingocardsdictionary.PutItem(schemaItem)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item, expression.AttributeNotExists(expression.Name("id"))); err != nil {
+	if err := dbDynamo.Put(ctx, lingocardsdictionary.TableSchema.TableName, item, expression.AttributeNotExists(expression.Name("id"))); err != nil {
 		var cfe *types.ConditionalCheckFailedException
 
 		if errors.As(err, &cfe) {

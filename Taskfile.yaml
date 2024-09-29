@@ -25,15 +25,9 @@ tasks:
 
   go/generate:
     desc: Run codegen.
-    dir: "{{.git_root}}/data"
+    dir: "{{.git_root}}/dynamodb-interface"
     cmds:
-      - |
-        for dir in */; do
-          if [[ "${dir}" != gen_* && -f "${dir}gen.go" ]]; then
-            echo "Running codegen for ${dir%/}"
-            go run "${dir}gen.go"
-          fi
-        done
+      - go run gen.go
     silent: true
 
   _go/version/check:

@@ -6,7 +6,7 @@ Lambda for manage dictionaries.
 ## Define variables
 
 ```bash
-api="r528taczbb"
+api="6znldm9wqe"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
@@ -22,7 +22,7 @@ curl -X POST ${url}/${api_path_put} \
     -d '{"description": "description", "code":"", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
     -H "Content-Type: application/json" 
 ```
- 
+
 ## v1/dictionary/manage/presign
 ```bash
 curl -X POST ${url}/${api_path_presign} \

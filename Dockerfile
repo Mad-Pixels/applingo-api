@@ -23,8 +23,7 @@ RUN --mount=type=cache,target=${GOCACHE} go mod download
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
-COPY ./internal ./internal
-COPY ./data ./data
+COPY ./dynamodb-interface ./dynamodb-interface
 
 ENV GOARCH=amd64
 RUN --mount=type=cache,target=${GOCACHE} \
@@ -59,8 +58,7 @@ RUN --mount=type=cache,target=${GOCACHE} go mod download
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
-COPY ./internal ./internal
-COPY ./data ./data
+COPY ./dynamodb-interface ./dynamodb-interface
 
 ENV GOARCH=arm64
 RUN --mount=type=cache,target=${GOCACHE} \

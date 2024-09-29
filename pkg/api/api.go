@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/Mad-Pixels/lingocards-api/internal/logger"
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"

@@ -4,6 +4,6 @@ locals {
   tfstate_file = "infra.tfstates"
 
   dictionary_dynamo_schema = jsondecode(
-    file("${path.module}/../../../data/.tmpl/dynamo_dictionary_table.json")
+    file("${path.module}/../../../dynamodb-interface/.tmpl/dynamo_dictionary_table.json")
   )
 }
