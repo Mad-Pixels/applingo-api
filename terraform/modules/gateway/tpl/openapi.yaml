@@ -210,13 +210,13 @@ components:
   securitySchemes:
     DeviceAuthorizer:
       type: "apiKey"
-      name: "X-Timestamp"
+      name: "x-timestamp"
       in: "header"
       x-amazon-apigateway-authtype: "custom"
       x-amazon-apigateway-authorizer:
         type: "request"
         authorizerUri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["authorizer_device"].arn}/invocations"
-        identitySource: ${use_localstack ? join(",", ["method.request.header.X-Timestamp", "method.request.header.X-Signature"]) : "method.request.header.X-Timestamp,method.request.header.X-Signature"}
+        identitySource: ${use_localstack ? join(",", ["method.request.header.x-timestamp", "method.request.header.x-signature"]) : "method.request.header.x-timestamp,method.request.header.x-signature"}
         authorizerResultTtlInSeconds: 30
 
 x-amazon-apigateway-policy:
