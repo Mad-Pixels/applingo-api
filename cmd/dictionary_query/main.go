@@ -15,11 +15,11 @@ import (
 
 var (
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+	awsRegion               = os.Getenv("AWS_REGION")
 
-	awsRegion = os.Getenv("AWS_REGION")
-	validate  *validator.Validate
-	s3Bucket  *cloud.Bucket
-	dbDynamo  *cloud.Dynamo
+	validate *validator.Validate
+	s3Bucket *cloud.Bucket
+	dbDynamo *cloud.Dynamo
 )
 
 func init() {

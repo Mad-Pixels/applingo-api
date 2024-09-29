@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"runtime/debug"
@@ -18,10 +21,11 @@ import (
 var (
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
+	awsRegion               = os.Getenv("AWS_REGION")
+	logger                  = lambda.InitLogger()
 
-	awsRegion = os.Getenv("AWS_REGION")
-	s3Bucket  *cloud.Bucket
-	dbDynamo  *cloud.Dynamo
+	s3Bucket *cloud.Bucket
+	dbDynamo *cloud.Dynamo
 )
 
 func init() {
@@ -29,7 +33,6 @@ func init() {
 	if err != nil {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
-
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
 
@@ -42,7 +45,8 @@ func handler(ctx context.Context, event events.S3Event) error {
 
 		reader, err := s3Bucket.Get(ctx, key, serviceProcessingBucket)
 		if err != nil {
-			return fmt.Errorf("error getting object %s/%s: %v", serviceProcessingBucket, key, err)
+			logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("cannot get object from bucket")
+			return errors.New("exit with error")
 		}
 		defer reader.Close()
 
@@ -55,15 +59,17 @@ func handler(ctx context.Context, event events.S3Event) error {
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("error reading CSV: %v", err)
+				logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error reading CSV")
+				return errors.New("exit with error")
 			}
 			if err := csvWriter.Write(record); err != nil {
-				return fmt.Errorf("error writing CSV: %v", err)
+				logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error writing CSV")
+				return errors.New("exit with error")
 			}
 		}
 		csvWriter.Flush()
 
-		newKey := strings.TrimSuffix(key, ".csv") + "_converted.csv"
+		newKey := uuid.New().String() + ".csv"
 		err = s3Bucket.Put(ctx, newKey, serviceDictionaryBucket, strings.NewReader(csvData.String()), "text/csv")
 		if err != nil {
 			return fmt.Errorf("unable to upload object to %s/%s: %v", serviceDictionaryBucket, newKey, err)

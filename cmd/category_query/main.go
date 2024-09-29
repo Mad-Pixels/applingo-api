@@ -7,10 +7,6 @@ import (
 	"runtime/debug"
 )
 
-// service vars.
-// ...
-
-// system vars.
 var (
 	validate *validator.Validate
 )
