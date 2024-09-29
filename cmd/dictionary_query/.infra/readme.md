@@ -14,6 +14,9 @@ token="000XXX000"
 
 device_path_query="device/v1/dictionary/query"
 api_path_query="v1/dictionary/query"
+
+device_download_url="device/v1/dictionary/download_url"
+api_download_url="v1/dictionary/download_url"
 ```
 
 ## Define body
@@ -45,13 +48,14 @@ body='{"name": "name"}'
 
 # Query by author
 body='{"author": "author"}'
+
+# Download body
+body='{"dictionary_key":"dictionary"}'
 ```
 
 ## device/v1/dictionary/query
 ```bash
-arn_get="arn:aws:execute-api:us-east-1:000000000000:${api}/prod/POST/${device_path_query}"
 timestamp=$(date -u +%s)
-
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
 curl -X POST ${url}/${device_path_query} \
     -d "${body}" \
@@ -63,6 +67,24 @@ curl -X POST ${url}/${device_path_query} \
 ## v1/dictionary/query
 ```bash
 curl -X POST ${url}/${api_path_query} \
+    -d "${body}" \
+    -H "Content-Type: application/json"
+```
+
+## device/v1/dictionary/download_url
+```bash
+timestamp=$(date -u +%s)
+signature=$(echo -n "${timestamp}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
+curl -X POST ${url}/${device_download_url} \
+    -d "${body}" \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+```
+
+## v1/dictionary/download_url
+```bash
+curl -X POST ${url}/${api_download_url} \
     -d "${body}" \
     -H "Content-Type: application/json"
 ```

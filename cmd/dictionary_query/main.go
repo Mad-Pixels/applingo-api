@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/go-playground/validator/v10"
 	"os"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
@@ -11,7 +12,11 @@ import (
 )
 
 var (
+	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+
 	awsRegion = os.Getenv("AWS_REGION")
+	validate  *validator.Validate
+	s3Bucket  *cloud.Bucket
 	dbDynamo  *cloud.Dynamo
 )
 
@@ -20,7 +25,9 @@ func init() {
 	if err != nil {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
+	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
+	validate = validator.New()
 }
 
 func main() {
@@ -28,7 +35,8 @@ func main() {
 		lambda.NewLambda(
 			lambda.Config{},
 			map[string]lambda.HandleFunc{
-				"query": handleDataQuery,
+				"query":        handleDataQuery,
+				"download_url": handleDownloadUrl,
 			},
 		).Handle,
 	)
