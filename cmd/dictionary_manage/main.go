@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"runtime/debug"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
@@ -31,6 +32,8 @@ func init() {
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
 	validate = validator.New()
+
+	debug.SetGCPercent(500)
 }
 
 func main() {

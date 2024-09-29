@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -25,6 +26,10 @@ var (
 	token  = os.Getenv("AUTH_TOKEN")
 	logger = lambda.InitLogger()
 )
+
+func init() {
+	debug.SetGCPercent(500)
+}
 
 func generateSignature(ts, token string) string {
 	h := hmac.New(sha256.New, []byte(token))

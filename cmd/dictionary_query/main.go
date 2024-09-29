@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"runtime/debug"
 
 	"github.com/go-playground/validator/v10"
 
@@ -29,6 +30,8 @@ func init() {
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
 	validate = validator.New()
+
+	debug.SetGCPercent(500)
 }
 
 func main() {
