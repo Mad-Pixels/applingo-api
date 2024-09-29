@@ -1,4 +1,4 @@
-package lambda
+package api
 
 import (
 	"net/http"

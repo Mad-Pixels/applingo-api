@@ -5,14 +5,14 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
 
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/aws/aws-lambda-go/events"
-	aws_lambda "github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
 )
 
@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	token  = os.Getenv("AUTH_TOKEN")
-	logger = lambda.InitLogger()
+	token = os.Getenv("AUTH_TOKEN")
+	log   = logger.InitLogger()
 )
 
 func init() {
@@ -87,10 +87,10 @@ func generatePolicy(principalID, effect, resource string) (events.APIGatewayCust
 
 func handler(_ context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	if err := validateRequest(req, token); err != nil {
-		logger.Error().Err(err).Msg("Access denied")
+		log.Error().Err(err).Msg("Access denied")
 		return generatePolicy("", "Deny", req.MethodArn)
 	}
 	return generatePolicy("device", "Allow", req.MethodArn)
 }
 
-func main() { aws_lambda.Start(handler) }
+func main() { lambda.Start(handler) }

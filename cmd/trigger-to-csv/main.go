@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"io"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-lambda-go/events"
-	aws_lambda "github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
@@ -22,7 +22,7 @@ var (
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	awsRegion               = os.Getenv("AWS_REGION")
-	logger                  = lambda.InitLogger()
+	log                     = logger.InitLogger()
 
 	s3Bucket *cloud.Bucket
 	dbDynamo *cloud.Dynamo
@@ -45,7 +45,7 @@ func handler(ctx context.Context, event events.S3Event) error {
 
 		reader, err := s3Bucket.Get(ctx, key, serviceProcessingBucket)
 		if err != nil {
-			logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("cannot get object from bucket")
+			log.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("cannot get object from bucket")
 			return errors.New("exit with error")
 		}
 		defer reader.Close()
@@ -59,11 +59,11 @@ func handler(ctx context.Context, event events.S3Event) error {
 				break
 			}
 			if err != nil {
-				logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error reading CSV")
+				log.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error reading CSV")
 				return errors.New("exit with error")
 			}
 			if err := csvWriter.Write(record); err != nil {
-				logger.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error writing CSV")
+				log.Error().Err(err).Str("bucket", serviceProcessingBucket).Str("key", key).Msg("error writing CSV")
 				return errors.New("exit with error")
 			}
 		}
@@ -79,5 +79,5 @@ func handler(ctx context.Context, event events.S3Event) error {
 }
 
 func main() {
-	aws_lambda.Start(handler)
+	lambda.Start(handler)
 }

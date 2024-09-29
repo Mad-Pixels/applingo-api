@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/rs/zerolog"
 )
 
@@ -19,18 +19,18 @@ type handleFilePresignResponse struct {
 	Url string `json:"url"`
 }
 
-func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
 	var req handleFilePresignRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := validate.Struct(&req); err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	url, err := s3Bucket.PresignUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return handleFilePresignResponse{Url: url}, nil
 }

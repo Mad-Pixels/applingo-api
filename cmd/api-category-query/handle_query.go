@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/rs/zerolog"
 )
 
@@ -21,16 +21,16 @@ type category struct {
 	SubCategories []string `json:"sub_categories"`
 }
 
-func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *lambda.HandleError) {
+func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
 	var req handleGetRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
-		return nil, &lambda.HandleError{
+		return nil, &api.HandleError{
 			Status: http.StatusBadRequest,
 			Err:    err,
 		}
 	}
 	if err := validate.Struct(&req); err != nil {
-		return nil, &lambda.HandleError{
+		return nil, &api.HandleError{
 			Status: http.StatusBadRequest,
 			Err:    err,
 		}

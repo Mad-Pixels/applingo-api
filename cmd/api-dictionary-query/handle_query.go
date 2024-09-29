@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 	"sync"
 
-	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
+	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen_lingocards_dictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -45,10 +45,10 @@ type dataQueryItem struct {
 	Description   string `json:"description,omitempty" dynamodbav:"description"`
 }
 
-func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
+func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
 	var req handleDataQueryRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if req.Code == "" {
 		req.IsPublic = true
@@ -56,15 +56,15 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 
 	queryInput, err := buildQueryInput(&req)
 	if err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	dynamoQueryInput, err := dbDynamo.BuildQueryInput(*queryInput)
 	if err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	result, err := dbDynamo.Query(ctx, gen_lingocards_dictionary.TableName, dynamoQueryInput)
 	if err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
 	response := handleDataQueryResponse{
@@ -99,11 +99,11 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 		var lastEvaluatedKeyMap map[string]interface{}
 
 		if err = attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap); err != nil {
-			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
 		lastEvaluatedKeyJSON, err := serializer.MarshalJSON(lastEvaluatedKeyMap)
 		if err != nil {
-			return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
 		response.LastEvaluated = base64.StdEncoding.EncodeToString(lastEvaluatedKeyJSON)
 	}

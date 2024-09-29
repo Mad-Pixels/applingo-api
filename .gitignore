@@ -94,4 +94,4 @@ crash.log
 tmp/
 
 # Codegen
-/data/gen_*
+dynamodb-interface/

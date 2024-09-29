@@ -1,8 +1,9 @@
-package lambda
+package api
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/internal/logger"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -21,18 +22,18 @@ type HandleError struct {
 // Config for lambda object.
 type Config struct{}
 
-type lambda struct {
+type api struct {
 	cfg      Config
-	logger   zerolog.Logger
+	log      zerolog.Logger
 	handlers map[string]HandleFunc
 }
 
 // NewLambda creates a new Lambda object.
-func NewLambda(cfg Config, handlers map[string]HandleFunc) *lambda {
-	return &lambda{
+func NewLambda(cfg Config, handlers map[string]HandleFunc) *api {
+	return &api{
 		cfg:      cfg,
 		handlers: handlers,
-		logger:   InitLogger(),
+		log:      logger.InitLogger(),
 	}
 }
 
@@ -79,8 +80,8 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *lambda {
 // Invocation examples (API Gateway request body):
 //   - Create user: {"name": "John Doe", "email": "john@example.com"}
 //   - Get user: {"id": "123"}
-func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (resp events.APIGatewayProxyResponse, err error) {
-	l.logger.Info().
+func (a *api) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (resp events.APIGatewayProxyResponse, err error) {
+	a.log.Info().
 		Str("path", req.Path).
 		Str("httpMethod", req.HTTPMethod).
 		Str("domainName", req.RequestContext.DomainName).
@@ -90,18 +91,18 @@ func (l *lambda) Handle(ctx context.Context, req events.APIGatewayProxyRequest) 
 
 	action := req.PathParameters["action"]
 	if action == "" {
-		l.logger.Error().Msg("Action not specified in path parameters")
+		a.log.Error().Msg("Action not specified in path parameters")
 		return errResponse(http.StatusBadRequest)
 	}
-	handler, ok := l.handlers[action]
+	handler, ok := a.handlers[action]
 	if !ok {
-		l.logger.Error().Str("action", action).Msg("Unknown action")
+		a.log.Error().Str("action", action).Msg("Unknown action")
 		return errResponse(http.StatusNotFound)
 	}
 
-	result, handleError := handler(ctx, l.logger, json.RawMessage(req.Body))
+	result, handleError := handler(ctx, a.log, json.RawMessage(req.Body))
 	if handleError != nil {
-		l.logger.Error().Err(handleError.Err).Str("action", action).Msg("Handle error")
+		a.log.Error().Err(handleError.Err).Str("action", action).Msg("Handle error")
 		return errResponse(handleError.Status)
 	}
 	return okResponse(result)

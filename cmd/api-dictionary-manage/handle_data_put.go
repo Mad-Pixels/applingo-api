@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/data/gen_lingocards_dictionary"
-	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
-	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
+	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen_lingocards_dictionary"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
@@ -34,13 +34,13 @@ type handleDataPutResponse struct {
 	Msg string `json:"msg"`
 }
 
-func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *lambda.HandleError) {
+func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
 	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := validate.Struct(&req); err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	id := hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
 
@@ -61,15 +61,15 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 
 	item, err := gen_lingocards_dictionary.PutItem(schemaItem)
 	if err != nil {
-		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if err := dbDynamo.Put(ctx, gen_lingocards_dictionary.TableSchema.TableName, item, expression.AttributeNotExists(expression.Name("id"))); err != nil {
 		var cfe *types.ConditionalCheckFailedException
 
 		if errors.As(err, &cfe) {
-			return nil, &lambda.HandleError{Status: http.StatusConflict, Err: errors.New("dictionary with id: '" + id + "' already exists")}
+			return nil, &api.HandleError{Status: http.StatusConflict, Err: errors.New("dictionary with id: '" + id + "' already exists")}
 		}
-		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return handleDataPutResponse{
 		Msg: "OK",
