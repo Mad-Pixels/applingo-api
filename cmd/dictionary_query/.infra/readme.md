@@ -1,13 +1,19 @@
-# Examples (localstack)
+# Description
+
+Lambda for query dictionaries.
+
+# Examples
 ## Define variables
 
 ```bash
 api="ej6xoo4l3y"
+
+# localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 token="000XXX000"
 
 device_path_query="device/v1/dictionary/query"
-api_path_query="api/v1/dictionary/query"
+api_path_query="v1/dictionary/query"
 ```
 
 ## Define body
@@ -50,11 +56,11 @@ signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${tok
 curl -X POST ${url}/${device_path_query} \
     -d "${body}" \
     -H "Content-Type: application/json" \
-    -H "X-Timestamp: ${timestamp}" \
-    -H "X-Signature: ${signature}"
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
 ```
 
-## api/v1/dictionary/query
+## v1/dictionary/query
 ```bash
 curl -X POST ${url}/${api_path_query} \
     -d "${body}" \

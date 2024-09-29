@@ -82,7 +82,7 @@ paths:
       security:
         - DeviceAuthorizer: []
 
-  /api/v1/category/{action}:
+  /v1/category/{action}:
     get:
       responses:
         "200":
@@ -113,7 +113,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
 
-  /api/v1/dictionary/{action}:
+  /v1/dictionary/{action}:
     post:
       parameters:
         - name: action
@@ -144,7 +144,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     
-  /api/v1/dictionary/manage/{action}:
+  /v1/dictionary/manage/{action}:
     post:
       parameters:
         - name: action
