@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -58,6 +59,28 @@ func (b *Bucket) Delete(ctx context.Context, key, bucket string) error {
 	_, err := b.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
+	})
+	return err
+}
+
+// Get an object from the bucket and returns an io.ReadCloser.
+func (b *Bucket) Get(ctx context.Context, key, bucket string) (io.ReadCloser, error) {
+	result, err := b.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.Body, nil
+}
+
+func (b *Bucket) Put(ctx context.Context, key, bucket string, body io.Reader, contentType string) error {
+	_, err := b.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(key),
+		Body:        body,
+		ContentType: aws.String(contentType),
 	})
 	return err
 }
