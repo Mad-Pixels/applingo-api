@@ -17,24 +17,26 @@ ARG GOCACHE
 ARG NAME
 
 WORKDIR /go/src/${NAME}
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=${GOCACHE} go mod download
+
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./internal ./internal
 COPY ./data ./data
-COPY go.mod go.sum ./
 
 ENV GOARCH=amd64
-RUN go mod vendor
-RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-      go build \
-        -mod=vendor \
-        -asmflags="${ASM_FLAGS}" \
-        -ldflags="${LD_FLAGS}"   \
-        -gcflags="${GC_FLAGS}"   \
-        -o /bin/bootstrap           
-RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap
-RUN wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
+RUN --mount=type=cache,target=${GOCACHE} \
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+    go build -mod=vendor \
+             -asmflags="${ASM_FLAGS}" \
+             -ldflags="${LD_FLAGS}"   \
+             -gcflags="${GC_FLAGS}"   \
+             -o /bin/bootstrap
+
+RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap \
+    && wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
 
 FROM scratch AS amd64
 COPY --from=builder-amd64 /bin/bootstrap /bootstrap
@@ -51,26 +53,30 @@ ARG GOCACHE
 ARG NAME
 
 WORKDIR /go/src/${NAME}
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=${GOCACHE} go mod download
+
 COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./internal ./internal
 COPY ./data ./data
-COPY go.mod go.sum ./
 
 ENV GOARCH=arm64
-RUN go mod vendor
-RUN --mount=type=cache,target="${GOCACHE}" env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
-      go build \
-        -mod=vendor \
-        -asmflags="${ASM_FLAGS}" \
-        -ldflags="${LD_FLAGS}"   \
-        -gcflags="${GC_FLAGS}"   \
-        -o /bin/bootstrap             
-RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap
-RUN wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
+RUN --mount=type=cache,target=${GOCACHE} \
+    env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+    go build -mod=vendor \
+             -asmflags="${ASM_FLAGS}" \
+             -ldflags="${LD_FLAGS}"   \
+             -gcflags="${GC_FLAGS}"   \
+             -o /bin/bootstrap
+
+RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap \
+    && wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
 
 FROM scratch AS arm64
 COPY --from=builder-arm64 /bin/bootstrap /bootstrap
 COPY --from=builder-arm64 /tmp/aws-ca-bundle.pem /etc/ssl/certs/aws-ca-bundle.pem
 ENTRYPOINT ["/bootstrap"]
+
+HEALTHCHECK CMD [ "/bootstrap", "--health-check" ]
