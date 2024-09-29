@@ -21,14 +21,14 @@ import (
 const pageLimit = 20
 
 type handleDataQueryRequest struct {
-	ID            string          `json:"id,omitempty"`
-	Name          string          `json:"name,omitempty"`
-	CategoryMain  string          `json:"category_main,omitempty"`
-	CategorySub   string          `json:"category_sub,omitempty"`
-	Author        string          `json:"author,omitempty"`
-	IsPublic      serializer.Bool `json:"is_public,omitempty"`
-	Code          string          `json:"code,omitempty"`
-	LastEvaluated string          `json:"last_evaluated,omitempty"`
+	ID            string `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
+	CategoryMain  string `json:"category_main,omitempty"`
+	CategorySub   string `json:"category_sub,omitempty"`
+	Author        string `json:"author,omitempty"`
+	IsPublic      bool   `json:"is_public,omitempty"`
+	Code          string `json:"code,omitempty"`
+	LastEvaluated string `json:"last_evaluated,omitempty"`
 }
 
 type handleDataQueryResponse struct {
@@ -51,7 +51,7 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	if req.Code == "" {
-		req.IsPublic = serializer.Bool{Set: true, Value: true}
+		req.IsPublic = true
 	}
 
 	queryInput, err := buildQueryInput(&req)
@@ -131,8 +131,8 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	if req.Code != "" {
 		qb.WithCode(req.Code)
 	}
-	if req.IsPublic.Set {
-		qb.WithIsPublic(gen_lingocards_dictionary.BoolToInt(req.IsPublic.Value))
+	if req.IsPublic {
+		qb.WithIsPublic(gen_lingocards_dictionary.BoolToInt(req.IsPublic))
 	}
 	indexName, keyCondition, filterCondition, err := qb.Build()
 	if err != nil {
