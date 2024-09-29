@@ -51,7 +51,7 @@ func handleDataDelete(ctx context.Context, logger zerolog.Logger, raw json.RawMe
 	if err := attributevalue.UnmarshalMap(result.Item, &item); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	if err := s3Bucket.Delete(ctx, item.DictionaryFilename, serviceDictionaryBucket); err != nil {
+	if err := s3Bucket.Delete(ctx, item.DictionaryKey, serviceDictionaryBucket); err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 

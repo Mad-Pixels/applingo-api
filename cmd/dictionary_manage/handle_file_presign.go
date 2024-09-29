@@ -28,7 +28,7 @@ func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessa
 		return nil, &lambda.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.Presign(ctx, req.Name, serviceProcessingBucket, req.ContentType)
+	url, err := s3Bucket.PresignUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
 		return nil, &lambda.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}

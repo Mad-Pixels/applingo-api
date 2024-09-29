@@ -40,7 +40,7 @@ type dataQueryItem struct {
 	CategoryMain  string `json:"category_main,omitempty" dynamodbav:"category_main"`
 	CategorySub   string `json:"category_sub,omitempty" dynamodbav:"category_sub"`
 	Author        string `json:"author,omitempty" dynamodbav:"author"`
-	DictionaryUrl string `json:"dictionary_url,omitempty" dynamodbav:"dictionary_url"`
+	DictionaryKey string `json:"dictionary_key,omitempty" dynamodbav:"dictionary_key"`
 	Description   string `json:"description,omitempty" dynamodbav:"description"`
 }
 
@@ -122,8 +122,8 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		return nil, err
 	}
 
-	additionalFilter := expression.Name("dictionary_url").AttributeExists().And(
-		expression.Name("dictionary_url").NotEqual(expression.Value("")),
+	additionalFilter := expression.Name("dictionary_key").AttributeExists().And(
+		expression.Name("dictionary_key").NotEqual(expression.Value("")),
 	)
 
 	var filterCond expression.ConditionBuilder

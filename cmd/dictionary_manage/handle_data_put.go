@@ -45,15 +45,14 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 	id := hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
 
 	schemaItem := gen_lingocards_dictionary.SchemaItem{
-		Id:                 id,
-		Name:               req.Name,
-		Author:             req.Author,
-		CategoryMain:       req.CategoryMain,
-		CategorySub:        req.CategorySub,
-		Description:        req.Description,
-		DictionaryFilename: req.Dictionary,
-		Code:               defaultRawCode,
-		IsPublic:           1,
+		Id:           id,
+		Name:         req.Name,
+		Author:       req.Author,
+		CategoryMain: req.CategoryMain,
+		CategorySub:  req.CategorySub,
+		Description:  req.Description,
+		Code:         defaultRawCode,
+		IsPublic:     1,
 	}
 	if req.Code != "" {
 		schemaItem.Code = req.Code

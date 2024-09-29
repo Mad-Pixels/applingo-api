@@ -6,14 +6,14 @@ Lambda for manage dictionaries.
 ## Define variables
 
 ```bash
-api="ej6xoo4l3y"
+api="jhkclspy35"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 
-api_path_put="api/v1/dictionary/manage/put"
-api_path_delete="api/v1/dictionary/manage/delete"
-api_path_presign="api/v1/dictionary/manage/presign"
+api_path_put="v1/dictionary/manage/put"
+api_path_delete="v1/dictionary/manage/delete"
+api_path_presign="v1/dictionary/manage/presign"
 ```
 
 ## v1/dictionary/manage/put

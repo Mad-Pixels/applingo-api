@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	presignTimeout = 5
+	presignTimeout  = 5
+	downloadTimeout = 30
 )
 
 type Bucket struct {
@@ -23,8 +24,8 @@ func NewBucket(cfg aws.Config) *Bucket {
 	}
 }
 
-// Presign return url for upload data to bucket.
-func (b *Bucket) Presign(ctx context.Context, key, bucket, contentType string) (string, error) {
+// PresignUrl return url for upload data to bucket.
+func (b *Bucket) PresignUrl(ctx context.Context, key, bucket, contentType string) (string, error) {
 	presignClient := s3.NewPresignClient(b.client)
 
 	req, err := presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
@@ -32,6 +33,20 @@ func (b *Bucket) Presign(ctx context.Context, key, bucket, contentType string) (
 		Key:         aws.String(key),
 		ContentType: aws.String(contentType),
 	}, s3.WithPresignExpires(presignTimeout*time.Minute))
+	if err != nil {
+		return "", err
+	}
+	return req.URL, nil
+}
+
+// DownloadUrl return url for download data from bucket.
+func (b *Bucket) DownloadUrl(ctx context.Context, key, bucket string) (string, error) {
+	presignClient := s3.NewPresignClient(b.client)
+
+	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(downloadTimeout*time.Second))
 	if err != nil {
 		return "", err
 	}

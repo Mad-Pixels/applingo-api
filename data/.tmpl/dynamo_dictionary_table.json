@@ -12,8 +12,7 @@
   "common_attributes": [
     { "name": "author", "type": "S" },
     { "name": "description", "type": "S" },
-    { "name": "dictionary_filename", "type": "S" },
-    { "name": "dictionary_url", "type": "S" },
+    { "name": "dictionary_key", "type": "S" },
     { "name": "code", "type": "S" }
   ],
   "secondary_indexes": [
@@ -25,7 +24,7 @@
         "name",
         "author",
         "description",
-        "dictionary_url",
+        "dictionary_key",
         "is_public",
         "code",
         "is_public",
@@ -40,7 +39,7 @@
         "name",
         "author",
         "description",
-        "dictionary_url",
+        "dictionary_key",
         "code",
         "is_public"
       ]
@@ -53,7 +52,7 @@
         "name",
         "author",
         "description",
-        "dictionary_url",
+        "dictionary_key",
         "code",
         "category_sub",
         "category_main"
