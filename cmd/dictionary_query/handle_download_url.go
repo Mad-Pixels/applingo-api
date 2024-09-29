@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/internal/serializer"
 	"github.com/rs/zerolog"
-	"net/http"
 )
 
 type handleDownloadUrlRequest struct {

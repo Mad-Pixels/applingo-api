@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/go-playground/validator/v10"
 	"os"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/Mad-Pixels/lingocards-api/internal/lambda"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
