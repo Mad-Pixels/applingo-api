@@ -282,7 +282,7 @@ func processSchemaFile(jsonPath, rootDir string) {
 	}
 
 	packageName := strings.ReplaceAll(schema.TableName, "-", "")
-	packageDir := filepath.Join(rootDir, packageName)
+	packageDir := filepath.Join(rootDir, "gen", packageName)
 
 	if err := os.MkdirAll(packageDir, os.ModePerm); err != nil {
 		fmt.Printf("Failed to create directory %s: %v\n", packageDir, err)

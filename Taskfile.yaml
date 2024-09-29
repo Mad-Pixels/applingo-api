@@ -27,7 +27,7 @@ tasks:
     desc: Run codegen.
     dir: "{{.git_root}}/dynamodb-interface"
     cmds:
-      - go run gen.go
+      - go run main.go
     silent: true
 
   _go/version/check:

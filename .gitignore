@@ -94,4 +94,4 @@ crash.log
 tmp/
 
 # Codegen
-dynamodb-interface/lingocardsdictionary
+dynamodb-interface/gen/*
