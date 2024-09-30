@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.41
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.35.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.63.1
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.35.3
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/json-iterator/go v1.1.12
 	github.com/pkg/errors v0.9.1

@@ -29,3 +29,19 @@ output "dynamo-dictionary-table_arn" {
 output "dynamo-dictionary-stream_arn" {
   value = module.dynamo-dictionary-table.stream_arn
 }
+
+output "sqs-put-csv-dead-letter-queue_url" {
+  value = module.dictionary_put_csv_queue.dead_letter_queue_url
+}
+
+output "sqs-put-csv-dead-letter-queue_arn" {
+  value = module.dictionary_put_csv_queue.dead_letter_queue_arn
+}
+
+output "sqs-put-csv-queue_url" {
+  value = module.dictionary_put_csv_queue.queue_url
+}
+
+output "sqs-put-csv-queue_arn" {
+  value = module.dictionary_put_csv_queue.queue_arn
+}

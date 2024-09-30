@@ -5,17 +5,25 @@
       {
         "Effect": "Allow",
         "Action": [
-          "dynamodb:ListStreams",
-          "dynamodb:DescribeStream",
-          "dynamodb:GetRecords",
-          "dynamodb:GetShardIterator"
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        "Resource": "${put_csv_sqs_queue_arn}"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
         ],
         "Resource": "${dictionary_table_arn}"
       }
     ]
   },
   "memory_size": 128,
-  "timeout": 6,
+  "timeout": 4,
   "envs": {
     "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}",
     "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"

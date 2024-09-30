@@ -12,7 +12,7 @@
   "common_attributes": [
     { "name": "author", "type": "S" },
     { "name": "description", "type": "S" },
-    { "name": "dictionary_key", "type": "S" },
+    { "name": "filename", "type": "S" },
     { "name": "code", "type": "S" }
   ],
   "secondary_indexes": [

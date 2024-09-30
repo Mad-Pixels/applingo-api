@@ -24,7 +24,7 @@ const (
 
 type handleDataPutRequest struct {
 	Description  string `json:"description" validate:"required"`
-	Dictionary   string `json:"dictionary" validate:"required"`
+	Filename     string `json:"filename" validate:"required"`
 	Name         string `json:"name" validate:"required,min=4,max=32"`
 	Author       string `json:"author" validate:"required"`
 	Code         string `json:"code,omitempty" validate:"validate_code"`
@@ -63,6 +63,7 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		Id:           id,
 		Name:         req.Name,
 		Author:       req.Author,
+		Filename:     req.Filename,
 		CategoryMain: req.CategoryMain,
 		CategorySub:  req.CategorySub,
 		Description:  req.Description,

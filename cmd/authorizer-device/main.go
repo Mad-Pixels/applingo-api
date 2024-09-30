@@ -21,9 +21,7 @@ const (
 	headerSignature = "x-signature"
 )
 
-var (
-	token = os.Getenv("AUTH_TOKEN")
-)
+var token = os.Getenv("AUTH_TOKEN")
 
 func init() {
 	debug.SetGCPercent(500)

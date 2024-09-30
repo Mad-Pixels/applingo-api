@@ -54,7 +54,7 @@ func handleDataDelete(ctx context.Context, _ zerolog.Logger, raw json.RawMessage
 	if err = attributevalue.UnmarshalMap(result.Item, &item); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	if err = s3Bucket.Delete(ctx, item.DictionaryKey, serviceDictionaryBucket); err != nil {
+	if err = s3Bucket.Delete(ctx, item.Filename, serviceDictionaryBucket); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	if err = dbDynamo.Delete(ctx, lingocardsdictionary.TableSchema.TableName, key); err != nil {

@@ -30,3 +30,10 @@ module "dynamo-dictionary-table" {
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
   stream_enabled       = true
 }
+
+module "dictionary_put_csv_queue" {
+  source = "../../modules/sqs"
+
+  project        = local.project
+  queue_name     = "put"
+}

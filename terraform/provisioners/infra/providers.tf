@@ -15,6 +15,7 @@ provider "aws" {
     content {
       s3       = var.localstack_endpoint
       ecr      = var.localstack_endpoint
+      sqs      = var.localstack_endpoint
       iam      = var.localstack_endpoint
       dynamodb = var.localstack_endpoint
     }

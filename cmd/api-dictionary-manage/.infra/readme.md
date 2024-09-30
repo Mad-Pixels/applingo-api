@@ -6,7 +6,7 @@ Lambda for manage dictionaries.
 ## Define variables
 
 ```bash
-api="6znldm9wqe"
+api="w0qgsont4i"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
@@ -20,12 +20,12 @@ api_path_presign="v1/dictionary/manage/upload_url"
 ```bash
 # public object
 curl -X POST ${url}/${api_path_put} \
-    -d '{"description": "description", "code":"", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": true}' \
+    -d '{"description": "description", "code":"", "filename": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": true}' \
     -H "Content-Type: application/json" 
 
 # private object
 curl -X POST ${url}/${api_path_put} \
-    -d '{"description": "description", "code":"666", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": false}' \
+    -d '{"description": "description", "code":"666", "filename": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": false}' \
     -H "Content-Type: application/json" 
 ```
 
