@@ -3,8 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 	"net/http"
+
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"

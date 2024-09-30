@@ -5,9 +5,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"net/http"
 
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"

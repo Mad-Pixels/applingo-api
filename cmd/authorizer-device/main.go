@@ -5,11 +5,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
+
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

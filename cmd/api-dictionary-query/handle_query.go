@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"sync"
+
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"net/http"
-	"sync"
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"

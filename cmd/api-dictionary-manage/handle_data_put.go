@@ -6,10 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"github.com/go-playground/validator/v10"
-	"net/http"
 
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"

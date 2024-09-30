@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"net/http"
 
 	"github.com/rs/zerolog"
 )

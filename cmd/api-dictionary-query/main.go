@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
-	"github.com/go-playground/validator/v10"
 	"os"
 	"runtime/debug"
+
+	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-lambda-go/lambda"

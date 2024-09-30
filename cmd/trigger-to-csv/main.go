@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"runtime/debug"
 	"strings"
+
+	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-lambda-go/events"
@@ -25,7 +26,7 @@ var (
 	log                     = logger.InitLogger()
 
 	s3Bucket *cloud.Bucket
-	dbDynamo *cloud.Dynamo
+	//dbDynamo *cloud.Dynamo
 )
 
 func init() {
@@ -36,7 +37,7 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
-	dbDynamo = cloud.NewDynamo(cfg)
+	//dbDynamo = cloud.NewDynamo(cfg)
 }
 
 func handler(ctx context.Context, event events.S3Event) error {
