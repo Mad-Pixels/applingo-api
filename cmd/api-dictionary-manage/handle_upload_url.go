@@ -10,17 +10,17 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type handleFilePresignRequest struct {
+type handleUploadUrlRequest struct {
 	ContentType string `json:"content_type" validate:"required,oneof=text/csv application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/vnd.ms-excel"`
 	Name        string `json:"name" validate:"required,min=4,max=32"`
 }
 
-type handleFilePresignResponse struct {
+type handleUploadUrlResponse struct {
 	Url string `json:"url"`
 }
 
-func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
-	var req handleFilePresignRequest
+func handleUploadUrl(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
+	var req handleUploadUrlRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -28,9 +28,9 @@ func handleFilePresign(ctx context.Context, _ zerolog.Logger, data json.RawMessa
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.PresignUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
+	url, err := s3Bucket.UploadUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleFilePresignResponse{Url: url}, nil
+	return handleUploadUrlResponse{Url: url}, nil
 }

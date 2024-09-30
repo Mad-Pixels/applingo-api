@@ -29,14 +29,14 @@ var (
 )
 
 func init() {
+	debug.SetGCPercent(500)
+
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
 	if err != nil {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
-
-	debug.SetGCPercent(500)
 }
 
 func handler(ctx context.Context, event events.S3Event) error {

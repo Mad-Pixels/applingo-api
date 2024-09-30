@@ -67,19 +67,20 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
+	var (
+		wg      sync.WaitGroup
+		itemsCh = make(chan dataQueryItem, len(result.Items))
+	)
 	response := handleDataQueryResponse{
 		Items: make([]dataQueryItem, 0, len(result.Items)),
 	}
-
-	var wg sync.WaitGroup
-	itemsCh := make(chan dataQueryItem, len(result.Items))
 	for _, dynamoItem := range result.Items {
 		wg.Add(1)
 
 		go func(dynamoItem map[string]types.AttributeValue) {
 			defer wg.Done()
-			var item dataQueryItem
 
+			var item dataQueryItem
 			if err := attributevalue.UnmarshalMap(dynamoItem, &item); err != nil {
 				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 				return
@@ -91,10 +92,10 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 		wg.Wait()
 		close(itemsCh)
 	}()
+
 	for item := range itemsCh {
 		response.Items = append(response.Items, item)
 	}
-
 	if result.LastEvaluatedKey != nil {
 		var lastEvaluatedKeyMap map[string]interface{}
 

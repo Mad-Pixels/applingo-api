@@ -2,6 +2,8 @@ package cloud
 
 import (
 	"context"
+	"errors"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"io"
 	"time"
 
@@ -10,7 +12,7 @@ import (
 )
 
 const (
-	presignTimeout  = 5
+	uploadTimeout   = 5
 	downloadTimeout = 30
 )
 
@@ -25,15 +27,13 @@ func NewBucket(cfg aws.Config) *Bucket {
 	}
 }
 
-// PresignUrl return url for upload data to bucket.
-func (b *Bucket) PresignUrl(ctx context.Context, key, bucket, contentType string) (string, error) {
-	presignClient := s3.NewPresignClient(b.client)
-
-	req, err := presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
+// UploadUrl return url for upload data to bucket.
+func (b *Bucket) UploadUrl(ctx context.Context, key, bucket, contentType string) (string, error) {
+	req, err := s3.NewPresignClient(b.client).PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(key),
 		ContentType: aws.String(contentType),
-	}, s3.WithPresignExpires(presignTimeout*time.Minute))
+	}, s3.WithPresignExpires(uploadTimeout*time.Minute))
 	if err != nil {
 		return "", err
 	}
@@ -42,9 +42,7 @@ func (b *Bucket) PresignUrl(ctx context.Context, key, bucket, contentType string
 
 // DownloadUrl return url for download data from bucket.
 func (b *Bucket) DownloadUrl(ctx context.Context, key, bucket string) (string, error) {
-	presignClient := s3.NewPresignClient(b.client)
-
-	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+	req, err := s3.NewPresignClient(b.client).PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	}, s3.WithPresignExpires(downloadTimeout*time.Second))
@@ -60,7 +58,13 @@ func (b *Bucket) Delete(ctx context.Context, key, bucket string) error {
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	})
-	return err
+	if err != nil {
+		var s3Err *types.NoSuchKey
+		if !errors.As(err, &s3Err) {
+			return err
+		}
+	}
+	return nil
 }
 
 // Get an object from the bucket and returns an io.ReadCloser.

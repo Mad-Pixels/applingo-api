@@ -12,9 +12,8 @@ var (
 )
 
 func init() {
-	validate = validator.New()
-
 	debug.SetGCPercent(500)
+	validate = validator.New()
 }
 
 func main() {

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	defaultRawCode = "0"
+	defaultCode = "0"
 )
 
 type handleDataPutRequest struct {
@@ -25,19 +26,32 @@ type handleDataPutRequest struct {
 	Dictionary   string `json:"dictionary" validate:"required"`
 	Name         string `json:"name" validate:"required,min=4,max=32"`
 	Author       string `json:"author" validate:"required"`
-	Code         string `json:"code,omitempty"`
+	Code         string `json:"code,omitempty" validate:"validate_code"`
 	CategoryMain string `json:"category_main" validate:"required"`
 	CategorySub  string `json:"category_sub" validate:"required"`
+	Public       bool   `json:"public" validate:"required"`
+}
+
+// custom validator tag.
+func validateCode(fl validator.FieldLevel) bool {
+	r, ok := fl.Parent().Interface().(handleDataPutRequest)
+	if !ok {
+		return false
+	}
+	return (r.Public && r.Code == "") || (!r.Public && r.Code != "")
 }
 
 type handleDataPutResponse struct {
-	Msg string `json:"msg"`
+	Status string `json:"status"`
 }
 
 func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
 	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+	}
+	if err := validate.RegisterValidation("validate_code", validateCode); err != nil {
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	if err := validate.Struct(&req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
@@ -51,19 +65,21 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		CategoryMain: req.CategoryMain,
 		CategorySub:  req.CategorySub,
 		Description:  req.Description,
-		Code:         defaultRawCode,
-		IsPublic:     1,
-	}
-	if req.Code != "" {
-		schemaItem.Code = req.Code
-		schemaItem.IsPublic = 0
+		IsPublic:     lingocardsdictionary.BoolToInt(req.Public),
+
+		Code: func(val, defaultVal string) string {
+			if val == "" {
+				return defaultVal
+			}
+			return val
+		}(req.Code, defaultCode),
 	}
 
 	item, err := lingocardsdictionary.PutItem(schemaItem)
 	if err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	if err := dbDynamo.Put(ctx, lingocardsdictionary.TableSchema.TableName, item, expression.AttributeNotExists(expression.Name("id"))); err != nil {
+	if err = dbDynamo.Put(ctx, lingocardsdictionary.TableSchema.TableName, item, expression.AttributeNotExists(expression.Name("id"))); err != nil {
 		var cfe *types.ConditionalCheckFailedException
 
 		if errors.As(err, &cfe) {
@@ -71,7 +87,5 @@ func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (
 		}
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleDataPutResponse{
-		Msg: "OK",
-	}, nil
+	return handleDataPutResponse{Status: "OK"}, nil
 }

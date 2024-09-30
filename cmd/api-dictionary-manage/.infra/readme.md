@@ -13,13 +13,19 @@ url="http://localhost:4566/restapis/${api}/prod/_user_request_"
 
 api_path_put="v1/dictionary/manage/put"
 api_path_delete="v1/dictionary/manage/delete"
-api_path_presign="v1/dictionary/manage/presign"
+api_path_presign="v1/dictionary/manage/upload_url"
 ```
 
 ## v1/dictionary/manage/put
 ```bash
+# public object
 curl -X POST ${url}/${api_path_put} \
-    -d '{"description": "description", "code":"", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "private": false}' \
+    -d '{"description": "description", "code":"", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": true}' \
+    -H "Content-Type: application/json" 
+
+# private object
+curl -X POST ${url}/${api_path_put} \
+    -d '{"description": "description", "code":"666", "dictionary": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": false}' \
     -H "Content-Type: application/json" 
 ```
 

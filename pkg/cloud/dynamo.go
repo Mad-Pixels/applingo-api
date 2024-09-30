@@ -38,7 +38,6 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 	if input.FilterCondition.IsSet() {
 		builder = builder.WithFilter(input.FilterCondition)
 	}
-
 	if len(input.ProjectionFields) > 0 {
 		projBuilder := expression.ProjectionBuilder{}
 		for _, field := range input.ProjectionFields {
@@ -46,7 +45,6 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 		}
 		builder = builder.WithProjection(projBuilder)
 	}
-
 	expr, err := builder.Build()
 	if err != nil {
 		return nil, err
@@ -65,11 +63,9 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 	if expr.Filter() != nil {
 		queryInput.FilterExpression = expr.Filter()
 	}
-
 	if expr.Projection() != nil {
 		queryInput.ProjectionExpression = expr.Projection()
 	}
-
 	return queryInput, nil
 }
 

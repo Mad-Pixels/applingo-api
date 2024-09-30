@@ -12,6 +12,7 @@ import (
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
 	"github.com/rs/zerolog"
 )
 
@@ -21,10 +22,10 @@ type handleDataDeleteRequest struct {
 }
 
 type handleDataDeleteResponse struct {
-	Msg string `json:"msg"`
+	Status string `json:"status"`
 }
 
-func handleDataDelete(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
+func handleDataDelete(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
 	var req handleDataDeleteRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
@@ -32,6 +33,7 @@ func handleDataDelete(ctx context.Context, logger zerolog.Logger, raw json.RawMe
 	if err := validate.Struct(&req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
+
 	var (
 		id  = hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
 		key = map[string]types.AttributeValue{
@@ -48,17 +50,14 @@ func handleDataDelete(ctx context.Context, logger zerolog.Logger, raw json.RawMe
 	}
 
 	var item lingocardsdictionary.SchemaItem
-	if err := attributevalue.UnmarshalMap(result.Item, &item); err != nil {
+	if err = attributevalue.UnmarshalMap(result.Item, &item); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	if err := s3Bucket.Delete(ctx, item.DictionaryKey, serviceDictionaryBucket); err != nil {
+	if err = s3Bucket.Delete(ctx, item.DictionaryKey, serviceDictionaryBucket); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-
-	if err := dbDynamo.Delete(ctx, lingocardsdictionary.TableSchema.TableName, key); err != nil {
+	if err = dbDynamo.Delete(ctx, lingocardsdictionary.TableSchema.TableName, key); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleDataDeleteResponse{
-		Msg: "OK",
-	}, nil
+	return handleDataDeleteResponse{Status: "OK"}, nil
 }

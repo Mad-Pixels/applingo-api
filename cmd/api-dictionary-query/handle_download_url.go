@@ -31,7 +31,5 @@ func handleDownloadUrl(ctx context.Context, _ zerolog.Logger, raw json.RawMessag
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusNotFound, Err: err}
 	}
-	return handleDownloadUrlResponse{
-		Url: url,
-	}, nil
+	return handleDownloadUrlResponse{Url: url}, nil
 }

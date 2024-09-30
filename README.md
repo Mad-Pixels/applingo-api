@@ -13,8 +13,3 @@ graph TD
     E -->|If failed| J[Delete from Temp Bucket]
     C -->|Return presigned URL| K[Client]
     K -->|Upload directly| D
-
-```bash
-cd /data/gen
-go run dynamo_dictionary_table.go
-```
