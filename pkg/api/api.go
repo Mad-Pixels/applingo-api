@@ -20,7 +20,7 @@ type HandleError struct {
 	Status int
 }
 
-// Config for lambda object.
+// Config for api object.
 type Config struct{}
 
 type api struct {
@@ -29,7 +29,7 @@ type api struct {
 	handlers map[string]HandleFunc
 }
 
-// NewLambda creates a new Lambda object.
+// NewLambda creates a new Api object.
 func NewLambda(cfg Config, handlers map[string]HandleFunc) *api {
 	return &api{
 		cfg:      cfg,
