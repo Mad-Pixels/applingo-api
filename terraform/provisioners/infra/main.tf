@@ -28,4 +28,5 @@ module "dynamo-dictionary-table" {
   range_key            = local.dictionary_dynamo_schema.range_key
   attributes           = local.dictionary_dynamo_schema.attributes
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
+  stream_enabled       = true
 }

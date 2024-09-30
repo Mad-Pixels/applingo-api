@@ -30,7 +30,7 @@ type handleDataPutRequest struct {
 	Code         string `json:"code,omitempty" validate:"validate_code"`
 	CategoryMain string `json:"category_main" validate:"required"`
 	CategorySub  string `json:"category_sub" validate:"required"`
-	Public       bool   `json:"public" validate:"required"`
+	Public       bool   `json:"is_public" validate:"required"`
 }
 
 // custom validator tag.

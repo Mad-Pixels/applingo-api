@@ -26,6 +26,12 @@ module "lambda_functions" {
   policy       = try(jsonencode(each.value.policy), "")
 }
 
+resource "aws_lambda_event_source_mapping" "trigger-to-csv" {
+  event_source_arn = data.terraform_remote_state.infra.outputs.dynamo-dictionary-stream_arn
+  function_name    = module.lambda_functions["trigger-to-csv"].function_arn
+  starting_position = "LATEST"
+}
+
 module "gateway" {
   source = "../../modules/gateway"
 

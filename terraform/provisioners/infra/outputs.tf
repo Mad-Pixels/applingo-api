@@ -25,3 +25,7 @@ output "dynamo-dictionary-table_name" {
 output "dynamo-dictionary-table_arn" {
   value = module.dynamo-dictionary-table.table_arn
 }
+
+output "dynamo-dictionary-stream_arn" {
+  value = module.dynamo-dictionary-table.stream_arn
+}

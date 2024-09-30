@@ -63,3 +63,13 @@ variable "shared_tags" {
   description = "Tags to add to all resources"
   default     = {}
 }
+
+variable "stream_enabled" {
+  description = "On/Off dynamo stream"
+  default     = false
+}
+
+variable "stream_type" {
+  description = "Type of streaming"
+  default     = "NEW_IMAGE"
+}

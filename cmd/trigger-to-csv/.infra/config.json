@@ -1,0 +1,23 @@
+{
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:ListStreams",
+          "dynamodb:DescribeStream",
+          "dynamodb:GetRecords",
+          "dynamodb:GetShardIterator"
+        ],
+        "Resource": "${dictionary_table_arn}"
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 6,
+  "envs": {
+    "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}",
+    "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
+  }
+}
