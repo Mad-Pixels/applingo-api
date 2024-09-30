@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
@@ -25,7 +23,6 @@ const (
 
 var (
 	token = os.Getenv("AUTH_TOKEN")
-	log   = logger.InitLogger()
 )
 
 func init() {
@@ -88,7 +85,6 @@ func generatePolicy(principalID, effect, resource string) (events.APIGatewayCust
 
 func handler(_ context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	if err := validateRequest(req, token); err != nil {
-		log.Error().Err(err).Msg("Access denied")
 		return generatePolicy("", "Deny", req.MethodArn)
 	}
 	return generatePolicy("device", "Allow", req.MethodArn)
