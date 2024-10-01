@@ -1,5 +1,5 @@
 resource "aws_sqs_queue" "dead_letter" {
-  name = "${var.queue_name}-dlq"
+  name                      = "${var.queue_name}-dlq"
   message_retention_seconds = var.dlq_message_retention_seconds
 
   tags = merge(
