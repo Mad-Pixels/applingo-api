@@ -33,6 +33,7 @@ terraform.tfstate
 tfplan
 .terraform.lock.hcl
 .terraform/
+backend.tf
 
 # OS-specific files
 .DS_Store
