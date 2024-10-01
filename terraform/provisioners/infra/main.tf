@@ -8,15 +8,15 @@ module "ecr-repository-api" {
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
-  project     = local.project
-  bucket_name = "dictionary"
+  project        = local.project
+  bucket_name    = "dictionary"
 }
 
 module "s3-processing-bucket" {
   source = "../../modules/s3"
 
-  project     = local.project
-  bucket_name = "processing"
+  project        = local.project
+  bucket_name    = "processing"
 }
 
 module "dynamo-dictionary-table" {

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	dictionaryFilenameKey = "dictionary"
+	dictionaryFilenameKey = "filename"
 )
 
 var (
