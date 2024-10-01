@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"runtime/debug"
@@ -18,7 +17,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const filenameKey = "filename"
+const (
+	dictionaryFilenameKey = "dictionary"
+)
 
 var (
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
@@ -41,29 +42,34 @@ func init() {
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
-	var dynamoRecord events.DynamoDBEventRecord
-	if err := serializer.UnmarshalJSON(record, &dynamoRecord); err != nil {
-		return errors.Wrap(err, "failed to unmarshal DynamoDB record")
+	var sqsRecord events.SQSMessage
+	if err := serializer.UnmarshalJSON(record, &sqsRecord); err != nil {
+		return errors.Wrap(err, "failed to unmarshal SQS record")
+	}
+	var dynamoDBEvent events.DynamoDBEventRecord
+	if err := serializer.UnmarshalJSON([]byte(sqsRecord.Body), &dynamoDBEvent); err != nil {
+		return errors.Wrap(err, "failed to unmarshal DynamoDB event from SQS message body")
 	}
 
-	fmt.Println(dynamoRecord)
-	fmt.Println(dynamoRecord.Change)
-	fmt.Println(dynamoRecord.Change.NewImage)
-	if dynamoRecord.Change.NewImage != nil {
-		key, ok := dynamoRecord.Change.NewImage[filenameKey]
-		if !ok {
-			return errors.New("attribute 'filenameKey' not found in new image")
-		}
+	bucketKey, ok := dynamoDBEvent.Change.NewImage[dictionaryFilenameKey]
+	if !ok {
+		return errors.New("'dictionaryFilenameKey' not found in DynamoDB event")
+	}
+	if bucketKey.DataType() != events.DataTypeString {
+		return errors.New("'dictionaryFilenameKey' is not a string in DynamoDB event")
+	}
+	return processFile(ctx, bucketKey.String())
+}
 
-		fileBody, err := s3Bucket.Get(ctx, key.String(), serviceProcessingBucket)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get file %s from bucket %s", key.String(), serviceProcessingBucket)
-		}
-		defer fileBody.Close()
+func processFile(ctx context.Context, filename string) error {
+	fileBody, err := s3Bucket.Get(ctx, filename, serviceProcessingBucket)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get file %s from bucket %s", filename, serviceProcessingBucket)
+	}
+	defer fileBody.Close()
 
-		if err = s3Bucket.Put(ctx, key.String(), serviceDictionaryBucket, fileBody.(io.Reader), "application/octet-stream"); err != nil {
-			return errors.Wrapf(err, "failed to upload file %s to bucket %s", key.String(), serviceDictionaryBucket)
-		}
+	if err = s3Bucket.Put(ctx, filename, serviceDictionaryBucket, fileBody.(io.Reader), "application/octet-stream"); err != nil {
+		return errors.Wrapf(err, "failed to upload file %s to bucket %s", filename, serviceDictionaryBucket)
 	}
 	return nil
 }

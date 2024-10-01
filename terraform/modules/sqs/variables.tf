@@ -11,13 +11,13 @@ variable "queue_name" {
 variable "delay_seconds" {
   description = "The time in seconds that the delivery of all messages in the queue will be delayed"
   type        = number
-  default     = 300
+  default     = 240
 }
 
 variable "visibility_timeout_seconds" {
   description = "The visibility timeout for the queue"
   type        = number
-  default     = 480
+  default     = 300
 }
 
 variable "message_retention_seconds" {

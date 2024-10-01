@@ -6,7 +6,7 @@ Lambda for manage dictionaries.
 ## Define variables
 
 ```bash
-api="w0qgsont4i"
+api="6waqal09qu"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
