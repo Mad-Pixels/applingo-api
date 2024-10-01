@@ -2,18 +2,23 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"runtime/debug"
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
+	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 	"github.com/Mad-Pixels/lingocards-api/pkg/trigger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
+
+const filenameKey = "filename"
 
 var (
 	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
@@ -35,47 +40,31 @@ func init() {
 	dbDynamo = cloud.NewDynamo(cfg)
 }
 
-const filenameKey = "filename"
-
-func handler(ctx context.Context, log zerolog.Logger, record any) error {
-	dynamoRecord, ok := record.(events.DynamoDBEventRecord)
-	if !ok {
-		return fmt.Errorf("invalid record type: %T", record)
+func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
+	var dynamoRecord events.DynamoDBEventRecord
+	if err := serializer.UnmarshalJSON(record, &dynamoRecord); err != nil {
+		return errors.Wrap(err, "failed to unmarshal DynamoDB record")
 	}
 
+	fmt.Println(dynamoRecord)
+	fmt.Println(dynamoRecord.Change)
+	fmt.Println(dynamoRecord.Change.NewImage)
 	if dynamoRecord.Change.NewImage != nil {
 		key, ok := dynamoRecord.Change.NewImage[filenameKey]
 		if !ok {
-			log.Error().Msg("Attribute 'filename' not found in new image")
-			return fmt.Errorf("attribute 'filename' not found in new image")
+			return errors.New("attribute 'filenameKey' not found in new image")
 		}
 
 		fileBody, err := s3Bucket.Get(ctx, key.String(), serviceProcessingBucket)
 		if err != nil {
-			log.Error().Err(err).
-				Str("bucket", serviceProcessingBucket).
-				Str("key", key.String()).
-				Msg("Failed to get file from bucket")
-			return err
+			return errors.Wrapf(err, "failed to get file %s from bucket %s", key.String(), serviceProcessingBucket)
 		}
 		defer fileBody.Close()
 
-		err = s3Bucket.Put(ctx, key.String(), serviceDictionaryBucket, fileBody.(io.Reader), "application/octet-stream")
-		if err != nil {
-			log.Error().Err(err).
-				Str("bucket", serviceDictionaryBucket).
-				Str("key", key.String()).
-				Msg("Failed to upload file to bucket")
-			return err
+		if err = s3Bucket.Put(ctx, key.String(), serviceDictionaryBucket, fileBody.(io.Reader), "application/octet-stream"); err != nil {
+			return errors.Wrapf(err, "failed to upload file %s to bucket %s", key.String(), serviceDictionaryBucket)
 		}
-
-		log.Info().
-			Str("file", key.String()).
-			Str("from", serviceProcessingBucket).
-			Str("to", serviceDictionaryBucket).
-			Msg("Successfully moved file")
 	}
-
 	return nil
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"runtime/debug"
 
@@ -32,19 +33,19 @@ func init() {
 	sqsQueue = cloud.NewQueue(cfg)
 }
 
-func handler(ctx context.Context, _ zerolog.Logger, record any) error {
-	dynamoRecord, ok := record.(events.DynamoDBEventRecord)
-	if !ok {
-		return errors.New("invalid record type")
+func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
+	var dynamoRecord events.DynamoDBEventRecord
+	if err := serializer.UnmarshalJSON(record, &dynamoRecord); err != nil {
+		return errors.Wrap(err, "failed to unmarshal DynamoDB record")
 	}
-
 	payload, err := serializer.MarshalJSON(dynamoRecord)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal DynamoDB record")
 	}
+
 	_, err = sqsQueue.SendMessage(ctx, servicePutScvQueueUrl, string(payload))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to send message to SQS")
 	}
 	return nil
 }
