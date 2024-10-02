@@ -1,0 +1,62 @@
+{
+  "table_name": "lingocards-dictionary",
+  "hash_key": "id",
+  "range_key": "name",
+  "attributes": [
+    { "name": "id", "type": "S" },
+    { "name": "name", "type": "S" },
+    { "name": "category_main", "type": "S" },
+    { "name": "category_sub", "type": "S" },
+    { "name": "is_public", "type": "N" }
+  ],
+  "common_attributes": [
+    { "name": "author", "type": "S" },
+    { "name": "description", "type": "S" },
+    { "name": "filename", "type": "S" },
+    { "name": "code", "type": "S" }
+  ],
+  "secondary_indexes": [
+    {
+      "name": "CategoryMainIndex",
+      "hash_key": "category_main",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "name",
+        "author",
+        "description",
+        "dictionary_key",
+        "is_public",
+        "code",
+        "is_public",
+        "category_sub"
+      ]
+    },
+    {
+      "name": "CategorySubIndex",
+      "hash_key": "category_sub",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "name",
+        "author",
+        "description",
+        "dictionary_key",
+        "code",
+        "is_public"
+      ]
+    },
+    {
+      "name": "IsPublicIndex",
+      "hash_key": "is_public",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "name",
+        "author",
+        "description",
+        "dictionary_key",
+        "code",
+        "category_sub",
+        "category_main"
+      ]
+    }
+  ]
+}
