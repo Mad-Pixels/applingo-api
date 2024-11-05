@@ -14,12 +14,12 @@ import (
 type handleGetRequest struct{}
 
 type handleGetResponse struct {
-	Categories []category `json:"categories"`
+	FrontCategory []categoryItem `json:"front_category"`
+	BackCategory  []categoryItem `json:"back_category"`
 }
 
-type category struct {
-	Name          string   `json:"name"`
-	SubCategories []string `json:"sub_categories"`
+type categoryItem struct {
+	Name string `json:"name"`
 }
 
 func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
@@ -37,11 +37,15 @@ func handleGet(_ context.Context, _ zerolog.Logger, data json.RawMessage) (any, 
 		}
 	}
 	return handleGetResponse{
-		Categories: []category{
-			{
-				Name:          "language",
-				SubCategories: []string{"ru-en", "en-ru"},
-			},
+		FrontCategory: []categoryItem{
+			{Name: "he"},
+			{Name: "ru"},
+			{Name: "en"},
+		},
+		BackCategory: []categoryItem{
+			{Name: "he"},
+			{Name: "ru"},
+			{Name: "en"},
 		},
 	}, nil
 }

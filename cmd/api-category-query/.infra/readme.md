@@ -6,7 +6,7 @@ Lambda for query dictionary categories and sub-categories.
 ## Define variables
 
 ```bash
-api="xn7kq3fu5p"
+api="jpql2tfs80"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
