@@ -110,21 +110,31 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	qb := lingocardsdictionary.NewQueryBuilder()
 
 	// Определяем индекс и сортировку
-	switch {
-	case req.IsPublic:
-		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
-		if req.SortBy == "rating" {
-			qb.OrderByDesc() // Используем PublicByRatingIndex
-		} else {
-			qb.OrderByDesc() // По умолчанию PublicByDateIndex
-		}
-
-	case req.Subcategory != "":
+	if req.IsPublic && req.Subcategory != "" {
+		// Если нужны публичные словари конкретной языковой пары
 		qb.WithSubcategory(req.Subcategory)
 		if req.SortBy == "rating" {
-			qb.OrderByDesc() // Используем SubcategoryByRatingIndex
+			qb.OrderByDesc() // SubcategoryByRatingIndex
 		} else {
-			qb.OrderByDesc() // По умолчанию SubcategoryByDateIndex
+			qb.OrderByDesc() // SubcategoryByDateIndex
+		}
+		// Добавляем фильтр по is_public
+		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
+	} else if req.IsPublic {
+		// Если нужны все публичные словари
+		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
+		if req.SortBy == "rating" {
+			qb.OrderByDesc() // PublicByRatingIndex
+		} else {
+			qb.OrderByDesc() // PublicByDateIndex
+		}
+	} else if req.Subcategory != "" {
+		// Если нужны все словари конкретной языковой пары
+		qb.WithSubcategory(req.Subcategory)
+		if req.SortBy == "rating" {
+			qb.OrderByDesc() // SubcategoryByRatingIndex
+		} else {
+			qb.OrderByDesc() // SubcategoryByDateIndex
 		}
 	}
 
