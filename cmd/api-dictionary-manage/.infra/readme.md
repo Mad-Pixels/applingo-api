@@ -23,6 +23,21 @@ curl -X POST ${url}/${api_path_put} \
     -d '{"description": "description", "code":"", "filename": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": true}' \
     -H "Content-Type: application/json" 
 
+curl -X POST ${url} \
+    -d '{"description": "description", "filename": "revert.csv", "name": "name6", "author": "author", "category": "category_main", "subcategory": "ru-he", "is_public": true}' \
+    -H "Content-Type: application/json" 
+
+
+type handleDataPutRequest struct {
+	Description string `json:"description" validate:"required"`
+	Filename    string `json:"filename" validate:"required"`
+	Name        string `json:"name" validate:"required,min=4,max=32"`
+	Author      string `json:"author" validate:"required"`
+	Category    string `json:"category" validate:"required"`
+	Subcategory string `json:"subcategory" validate:"required"`
+	IsPublic    bool   `json:"is_public" validate:"required"`
+}
+
 # private object
 curl -X POST ${url}/${api_path_put} \
     -d '{"description": "description", "code":"666", "filename": "dictionary", "name": "name", "author": "author", "category_main": "category_main", "category_sub": "category_sub", "is_public": false}' \

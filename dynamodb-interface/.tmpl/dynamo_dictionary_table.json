@@ -58,7 +58,6 @@
         "name",
         "description",
         "category",
-        "subcategory",
         "author",
         "rating"
       ]
@@ -73,7 +72,6 @@
         "name",
         "description",
         "category",
-        "subcategory",
         "author",
         "created_at"
       ]
