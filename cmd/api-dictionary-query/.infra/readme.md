@@ -53,6 +53,56 @@ body='{"author": "author"}'
 body='{"dictionary_key":"dictionary"}'
 ```
 
+```bash
+curl -X POST ${url}/${device_path_query} \
+    -d '{
+        "is_public": true,
+        "sort_by": "date"
+    }' \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+
+curl -X POST ${url}/${device_path_query} \
+    -d '{
+        "is_public": true,
+        "sort_by": "rating"
+    }' \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+    
+    
+  curl -X POST ${url}/${device_path_query} \
+    -d '{
+        "subcategory": "ru-en",
+        "sort_by": "date"
+    }' \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+    
+curl -X POST ${url}/${device_path_query} \
+    -d '{
+        "subcategory": "ru-en",
+        "sort_by": "rating"
+    }' \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+    
+    
+curl -X POST ${url}/${device_path_query} \
+    -d '{
+        "is_public": true,
+        "sort_by": "date",
+        "last_evaluated": "eyJpZCI6ImFiYzEyMyIsInN1YmNhdGVnb3J5IjoicnUtZW4ifQ=="
+    }' \
+    -H "Content-Type: application/json" \
+    -H "x-timestamp: ${timestamp}" \
+    -H "x-signature: ${signature}"
+```
+
 ## device/v1/dictionary/query
 ```bash
 timestamp=$(date -u +%s)
