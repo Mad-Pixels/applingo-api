@@ -39,7 +39,10 @@ package {{.PackageName}}
 
 import (
     "fmt"
+    "context"
 
+    "github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/service/dynamodb"
     "github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
     "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
     "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -246,7 +249,7 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
     return index.Name, keyCond, filterCond, qb.ExclusiveStartKey, nil
 }
 
-func (qb *QueryBuilder) BuildQuery() (*types.QueryInput, error) {
+func (qb *QueryBuilder) BuildQuery() (*dynamodb.QueryInput, error) {
     indexName, keyCond, filterCond, exclusiveStartKey, err := qb.Build()
     if err != nil {
         return nil, err
@@ -262,7 +265,7 @@ func (qb *QueryBuilder) BuildQuery() (*types.QueryInput, error) {
         return nil, fmt.Errorf("failed to build expression: %v", err)
     }
 
-    input := &types.QueryInput{
+    input := &dynamodb.QueryInput{
         TableName:                 aws.String(TableName),
         KeyConditionExpression:    builtExpr.KeyCondition(),
         ExpressionAttributeNames:  builtExpr.Names(),
@@ -287,6 +290,26 @@ func (qb *QueryBuilder) BuildQuery() (*types.QueryInput, error) {
     }
 
     return input, nil
+}
+
+func (qb *QueryBuilder) Execute(ctx context.Context, client *dynamodb.Client) ([]SchemaItem, error) {
+    input, err := qb.BuildQuery()
+    if err != nil {
+        return nil, err
+    }
+
+    result, err := client.Query(ctx, input)
+    if err != nil {
+        return nil, fmt.Errorf("failed to execute query: %v", err)
+    }
+
+    var items []SchemaItem
+    err = attributevalue.UnmarshalListOfMaps(result.Items, &items)
+    if err != nil {
+        return nil, fmt.Errorf("failed to unmarshal result: %v", err)
+    }
+
+    return items, nil
 }
 
 {{range .AllAttributes}}
