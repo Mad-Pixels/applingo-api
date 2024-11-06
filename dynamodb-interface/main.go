@@ -140,17 +140,22 @@ var TableSchema = DynamoSchema{
 }
 
 type QueryBuilder struct {
-    IndexName        string
-    KeyConditions    []expression.KeyConditionBuilder
-    FilterConditions []expression.ConditionBuilder
-    UsedKeys         map[string]bool
-    Attributes       map[string]interface{}
+    IndexName          string
+    KeyConditions      []expression.KeyConditionBuilder
+    FilterConditions   []expression.ConditionBuilder
+    UsedKeys          map[string]bool
+    Attributes        map[string]interface{}
+    SortDescending    bool
+    LimitValue        *int
+    ExclusiveStartKey map[string]types.AttributeValue
+    RangeConditions   map[string]expression.KeyConditionBuilder
 }
 
 func NewQueryBuilder() *QueryBuilder {
     return &QueryBuilder{
-        UsedKeys:   make(map[string]bool),
-        Attributes: make(map[string]interface{}),
+        UsedKeys:        make(map[string]bool),
+        Attributes:      make(map[string]interface{}),
+        RangeConditions: make(map[string]expression.KeyConditionBuilder),
     }
 }
 
@@ -163,7 +168,7 @@ func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}({{SafeName .Name | 
 }
 {{end}}
 
-func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expression.ConditionBuilder, error) {
+func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expression.ConditionBuilder, map[string]types.AttributeValue, error) {
     var index *SecondaryIndex
     var keyCond expression.KeyConditionBuilder
     var filterCond *expression.ConditionBuilder
@@ -174,7 +179,11 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
             index = &idx
             // Build KeyCondition
             keyCond = expression.Key(idx.HashKey).Equal(expression.Value(qb.Attributes[idx.HashKey]))
-            if idx.RangeKey != "" && qb.UsedKeys[idx.RangeKey] {
+            
+            // Check for range key conditions
+            if rangeCond, exists := qb.RangeConditions[idx.RangeKey]; exists {
+                keyCond = keyCond.And(rangeCond)
+            } else if idx.RangeKey != "" && qb.UsedKeys[idx.RangeKey] {
                 keyCond = keyCond.And(expression.Key(idx.RangeKey).Equal(expression.Value(qb.Attributes[idx.RangeKey])))
             }
             break
@@ -185,9 +194,14 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
     if index == nil && qb.UsedKeys[TableSchema.HashKey] {
         indexName := ""
         keyCond = expression.Key(TableSchema.HashKey).Equal(expression.Value(qb.Attributes[TableSchema.HashKey]))
-        if TableSchema.RangeKey != "" && qb.UsedKeys[TableSchema.RangeKey] {
+        
+        // Check for range key conditions on primary key
+        if rangeCond, exists := qb.RangeConditions[TableSchema.RangeKey]; exists {
+            keyCond = keyCond.And(rangeCond)
+        } else if TableSchema.RangeKey != "" && qb.UsedKeys[TableSchema.RangeKey] {
             keyCond = keyCond.And(expression.Key(TableSchema.RangeKey).Equal(expression.Value(qb.Attributes[TableSchema.RangeKey])))
         }
+
         // Build FilterCondition for remaining attributes
         for attrName, value := range qb.Attributes {
             if attrName != TableSchema.HashKey && attrName != TableSchema.RangeKey {
@@ -195,6 +209,7 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
                 qb.FilterConditions = append(qb.FilterConditions, cond)
             }
         }
+        
         // Combine filter conditions if any
         if len(qb.FilterConditions) > 0 {
             combinedFilter := qb.FilterConditions[0]
@@ -203,11 +218,12 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
             }
             filterCond = &combinedFilter
         }
-        return indexName, keyCond, filterCond, nil
+        
+        return indexName, keyCond, filterCond, qb.ExclusiveStartKey, nil
     }
 
     if index == nil {
-        return "", expression.KeyConditionBuilder{}, nil, fmt.Errorf("no suitable index found for the provided keys")
+        return "", expression.KeyConditionBuilder{}, nil, nil, fmt.Errorf("no suitable index found for the provided keys")
     }
 
     // Build FilterCondition for the remaining attributes
@@ -227,7 +243,134 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
         filterCond = &combinedFilter
     }
 
-    return index.Name, keyCond, filterCond, nil
+    return index.Name, keyCond, filterCond, qb.ExclusiveStartKey, nil
+}
+
+func (qb *QueryBuilder) BuildQuery() (*types.QueryInput, error) {
+    indexName, keyCond, filterCond, exclusiveStartKey, err := qb.Build()
+    if err != nil {
+        return nil, err
+    }
+
+    expr := expression.NewBuilder().WithKeyCondition(keyCond)
+    if filterCond != nil {
+        expr = expr.WithFilter(*filterCond)
+    }
+
+    builtExpr, err := expr.Build()
+    if err != nil {
+        return nil, fmt.Errorf("failed to build expression: %v", err)
+    }
+
+    input := &types.QueryInput{
+        TableName:                 aws.String(TableName),
+        KeyConditionExpression:    builtExpr.KeyCondition(),
+        ExpressionAttributeNames:  builtExpr.Names(),
+        ExpressionAttributeValues: builtExpr.Values(),
+        ScanIndexForward:         aws.Bool(!qb.SortDescending),
+    }
+
+    if indexName != "" {
+        input.IndexName = aws.String(indexName)
+    }
+
+    if filterCond != nil {
+        input.FilterExpression = builtExpr.Filter()
+    }
+
+    if qb.LimitValue != nil {
+        input.Limit = aws.Int32(int32(*qb.LimitValue))
+    }
+
+    if exclusiveStartKey != nil {
+        input.ExclusiveStartKey = exclusiveStartKey
+    }
+
+    return input, nil
+}
+
+{{range .AllAttributes}}
+{{if eq (TypeGo .Type) "int"}}
+func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}Between(start, end int) *QueryBuilder {
+    attrName := "{{.Name}}"
+    keyCond := expression.Key(attrName).Between(expression.Value(start), expression.Value(end))
+    qb.KeyConditions = append(qb.KeyConditions, keyCond)
+    return qb
+}
+
+func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}GreaterThan(value int) *QueryBuilder {
+    attrName := "{{.Name}}"
+    keyCond := expression.Key(attrName).GreaterThan(expression.Value(value))
+    qb.KeyConditions = append(qb.KeyConditions, keyCond)
+    return qb
+}
+
+func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}LessThan(value int) *QueryBuilder {
+    attrName := "{{.Name}}"
+    keyCond := expression.Key(attrName).LessThan(expression.Value(value))
+    qb.KeyConditions = append(qb.KeyConditions, keyCond)
+    return qb
+}
+{{end}}
+{{end}}
+
+func (qb *QueryBuilder) OrderByDesc() *QueryBuilder {
+    qb.SortDescending = true
+    return qb
+}
+
+func (qb *QueryBuilder) OrderByAsc() *QueryBuilder {
+    qb.SortDescending = false
+    return qb
+}
+
+func (qb *QueryBuilder) Limit(limit int) *QueryBuilder {
+    qb.LimitValue = &limit
+    return qb
+}
+
+func (qb *QueryBuilder) WithKeyBetween(keyName string, start, end interface{}) *QueryBuilder {
+    qb.RangeConditions[keyName] = expression.Key(keyName).Between(
+        expression.Value(start), 
+        expression.Value(end),
+    )
+    return qb
+}
+
+func (qb *QueryBuilder) WithKeyGreaterThan(keyName string, value interface{}) *QueryBuilder {
+    qb.RangeConditions[keyName] = expression.Key(keyName).GreaterThan(
+        expression.Value(value),
+    )
+    return qb
+}
+
+func (qb *QueryBuilder) WithKeyLessThan(keyName string, value interface{}) *QueryBuilder {
+    qb.RangeConditions[keyName] = expression.Key(keyName).LessThan(
+        expression.Value(value),
+    )
+    return qb
+}
+
+func (qb *QueryBuilder) StartFrom(lastEvaluatedKey map[string]types.AttributeValue) *QueryBuilder {
+    qb.ExclusiveStartKey = lastEvaluatedKey
+    return qb
+}
+
+func (qb *QueryBuilder) WithKeyBeginsWith(keyName string, prefix string) *QueryBuilder {
+    qb.RangeConditions[keyName] = expression.Key(keyName).BeginsWith(prefix)
+    return qb
+}
+
+func BatchPutItems(items []SchemaItem) ([]map[string]types.AttributeValue, error) {
+    result := make([]map[string]types.AttributeValue, 0, len(items))
+    for _, item := range items {
+        av, err := PutItem(item)
+        if err != nil {
+            return nil, fmt.Errorf("failed to marshal item: %v", err)
+        }
+        result = append(result, av)
+    }
+    return result, nil
 }
 
 // PutItem creates an AttributeValues map for PutItem in DynamoDB
@@ -295,6 +438,7 @@ func processSchemaFile(jsonPath, rootDir string) {
 		"ToLowerCamelCase": toLowerCamelCase,
 		"SafeName":         safeName,
 		"TypeGo":           typeGo,
+		"TypeZero":         typeZero,
 	}
 	allAttributes := append(schema.Attributes, schema.CommonAttributes...)
 
@@ -400,5 +544,18 @@ func typeGo(dynamoType string) string {
 		return "bool"
 	default:
 		return "interface{}"
+	}
+}
+
+func typeZero(dynamoType string) string {
+	switch dynamoType {
+	case "S":
+		return `""`
+	case "N":
+		return "0"
+	case "B":
+		return "false"
+	default:
+		return "nil"
 	}
 }
