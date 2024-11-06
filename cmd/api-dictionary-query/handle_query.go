@@ -9,9 +9,9 @@ import (
 
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -22,13 +22,9 @@ import (
 const pageLimit = 20
 
 type handleDataQueryRequest struct {
-	ID            string `json:"id,omitempty"`
-	Name          string `json:"name,omitempty"`
-	CategoryMain  string `json:"category_main,omitempty"`
-	CategorySub   string `json:"category_sub,omitempty"`
-	Author        string `json:"author,omitempty"`
+	Subcategory   string `json:"subcategory,omitempty"`
 	IsPublic      bool   `json:"is_public,omitempty"`
-	Code          string `json:"code,omitempty"`
+	SortBy        string `json:"sort_by,omitempty"` // "date" или "rating"
 	LastEvaluated string `json:"last_evaluated,omitempty"`
 }
 
@@ -38,21 +34,21 @@ type handleDataQueryResponse struct {
 }
 
 type dataQueryItem struct {
-	Name          string `json:"name,omitempty" dynamodbav:"name"`
-	CategoryMain  string `json:"category_main,omitempty" dynamodbav:"category_main"`
-	CategorySub   string `json:"category_sub,omitempty" dynamodbav:"category_sub"`
-	Author        string `json:"author,omitempty" dynamodbav:"author"`
-	DictionaryKey string `json:"dictionary_key,omitempty" dynamodbav:"dictionary_key"`
-	Description   string `json:"description,omitempty" dynamodbav:"description"`
+	Name        string `json:"name" dynamodbav:"name"`
+	Category    string `json:"category" dynamodbav:"category"`
+	Subcategory string `json:"subcategory" dynamodbav:"subcategory"`
+	Author      string `json:"author" dynamodbav:"author"`
+	Dictionary  string `json:"dictionary" dynamodbav:"dictionary"`
+	Description string `json:"description" dynamodbav:"description"`
+	CreatedAt   int    `json:"created_at" dynamodbav:"created_at"`
+	Rating      int    `json:"rating" dynamodbav:"rating"`
+	IsPublic    int    `json:"is_public" dynamodbav:"is_public"`
 }
 
 func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
 	var req handleDataQueryRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
-	}
-	if req.Code == "" {
-		req.IsPublic = true
 	}
 
 	queryInput, err := buildQueryInput(&req)
@@ -77,7 +73,6 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	}
 	for _, dynamoItem := range result.Items {
 		wg.Add(1)
-
 		go func(dynamoItem map[string]types.AttributeValue) {
 			defer wg.Done()
 
@@ -99,7 +94,6 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	}
 	if result.LastEvaluatedKey != nil {
 		var lastEvaluatedKeyMap map[string]interface{}
-
 		if err = attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap); err != nil {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
@@ -115,45 +109,41 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	qb := lingocardsdictionary.NewQueryBuilder()
 
-	if req.ID != "" {
-		qb.WithId(req.ID)
+	// Определяем индекс и сортировку
+	switch {
+	case req.IsPublic:
+		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
+		if req.SortBy == "rating" {
+			qb.OrderByDesc() // Используем PublicByRatingIndex
+		} else {
+			qb.OrderByDesc() // По умолчанию PublicByDateIndex
+		}
+
+	case req.Subcategory != "":
+		qb.WithSubcategory(req.Subcategory)
+		if req.SortBy == "rating" {
+			qb.OrderByDesc() // Используем SubcategoryByRatingIndex
+		} else {
+			qb.OrderByDesc() // По умолчанию SubcategoryByDateIndex
+		}
 	}
-	if req.Name != "" {
-		qb.WithName(req.Name)
-	}
-	if req.Author != "" {
-		qb.WithAuthor(req.Author)
-	}
-	if req.CategoryMain != "" {
-		qb.WithCategoryMain(req.CategoryMain)
-	}
-	if req.CategorySub != "" {
-		qb.WithCategorySub(req.CategorySub)
-	}
-	if req.Code != "" {
-		qb.WithCode(req.Code)
-	}
-	if req.IsPublic {
-		qb.WithIsPublic(lingocardsdictionary.BoolToInt(req.IsPublic))
-	}
-	indexName, keyCondition, filterCondition, err := qb.Build()
+
+	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
-
-	additionalFilter := expression.Name("dictionary_key").AttributeExists().And(
-		expression.Name("dictionary_key").NotEqual(expression.Value("")),
+	additionalFilter := expression.Name("dictionary").AttributeExists().And(
+		expression.Name("dictionary").NotEqual(expression.Value("")),
 	)
 
 	var filterCond expression.ConditionBuilder
 	if filterCondition != nil {
-		combinedFilter := filterCondition.And(additionalFilter)
-		filterCond = combinedFilter
+		filterCond = filterCondition.And(additionalFilter)
 	} else {
 		filterCond = additionalFilter
 	}
 
-	var exclusiveStartKey map[string]types.AttributeValue
+	// Обработка пагинации
 	if req.LastEvaluated != "" {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(req.LastEvaluated)
 		if err != nil {
@@ -168,6 +158,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
+
 	projectionFields := lingocardsdictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
@@ -176,7 +167,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		FilterCondition:   filterCond,
 		ProjectionFields:  projectionFields,
 		Limit:             pageLimit,
-		ScanForward:       true,
+		ScanForward:       false, // всегда DESC для дат и рейтингов
 		ExclusiveStartKey: exclusiveStartKey,
 	}, nil
 }

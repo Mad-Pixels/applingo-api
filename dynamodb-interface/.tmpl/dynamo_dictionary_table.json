@@ -6,7 +6,8 @@
     { "name": "id", "type": "S" },
     { "name": "subcategory", "type": "S" },
     { "name": "created_at", "type": "N" },
-    { "name": "rating", "type": "N" }
+    { "name": "rating", "type": "N" },
+    { "name": "is_public", "type": "N" }
   ],
   "common_attributes": [
     { "name": "name", "type": "S" },
@@ -14,8 +15,7 @@
     { "name": "category", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "filename", "type": "S" },
-    { "name": "dictionary", "type": "S" },
-    { "name": "is_public", "type": "N" }
+    { "name": "dictionary", "type": "S" }
   ],
   "secondary_indexes": [
     {
