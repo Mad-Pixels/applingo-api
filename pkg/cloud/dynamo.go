@@ -13,8 +13,8 @@ import (
 
 // Common errors
 var (
-	errDynamoEmptyTable = errors.New("empty table name")
-	errDynamoEmptyKey   = errors.New("empty key")
+	ErrDynamoEmptyTable = errors.New("empty table name")
+	ErrDynamoEmptyKey   = errors.New("empty key")
 )
 
 // QueryInput represents the input for a DynamoDB query.
@@ -43,7 +43,7 @@ func NewDynamo(cfg aws.Config) *Dynamo {
 // validateTable checks if table name is not empty.
 func validateTable(table string) error {
 	if table == "" {
-		return errDynamoEmptyTable
+		return ErrDynamoEmptyTable
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func validateTable(table string) error {
 // validateKey checks if key is not empty.
 func validateKey(key map[string]types.AttributeValue) error {
 	if len(key) == 0 {
-		return errDynamoEmptyKey
+		return ErrDynamoEmptyKey
 	}
 	return nil
 }

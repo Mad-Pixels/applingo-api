@@ -42,3 +42,22 @@ variable "shared_tags" {
   description = "Tags to add to all resources"
   default     = {}
 }
+
+variable "rule" {
+  description = "Optional lifecycle rule configuration"
+  type = object({
+    id     = string
+    status = string
+    filter = object({
+      prefix = string
+    })
+    transition = optional(object({
+      days          = number
+      storage_class = string
+    }))
+    expiration = optional(object({
+      days = number
+    }))
+  })
+  default = null
+}

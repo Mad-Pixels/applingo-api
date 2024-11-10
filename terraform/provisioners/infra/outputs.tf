@@ -18,6 +18,14 @@ output "s3-processing-bucket_arn" {
   value = module.s3-processing-bucket.s3_arn
 }
 
+output "s3-errors-bucket_name" {
+  value = module.s3-errors-bucket.s3_name
+}
+
+output "s3-errors-bucket_arn" {
+  value = module.s3-errors-bucket.s3_arn
+}
+
 output "dynamo-dictionary-table_name" {
   value = module.dynamo-dictionary-table.table_name
 }

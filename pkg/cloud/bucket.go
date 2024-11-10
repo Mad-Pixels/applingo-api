@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	errBucketObjectNotFound = errors.New("object not found in bucket")
-	errBucketEmptyKey       = errors.New("empty object key")
-	errBucketEmptyBucket    = errors.New("empty bucket name")
+	ErrBucketObjectNotFound = errors.New("object not found in bucket")
+	ErrBucketEmptyKey       = errors.New("empty object key")
+	ErrBucketEmptyBucket    = errors.New("empty bucket name")
 )
 
 const (
@@ -64,10 +64,10 @@ func NewBucket(cfg aws.Config) *Bucket {
 // validateInput checks basic request parameters.
 func validateInput(key, bucket string) error {
 	if key == "" {
-		return errBucketEmptyKey
+		return ErrBucketEmptyKey
 	}
 	if bucket == "" {
-		return errBucketEmptyBucket
+		return ErrBucketEmptyBucket
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func (b *Bucket) DownloadToWriter(ctx context.Context, key, bucket string, w io.
 	if err != nil {
 		var s3Err *types.NoSuchKey
 		if errors.As(err, &s3Err) {
-			return errBucketObjectNotFound
+			return ErrBucketObjectNotFound
 		}
 		return fmt.Errorf("failed to download object: %w", err)
 	}
@@ -143,7 +143,7 @@ func (b *Bucket) Delete(ctx context.Context, key, bucket string) error {
 	if err != nil {
 		var s3Err *types.NoSuchKey
 		if errors.As(err, &s3Err) {
-			return errBucketObjectNotFound
+			return ErrBucketObjectNotFound
 		}
 		return fmt.Errorf("failed to delete object: %w", err)
 	}
@@ -163,7 +163,7 @@ func (b *Bucket) Get(ctx context.Context, key, bucket string) (io.ReadCloser, er
 	if err != nil {
 		var s3Err *types.NoSuchKey
 		if errors.As(err, &s3Err) {
-			return nil, errBucketObjectNotFound
+			return nil, ErrBucketObjectNotFound
 		}
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
