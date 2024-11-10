@@ -21,7 +21,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 20
+const pageLimit = 40
 
 type handleDataQueryRequest struct {
 	SortBy        sort.QueryType `json:"sort_by,omitempty"`

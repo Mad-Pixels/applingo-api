@@ -12,7 +12,7 @@ import (
 )
 
 type handleDownloadUrlRequest struct {
-	DictionaryKey string `json:"dictionary_key" validate:"required,min=4,max=32"`
+	Dictionary string `json:"dictionary" validate:"required,min=4,max=32"`
 }
 
 type handleDownloadUrlResponse struct {
@@ -28,7 +28,7 @@ func handleDownloadUrl(ctx context.Context, _ zerolog.Logger, raw json.RawMessag
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.DownloadURL(ctx, req.DictionaryKey, serviceDictionaryBucket)
+	url, err := s3Bucket.DownloadURL(ctx, req.Dictionary, serviceDictionaryBucket)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusNotFound, Err: err}
 	}
