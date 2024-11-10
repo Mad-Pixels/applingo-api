@@ -343,6 +343,36 @@ tasks:
     silent: true
     internal: true
 
+  aws/update_lambda:
+    desc: Update specific Lambda function with latest image
+    vars:
+      FUNC_NAME: '{{.FUNC}}'
+    cmds:
+      - |
+        if [ -z "{{.FUNC}}" ]; then
+          echo "Error: FUNC parameter is not set. Usage: task _aws/update_lambda FUNC=function_name"
+          exit 1
+        fi
+        
+        IMAGE_URI="{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_DEFAULT_REGION}}.amazonaws.com/{{.api_image_name}}:{{.FUNC_NAME}}"
+        echo "Updating Lambda function {{.FUNC_NAME}} with image ${IMAGE_URI}"
+        
+        aws lambda update-function-code \
+          --function-name "{{.FUNC_NAME}}" \
+          --image-uri "${IMAGE_URI}" \
+          --region "{{.AWS_DEFAULT_REGION}}" \
+          --no-cli-pager
+        
+        aws lambda wait function-updated \
+          --function-name "{{.FUNC_NAME}}" \
+          --region "{{.AWS_DEFAULT_REGION}}"
+        echo "Lambda function {{.FUNC_NAME}} has been updated successfully"
+    env:
+      AWS_DEFAULT_REGION: '{{.AWS_DEFAULT_REGION}}'
+      AWS_ACCESS_KEY_ID: '{{.AWS_ACCESS_KEY_ID}}'
+      AWS_SECRET_ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
+    silent: true
+
   env/localstack/start:
     desc: Run localstack environment.
     deps:
@@ -429,4 +459,14 @@ tasks:
           KEY_ID:           '{{.AWS_ACCESS_KEY_ID}}'
           ACCESS_KEY:       '{{.AWS_SECRET_ACCESS_KEY}}'
           DEVICE_API_TOKEN: '{{.DEVICE_API_TOKEN}}'
+      - |
+        echo "Updating all Lambda functions..."
+        for dir in {{.git_root}}/cmd/*; do
+          if [ -d "$dir" ]; then
+            func=$(basename "$dir")
+            
+            echo "Updating Lambda function: $func"
+            task aws/update_lambda FUNC=$func
+          fi
+        done
     silent: true
