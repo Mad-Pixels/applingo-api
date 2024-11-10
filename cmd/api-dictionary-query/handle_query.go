@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/Mad-Pixels/lingocards-api/pkg/sort"
 	"net/http"
 	"sync"
 
@@ -22,10 +23,10 @@ import (
 const pageLimit = 20
 
 type handleDataQueryRequest struct {
-	Subcategory   string `json:"subcategory,omitempty"`
-	IsPublic      bool   `json:"is_public,omitempty"`
-	SortBy        string `json:"sort_by,omitempty"` // "date" или "rating"
-	LastEvaluated string `json:"last_evaluated,omitempty"`
+	Subcategory   string         `json:"subcategory,omitempty"`
+	IsPublic      bool           `json:"is_public,omitempty"`
+	SortBy        sort.QueryType `json:"sort_by,omitempty"`
+	LastEvaluated string         `json:"last_evaluated,omitempty"`
 }
 
 type handleDataQueryResponse struct {
