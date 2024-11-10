@@ -28,7 +28,7 @@ func handleDownloadUrl(ctx context.Context, _ zerolog.Logger, raw json.RawMessag
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.DownloadUrl(ctx, req.DictionaryKey, serviceDictionaryBucket)
+	url, err := s3Bucket.DownloadURL(ctx, req.DictionaryKey, serviceDictionaryBucket)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusNotFound, Err: err}
 	}

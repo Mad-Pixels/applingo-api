@@ -29,7 +29,7 @@ func handleUploadUrl(ctx context.Context, _ zerolog.Logger, data json.RawMessage
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.UploadUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
+	url, err := s3Bucket.UploadURL(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}

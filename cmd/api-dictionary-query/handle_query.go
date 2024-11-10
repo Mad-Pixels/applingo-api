@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/Mad-Pixels/lingocards-api/pkg/sort"
 	"net/http"
 	"sync"
+
+	"github.com/Mad-Pixels/lingocards-api/pkg/sort"
 
 	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
@@ -23,10 +24,10 @@ import (
 const pageLimit = 20
 
 type handleDataQueryRequest struct {
-	Subcategory   string         `json:"subcategory,omitempty"`
-	IsPublic      bool           `json:"is_public,omitempty"`
 	SortBy        sort.QueryType `json:"sort_by,omitempty"`
+	Subcategory   string         `json:"subcategory,omitempty"`
 	LastEvaluated string         `json:"last_evaluated,omitempty"`
+	IsPublic      bool           `json:"is_public,omitempty"`
 }
 
 type handleDataQueryResponse struct {
@@ -110,34 +111,16 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	qb := lingocardsdictionary.NewQueryBuilder()
 
-	// Определяем индекс и сортировку
-	if req.IsPublic && req.Subcategory != "" {
-		// Если нужны публичные словари конкретной языковой пары
+	switch {
+	case req.IsPublic && req.Subcategory != "":
 		qb.WithSubcategory(req.Subcategory)
-		if req.SortBy == "rating" {
-			qb.OrderByDesc() // SubcategoryByRatingIndex
-		} else {
-			qb.OrderByDesc() // SubcategoryByDateIndex
-		}
-		// Добавляем фильтр по is_public
 		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
-	} else if req.IsPublic {
-		// Если нужны все публичные словари
+	case req.IsPublic:
 		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
-		if req.SortBy == "rating" {
-			qb.OrderByDesc() // PublicByRatingIndex
-		} else {
-			qb.OrderByDesc() // PublicByDateIndex
-		}
-	} else if req.Subcategory != "" {
-		// Если нужны все словари конкретной языковой пары
+	case req.Subcategory != "":
 		qb.WithSubcategory(req.Subcategory)
-		if req.SortBy == "rating" {
-			qb.OrderByDesc() // SubcategoryByRatingIndex
-		} else {
-			qb.OrderByDesc() // SubcategoryByDateIndex
-		}
 	}
+	qb.OrderByDesc()
 
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
@@ -153,8 +136,6 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 	} else {
 		filterCond = additionalFilter
 	}
-
-	// Обработка пагинации
 	if req.LastEvaluated != "" {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(req.LastEvaluated)
 		if err != nil {
@@ -169,7 +150,6 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
-
 	projectionFields := lingocardsdictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
@@ -178,7 +158,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 		FilterCondition:   filterCond,
 		ProjectionFields:  projectionFields,
 		Limit:             pageLimit,
-		ScanForward:       false, // всегда DESC для дат и рейтингов
+		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
 	}, nil
 }

@@ -37,7 +37,9 @@ func init() {
 func main() {
 	lambda.Start(
 		api.NewLambda(
-			api.Config{},
+			api.Config{
+				EnableRequestLogging: true,
+			},
 			map[string]api.HandleFunc{
 				"query":        handleDataQuery,
 				"download_url": handleDownloadUrl,

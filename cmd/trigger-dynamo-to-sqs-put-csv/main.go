@@ -43,7 +43,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		return errors.Wrap(err, "failed to marshal DynamoDB record")
 	}
 
-	_, err = sqsQueue.SendMessage(ctx, servicePutScvQueueUrl, string(payload))
+	_, err = sqsQueue.SendMessage(ctx, cloud.SendMessageInput{
+		QueueURL:    servicePutScvQueueUrl,
+		MessageBody: string(payload),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to send message to SQS")
 	}

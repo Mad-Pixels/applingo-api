@@ -3,6 +3,7 @@ package trigger
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
@@ -11,168 +12,135 @@ import (
 	"github.com/rs/zerolog"
 )
 
+var (
+	errUnsupportedEventType = errors.New("unsupported event type")
+	errProcessingFailed     = errors.New("finished with errors")
+)
+
+const (
+	recordsKey = "Records"
+)
+
 // HandleFunc is the type for event record handlers.
 type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage) error
 
-// Config for api object.
+// Config contains trigger configuration.
 type Config struct {
 	MaxWorkers int
 }
 
-type trigger struct {
+// Trigger handles AWS Lambda events processing.
+type Trigger struct {
 	cfg     Config
 	log     zerolog.Logger
 	handler HandleFunc
 }
 
-// NewLambda creates a new lambda object.
-func NewLambda(cfg Config, handler HandleFunc) *trigger {
-	return &trigger{
+// NewLambda creates a new Lambda trigger instance.
+func NewLambda(cfg Config, handler HandleFunc) *Trigger {
+	if handler == nil {
+		panic("handler function cannot be nil")
+	}
+	return &Trigger{
 		cfg:     cfg,
 		handler: handler,
 		log:     logger.InitLogger(),
 	}
 }
 
-// Handle processes AWS Lambda events, applying the handler function to each record in the event.
+// Handle processes AWS Lambda events by applying the handler function to each record.
 // It supports various event types such as DynamoDB and SQS events, and processes records in parallel.
-//
-// The function unmarshals the raw event, extracts records, and applies the handler to each record
-// using a worker pool limited by MaxWorkers. Any errors encountered during processing are collected
-// and logged.
-//
-// Example usage:
-//
-//	triggerHandler := trigger.NewLambda(
-//		trigger.Config{MaxWorkers: 4},
-//		func(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
-//			var dynamoRecord events.DynamoDBEventRecord
-//			if err := json.Unmarshal(record, &dynamoRecord); err != nil {
-//				return errors.Wrap(err, "failed to unmarshal DynamoDB record")
-//			}
-//			// Process the DynamoDB record
-//			return nil
-//		},
-//	)
-//
-//	func main() {
-//		lambda.Start(triggerHandler.Handle)
-//	}
-//
-// Example event structures:
-//
-// DynamoDB event:
-//
-//	{
-//		"Records": [
-//			{
-//				"eventID": "1",
-//				"eventName": "INSERT",
-//				"eventVersion": "1.0",
-//				"eventSource": "aws:dynamodb",
-//				"awsRegion": "us-east-1",
-//				"dynamodb": {
-//					"Keys": {
-//						"Id": {
-//							"N": "101"
-//						}
-//					},
-//					"NewImage": {
-//						"Message": {
-//							"S": "New item!"
-//						},
-//						"Id": {
-//							"N": "101"
-//						}
-//					},
-//					"SequenceNumber": "111",
-//					"SizeBytes": 26,
-//					"StreamViewType": "NEW_AND_OLD_IMAGES"
-//				},
-//				"eventSourceARN": "arn:aws:dynamodb:us-east-1:account-id:table/ExampleTableWithStream/stream/2015-06-27T00:48:05.899"
-//			}
-//		]
-//	}
-//
-// SQS event:
-//
-//	{
-//		"Records": [
-//			{
-//				"messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
-//				"receiptHandle": "MessageReceiptHandle",
-//				"body": "Hello from SQS!",
-//				"attributes": {
-//					"ApproximateReceiveCount": "1",
-//					"SentTimestamp": "1523232000000",
-//					"SenderId": "123456789012",
-//					"ApproximateFirstReceiveTimestamp": "1523232000001"
-//				},
-//				"messageAttributes": {},
-//				"md5OfBody": "7b270e59b47ff90a553787216d55d91d",
-//				"eventSource": "aws:sqs",
-//				"eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:MyQueue",
-//				"awsRegion": "us-east-1"
-//			}
-//		]
-//	}
-func (t *trigger) Handle(ctx context.Context, event map[string]json.RawMessage) error {
+func (t *Trigger) Handle(ctx context.Context, event map[string]json.RawMessage) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	records, err := t.getRecords(event)
 	if err != nil {
-		t.log.Error().Err(err).Msg("failed to get records")
-		return err
-	}
-	maxWorkers := t.cfg.MaxWorkers
-	if maxWorkers <= 0 {
-		maxWorkers = len(records)
+		t.log.Error().Err(err).Msg("Failed to get records from event")
+		return fmt.Errorf("failed to get records: %w", err)
 	}
 
+	if len(records) == 0 {
+		t.log.Warn().Msg("No records to process")
+		return nil
+	}
+	maxWorkers := t.getMaxWorkers(len(records))
+	return t.processRecords(ctx, records, maxWorkers)
+}
+
+// getMaxWorkers determines the number of workers to use.
+func (t *Trigger) getMaxWorkers(recordCount int) int {
+	if t.cfg.MaxWorkers <= 0 {
+		return recordCount
+	}
+	if t.cfg.MaxWorkers > recordCount {
+		return recordCount
+	}
+	return t.cfg.MaxWorkers
+}
+
+// processRecords handles the concurrent processing of records.
+func (t *Trigger) processRecords(ctx context.Context, records []json.RawMessage, maxWorkers int) error {
 	var (
 		wg        sync.WaitGroup
 		errChan   = make(chan error, len(records))
 		semaphore = make(chan struct{}, maxWorkers)
 	)
 
-	for _, record := range records {
+	t.log.Info().
+		Int("total_records", len(records)).
+		Int("max_workers", maxWorkers).
+		Msg("Starting records processing")
+
+	for i, record := range records {
 		wg.Add(1)
-		go func(r json.RawMessage) {
+		go func(recordNum int, r json.RawMessage) {
 			defer wg.Done()
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			if err := t.handler(ctx, t.log, r); err != nil {
+			recordLogger := t.log.With().Int("record_number", recordNum+1).Logger()
+
+			if err := t.handler(ctx, recordLogger, r); err != nil {
 				select {
-				case errChan <- err:
+				case errChan <- fmt.Errorf("record %d processing failed: %w", recordNum+1, err):
 				default:
-					t.log.Error().Err(err).Msg("Error channel full, logging error")
+					recordLogger.Error().Err(err).Msg("Error channel full, logging error")
 				}
 			}
-		}(record)
+		}(i, record)
 	}
 	go func() {
 		wg.Wait()
 		close(errChan)
 	}()
+	return t.collectErrors(errChan)
+}
 
-	var hasErrors bool
+// collectErrors gathers all errors from the error channel.
+func (t *Trigger) collectErrors(errChan <-chan error) error {
+	var errs []error
 	for err := range errChan {
+		errs = append(errs, err)
 		t.log.Error().Err(err).Msg("Error processing record")
-		hasErrors = true
 	}
-	if hasErrors {
-		return errors.New("finished with errors")
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%w: %d errors occurred", errProcessingFailed, len(errs))
 	}
 	return nil
 }
 
-func (t *trigger) getRecords(event map[string]json.RawMessage) ([]json.RawMessage, error) {
-	if records, ok := event["Records"]; ok {
-		var res []json.RawMessage
-
-		if err := serializer.UnmarshalJSON(records, &res); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal records")
-		}
-		return res, nil
+// getRecords extracts records from the event payload.
+func (t *Trigger) getRecords(event map[string]json.RawMessage) ([]json.RawMessage, error) {
+	records, ok := event[recordsKey]
+	if !ok {
+		return nil, errUnsupportedEventType
 	}
-	return nil, errors.New("unsupported event type")
+
+	var res []json.RawMessage
+	if err := serializer.UnmarshalJSON(records, &res); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal records: %w", err)
+	}
+	return res, nil
 }
