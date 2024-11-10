@@ -358,13 +358,13 @@ tasks:
         echo "Updating Lambda function {{.FUNC_NAME}} with image ${IMAGE_URI}"
         
         aws lambda update-function-code \
-          --function-name "{{.FUNC_NAME}}" \
+          --function-name "lingocards-{{.FUNC_NAME}}" \
           --image-uri "${IMAGE_URI}" \
           --region "{{.AWS_DEFAULT_REGION}}" \
           --no-cli-pager
         
         aws lambda wait function-updated \
-          --function-name "{{.FUNC_NAME}}" \
+          --function-name "lingocards-{{.FUNC_NAME}}" \
           --region "{{.AWS_DEFAULT_REGION}}"
         echo "Lambda function {{.FUNC_NAME}} has been updated successfully"
     env:

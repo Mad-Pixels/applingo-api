@@ -22,7 +22,7 @@ module "s3-processing-bucket" {
 module "s3-errors-bucket" {
   source = "../../modules/s3"
 
-  project = local.project
+  project     = local.project
   bucket_name = "errors"
 
   rule = {
