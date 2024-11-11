@@ -22,6 +22,7 @@ type handleDataPutRequest struct {
 	ErrorOriginal  string         `json:"error_original" validate:"required"`
 	ErrorType      string         `json:"error_type" validate:"required"`
 	Timestamp      int            `json:"timestamp" validate:"required"`
+	ReplicaID      string         `json:"replica_id" validate:"required"`
 	AdditionalInfo map[string]any `json:"additional_info,omitempty"`
 }
 
