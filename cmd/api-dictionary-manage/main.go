@@ -41,9 +41,11 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"upload_url": handleUploadUrl,
-				"delete":     handleDataDelete,
-				"put":        handleDataPut,
+				"upload_url":   handleUploadUrl,
+				"delete":       handleDataDelete,
+				"put":          handleDataPut,
+				"query":        handleDataQuery,
+				"download_url": handleDownloadUrl,
 			},
 		).Handle,
 	)
