@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }

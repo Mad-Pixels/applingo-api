@@ -14,7 +14,7 @@ vars:
   trivy: v0.54.1
   terraform: 1.9.5
   terraform_docs: v0.18.0
-  api_image_name: lingocards-api
+  api_image_name: applingo-api
 
 tasks:
   default:
@@ -358,13 +358,13 @@ tasks:
         echo "Updating Lambda function {{.FUNC_NAME}} with image ${IMAGE_URI}"
         
         aws lambda update-function-code \
-          --function-name "lingocards-{{.FUNC_NAME}}" \
+          --function-name "applingo-{{.FUNC_NAME}}" \
           --image-uri "${IMAGE_URI}" \
           --region "{{.AWS_DEFAULT_REGION}}" \
           --no-cli-pager
         
         aws lambda wait function-updated \
-          --function-name "lingocards-{{.FUNC_NAME}}" \
+          --function-name "applingo-{{.FUNC_NAME}}" \
           --region "{{.AWS_DEFAULT_REGION}}"
         echo "Lambda function {{.FUNC_NAME}} has been updated successfully"
     env:

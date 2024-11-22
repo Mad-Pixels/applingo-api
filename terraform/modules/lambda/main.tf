@@ -32,7 +32,7 @@ resource "aws_lambda_function" "this" {
       "Type"    = "image",
       "Arch"    = var.arch,
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 
@@ -67,7 +67,7 @@ resource "aws_iam_role" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }

@@ -7,7 +7,7 @@ resource "aws_sqs_queue" "dead_letter" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }
@@ -29,7 +29,7 @@ resource "aws_sqs_queue" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }

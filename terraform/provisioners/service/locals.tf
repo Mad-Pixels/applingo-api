@@ -16,7 +16,7 @@ locals {
   }
 
   lambdas      = { for func in local._lambda_functions : func => local._lambda_configs[func] }
-  project      = "lingocards"
+  project      = "applingo"
   state_bucket = "tfstates-madpixels"
   tfstate_file = "lingocards-api/infra.tfstate"
 

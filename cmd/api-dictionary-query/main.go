@@ -41,8 +41,8 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"query":        handleDataQuery,
-				"download_url": handleDownloadUrl,
+				"query":    handleDataQuery,
+				"download": handleDownloadUrl,
 			},
 		).Handle,
 	)
