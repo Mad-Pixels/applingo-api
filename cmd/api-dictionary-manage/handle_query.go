@@ -9,7 +9,7 @@ import (
 
 	"github.com/Mad-Pixels/lingocards-api/pkg/sort"
 
-	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/lingocardsdictionary"
+	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/lingocards-api/pkg/api"
 	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
 	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
@@ -61,7 +61,7 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	result, err := dbDynamo.Query(ctx, lingocardsdictionary.TableName, dynamoQueryInput)
+	result, err := dbDynamo.Query(ctx, applingodictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
@@ -109,14 +109,14 @@ func handleDataQuery(ctx context.Context, logger zerolog.Logger, raw json.RawMes
 }
 
 func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
-	qb := lingocardsdictionary.NewQueryBuilder()
+	qb := applingodictionary.NewQueryBuilder()
 
 	switch {
 	case req.IsPublic && req.Subcategory != "":
 		qb.WithSubcategory(req.Subcategory)
-		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
+		qb.WithIsPublic(applingodictionary.BoolToInt(true))
 	case req.IsPublic:
-		qb.WithIsPublic(lingocardsdictionary.BoolToInt(true))
+		qb.WithIsPublic(applingodictionary.BoolToInt(true))
 	case req.Subcategory != "":
 		qb.WithSubcategory(req.Subcategory)
 	}
@@ -150,7 +150,7 @@ func buildQueryInput(req *handleDataQueryRequest) (*cloud.QueryInput, error) {
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
-	projectionFields := lingocardsdictionary.IndexProjections[indexName]
+	projectionFields := applingodictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
 		IndexName:         indexName,

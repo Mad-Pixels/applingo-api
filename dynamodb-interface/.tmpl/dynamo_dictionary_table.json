@@ -1,5 +1,5 @@
 {
-  "table_name": "lingocards-dictionary",
+  "table_name": "applingo-dictionary",
   "hash_key": "id",
   "range_key": "subcategory",
   "attributes": [
