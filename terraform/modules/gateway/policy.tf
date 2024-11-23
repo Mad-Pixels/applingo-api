@@ -13,26 +13,28 @@ resource "aws_iam_role" "cloudwatch_role" {
       }
     ]
   })
+}
 
-  inline_policy {
-    name = "${var.project}-${var.api_name}-cloudwatch-policy"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "logs:CreateLogGroup",
-            "logs:CreateLogStream",
-            "logs:DescribeLogGroups",
-            "logs:DescribeLogStreams",
-            "logs:PutLogEvents",
-            "logs:GetLogEvents",
-            "logs:FilterLogEvents"
-          ]
-          Resource = "*"
-        }
-      ]
-    })
-  }
+resource "aws_iam_role_policy" "cloudwatch_policy" {
+  name = "${var.project}-${var.api_name}-cloudwatch-policy"
+  role = aws_iam_role.cloudwatch_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
