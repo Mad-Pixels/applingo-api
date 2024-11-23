@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
 	"github.com/aws/aws-lambda-go/events"
 )

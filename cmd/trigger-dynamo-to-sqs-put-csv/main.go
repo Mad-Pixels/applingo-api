@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"github.com/Mad-Pixels/lingocards-api/pkg/trigger"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"

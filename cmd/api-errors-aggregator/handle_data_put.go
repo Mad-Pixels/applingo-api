@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )

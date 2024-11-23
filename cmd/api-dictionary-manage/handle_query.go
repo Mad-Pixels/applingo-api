@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/sort"
+	"github.com/Mad-Pixels/applingo-api/pkg/sort"
 
-	"github.com/Mad-Pixels/lingocards-api/dynamodb-interface/gen/applingodictionary"
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
+	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"

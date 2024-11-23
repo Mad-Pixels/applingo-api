@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/logger"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )

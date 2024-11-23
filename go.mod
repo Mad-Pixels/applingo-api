@@ -1,4 +1,4 @@
-module github.com/Mad-Pixels/lingocards-api
+module github.com/Mad-Pixels/applingo-api
 
 go 1.23.0
 

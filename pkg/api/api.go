@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/logger"
+	"github.com/Mad-Pixels/applingo-api/pkg/logger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
 )
