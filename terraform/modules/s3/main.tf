@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }
@@ -39,5 +39,34 @@ resource "aws_s3_bucket_website_configuration" "this" {
   }
   error_document {
     key = var.error_document
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "this" {
+  count  = var.rule != null ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    id     = var.rule.id
+    status = var.rule.status
+
+    filter {
+      prefix = var.rule.filter.prefix
+    }
+
+    dynamic "transition" {
+      for_each = var.rule.transition != null ? [var.rule.transition] : []
+      content {
+        days          = transition.value.days
+        storage_class = transition.value.storage_class
+      }
+    }
+
+    dynamic "expiration" {
+      for_each = var.rule.expiration != null ? [var.rule.expiration] : []
+      content {
+        days = expiration.value.days
+      }
+    }
   }
 }

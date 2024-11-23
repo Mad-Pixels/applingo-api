@@ -1,61 +1,79 @@
 {
-  "table_name": "lingocards-dictionary",
+  "table_name": "applingo-dictionary",
   "hash_key": "id",
-  "range_key": "name",
+  "range_key": "subcategory",
   "attributes": [
     { "name": "id", "type": "S" },
-    { "name": "name", "type": "S" },
-    { "name": "category_main", "type": "S" },
-    { "name": "category_sub", "type": "S" },
+    { "name": "subcategory", "type": "S" },
+    { "name": "created_at", "type": "N" },
+    { "name": "rating", "type": "N" },
     { "name": "is_public", "type": "N" }
   ],
   "common_attributes": [
+    { "name": "name", "type": "S" },
     { "name": "author", "type": "S" },
+    { "name": "category", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "filename", "type": "S" },
-    { "name": "code", "type": "S" }
+    { "name": "dictionary", "type": "S" }
   ],
   "secondary_indexes": [
     {
-      "name": "CategoryMainIndex",
-      "hash_key": "category_main",
-      "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "name",
-        "author",
-        "description",
-        "dictionary_key",
-        "is_public",
-        "code",
-        "is_public",
-        "category_sub"
-      ]
-    },
-    {
-      "name": "CategorySubIndex",
-      "hash_key": "category_sub",
-      "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "name",
-        "author",
-        "description",
-        "dictionary_key",
-        "code",
-        "is_public"
-      ]
-    },
-    {
-      "name": "IsPublicIndex",
+      "name": "PublicByDateIndex",
       "hash_key": "is_public",
+      "range_key": "created_at",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
+        "dictionary",
         "name",
-        "author",
         "description",
-        "dictionary_key",
-        "code",
-        "category_sub",
-        "category_main"
+        "category",
+        "subcategory",
+        "author",
+        "rating"
+      ]
+    },
+    {
+      "name": "PublicByRatingIndex",
+      "hash_key": "is_public",
+      "range_key": "rating",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "dictionary",
+        "name",
+        "description",
+        "category",
+        "subcategory",
+        "author",
+        "created_at"
+      ]
+    },
+    {
+      "name": "SubcategoryByDateIndex",
+      "hash_key": "subcategory",
+      "range_key": "created_at",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "dictionary",
+        "name",
+        "description",
+        "category",
+        "author",
+        "rating"
+      ]
+    },
+    {
+      "name": "SubcategoryByRatingIndex",
+      "hash_key": "subcategory",
+      "range_key": "rating",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "dictionary",
+        "name",
+        "description",
+        "category",
+        "author",
+        "created_at"
       ]
     }
   ]

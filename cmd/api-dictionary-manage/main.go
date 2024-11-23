@@ -5,8 +5,9 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
@@ -37,11 +38,13 @@ func init() {
 func main() {
 	lambda.Start(
 		api.NewLambda(
-			api.Config{},
+			api.Config{
+				EnableRequestLogging: true,
+			},
 			map[string]api.HandleFunc{
-				"upload_url": handleUploadUrl,
-				"delete":     handleDataDelete,
-				"put":        handleDataPut,
+				"upload": handleUpload,
+				"delete": handleDataDelete,
+				"put":    handleDataPut,
 			},
 		).Handle,
 	)

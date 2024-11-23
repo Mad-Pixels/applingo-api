@@ -25,7 +25,7 @@ resource "aws_api_gateway_rest_api" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }
@@ -54,7 +54,7 @@ resource "aws_api_gateway_stage" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 
@@ -95,7 +95,7 @@ resource "aws_api_gateway_domain_name" "this" {
     {
       "TF"      = "true",
       "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/lingocards-api",
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }

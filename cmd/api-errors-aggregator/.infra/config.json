@@ -1,0 +1,24 @@
+{
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ],
+        "Resource": [
+          "${log_errors_bucket_arn}/*",
+          "${log_errors_bucket_arn}"
+        ]
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 2,
+  "envs": {
+    "SERVICE_ERRORS_BUCKET": "${log_errors_bucket_name}"
+  }
+}

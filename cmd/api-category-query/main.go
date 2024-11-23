@@ -3,7 +3,8 @@ package main
 import (
 	"runtime/debug"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/api"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/go-playground/validator/v10"
 )
@@ -18,7 +19,9 @@ func init() {
 func main() {
 	lambda.Start(
 		api.NewLambda(
-			api.Config{},
+			api.Config{
+				EnableRequestLogging: true,
+			},
 			map[string]api.HandleFunc{
 				"query": handleGet,
 			},

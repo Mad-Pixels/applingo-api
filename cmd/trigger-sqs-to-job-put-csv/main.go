@@ -10,9 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"github.com/Mad-Pixels/lingocards-api/pkg/trigger"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -32,7 +33,6 @@ var (
 	awsRegion               = os.Getenv("AWS_REGION")
 
 	s3Bucket *cloud.Bucket
-	dbDynamo *cloud.Dynamo
 )
 
 func init() {
@@ -41,7 +41,6 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
-	dbDynamo = cloud.NewDynamo(cfg)
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
@@ -100,7 +99,7 @@ func processFile(ctx context.Context, log zerolog.Logger, filename string) error
 	return nil
 }
 
-func convertToCSV(log zerolog.Logger, r io.Reader, w io.Writer) error {
+func convertToCSV(_ zerolog.Logger, r io.Reader, w io.Writer) error {
 	buf := make([]byte, maxSampleSize)
 	n, err := io.ReadFull(r, buf)
 	if err != nil && err != io.ErrUnexpectedEOF {

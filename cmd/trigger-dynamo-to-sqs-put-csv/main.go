@@ -6,9 +6,10 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/cloud"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
-	"github.com/Mad-Pixels/lingocards-api/pkg/trigger"
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -43,7 +44,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		return errors.Wrap(err, "failed to marshal DynamoDB record")
 	}
 
-	_, err = sqsQueue.SendMessage(ctx, servicePutScvQueueUrl, string(payload))
+	_, err = sqsQueue.SendMessage(ctx, cloud.SendMessageInput{
+		QueueURL:    servicePutScvQueueUrl,
+		MessageBody: string(payload),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to send message to SQS")
 	}

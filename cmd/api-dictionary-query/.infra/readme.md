@@ -6,7 +6,7 @@ Lambda for query dictionaries.
 ## Define variables
 
 ```bash
-api="3i8l3h8e8o"
+api="xw66q4bfqv"
 
 # localstack
 url="http://localhost:4566/restapis/${api}/prod/_user_request_"
@@ -21,36 +21,18 @@ api_download_url="v1/dictionary/download_url"
 
 ## Define body
 ```bash
-# Query by category_main (public)
-body='{"category_main": "category_main"}'
+# Query by public
+body='{"is_public": true, "sort_by": "date"}'
+body='{"is_public": true, "sort_by": "rating"}'
+body='{"is_public": true, "sort_by": "rating", "last_evaluated": "...."}'
 
-# Query by category_main (private)
-body='{"category_main": "category_main", "code": "666"}'
+# Query by sub category
+body='{"subcategory": "ru-en", "sort_by": "date"}'
+body='{"subcategory": "en-he", "sort_by": "rating"}'
+body='{"subcategory": "en-he", "sort_by": "rating", "last_evaluated": "...."}'
 
-# Query by category_sub (public)
-body='{"category_sub": "category_sub"}'
-
-# Query by category_sub (private)
-body='{"category_sub": "category_sub", "code": "666"}'
-
-# Query by public raws
-body='{"is_public": true}'
-body='{}'
-
-# Query by private raws
-body='{"is_public": false, "code": "666"}'
-
-# Query by name, author
-body='{"name": "name","author": "author"}'
-
-# Query by name
-body='{"name": "name"}'
-
-# Query by author
-body='{"author": "author"}'
-
-# Download body
-body='{"dictionary_key":"dictionary"}'
+# Get S3 file url
+body='{"dictionary": "my_dictionary"}'
 ```
 
 ## device/v1/dictionary/query

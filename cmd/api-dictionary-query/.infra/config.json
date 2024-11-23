@@ -28,5 +28,7 @@
   },
   "memory_size": 128,
   "timeout": 2,
-  "envs": {}
+  "envs": {
+    "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}"
+  }
 }

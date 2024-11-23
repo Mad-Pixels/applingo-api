@@ -19,6 +19,24 @@ module "s3-processing-bucket" {
   bucket_name = "processing"
 }
 
+module "s3-errors-bucket" {
+  source = "../../modules/s3"
+
+  project     = local.project
+  bucket_name = "errors"
+
+  rule = {
+    id     = "cleanup"
+    status = "Enabled"
+    filter = {
+      prefix = "logs-"
+    }
+    expiration = {
+      days = 30
+    }
+  }
+}
+
 module "dynamo-dictionary-table" {
   source = "../../modules/dynamo"
 

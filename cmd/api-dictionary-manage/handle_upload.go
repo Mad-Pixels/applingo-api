@@ -5,23 +5,23 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Mad-Pixels/lingocards-api/pkg/api"
-	"github.com/Mad-Pixels/lingocards-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
 	"github.com/rs/zerolog"
 )
 
-type handleUploadUrlRequest struct {
+type handleUploadRequest struct {
 	ContentType string `json:"content_type" validate:"required,oneof=text/csv application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/vnd.ms-excel"`
 	Name        string `json:"name" validate:"required,min=4,max=32"`
 }
 
-type handleUploadUrlResponse struct {
+type handleUploadResponse struct {
 	Url string `json:"url"`
 }
 
-func handleUploadUrl(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
-	var req handleUploadUrlRequest
+func handleUpload(ctx context.Context, _ zerolog.Logger, data json.RawMessage) (any, *api.HandleError) {
+	var req handleUploadRequest
 	if err := serializer.UnmarshalJSON(data, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -29,9 +29,9 @@ func handleUploadUrl(ctx context.Context, _ zerolog.Logger, data json.RawMessage
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	url, err := s3Bucket.UploadUrl(ctx, req.Name, serviceProcessingBucket, req.ContentType)
+	url, err := s3Bucket.UploadURL(ctx, req.Name, serviceProcessingBucket, req.ContentType)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleUploadUrlResponse{Url: url}, nil
+	return handleUploadResponse{Url: url}, nil
 }
