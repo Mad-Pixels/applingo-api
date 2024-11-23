@@ -12,7 +12,7 @@ import (
 )
 
 type handleDownloadUrlRequest struct {
-	Dictionary string `json:"dictionary" validate:"required,min=4,max=32"`
+	Dictionary string `json:"dictionary" validate:"required,min=4,max=40"`
 }
 
 type handleDownloadUrlResponse struct {
