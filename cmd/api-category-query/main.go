@@ -4,6 +4,7 @@ import (
 	"runtime/debug"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/go-playground/validator/v10"
 )

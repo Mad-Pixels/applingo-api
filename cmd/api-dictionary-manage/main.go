@@ -7,6 +7,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
@@ -41,11 +42,11 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"upload_url": handleUploadUrl,
-				"delete":     handleDataDelete,
-				"put":        handleDataPut,
-				"query":      handleDataQuery,
-				"download":   handleDownloadUrl,
+				"upload":   handleUpload,
+				"delete":   handleDataDelete,
+				"put":      handleDataPut,
+				"query":    handleDataQuery,
+				"download": handleDownloadUrl,
 			},
 		).Handle,
 	)

@@ -11,16 +11,16 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type handleDownloadUrlRequest struct {
+type handleDownloadRequest struct {
 	Dictionary string `json:"dictionary" validate:"required,min=4,max=40"`
 }
 
-type handleDownloadUrlResponse struct {
+type handleDownloadResponse struct {
 	Url string `json:"url"`
 }
 
-func handleDownloadUrl(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
-	var req handleDownloadUrlRequest
+func handleDownload(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
+	var req handleDownloadRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -32,5 +32,5 @@ func handleDownloadUrl(ctx context.Context, _ zerolog.Logger, raw json.RawMessag
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusNotFound, Err: err}
 	}
-	return handleDownloadUrlResponse{Url: url}, nil
+	return handleDownloadResponse{Url: url}, nil
 }

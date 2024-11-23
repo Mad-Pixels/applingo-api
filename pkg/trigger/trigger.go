@@ -8,6 +8,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )

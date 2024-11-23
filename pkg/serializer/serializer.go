@@ -1,4 +1,3 @@
-// Package serializer provides optimized JSON serialization and deserialization functions.
 package serializer
 
 import (

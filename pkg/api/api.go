@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
 )

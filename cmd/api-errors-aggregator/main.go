@@ -6,11 +6,11 @@ import (
 	"runtime/debug"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
-	"github.com/go-playground/validator/v10"
-
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/go-playground/validator/v10"
 )
 
 var (
