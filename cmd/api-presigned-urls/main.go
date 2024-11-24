@@ -2,20 +2,19 @@ package main
 
 import (
 	"context"
-	"os"
-	"runtime/debug"
-
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
-
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
+	"os"
+	"runtime/debug"
 )
 
 var (
-	serviceErrorsBucket = os.Getenv("SERVICE_ERRORS_BUCKET")
-	awsRegion           = os.Getenv("AWS_REGION")
+	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
+	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
+	awsRegion               = os.Getenv("AWS_REGION")
 
 	validate *validator.Validate
 	s3Bucket *cloud.Bucket
@@ -36,10 +35,10 @@ func main() {
 	lambda.Start(
 		api.NewLambda(
 			api.Config{
-				EnableRequestLogging: false,
+				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"put": handleDataPut,
+				"post": handlePost,
 			},
 		).Handle,
 	)

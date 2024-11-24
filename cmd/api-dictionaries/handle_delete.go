@@ -2,62 +2,51 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"net/http"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
-	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
 )
 
-type handleDataDeleteRequest struct {
-	Name   string `json:"name" validate:"required,min=4,max=32"`
-	Author string `json:"author" validate:"required"`
-}
-
-type handleDataDeleteResponse struct {
-	Status string `json:"status"`
-}
-
-func handleDataDelete(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
-	var req handleDataDeleteRequest
-	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
-	}
-	if err := validate.Struct(&req); err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+func handleDelete(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, pathParams map[string]string) (any, *api.HandleError) {
+	id := pathParams["id"]
+	if id == "" {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("dictionary id is required")}
 	}
 
-	var (
-		id  = hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
-		key = map[string]types.AttributeValue{
-			"id":   &types.AttributeValueMemberS{Value: id},
-			"name": &types.AttributeValueMemberS{Value: req.Name},
-		}
-	)
+	key := map[string]types.AttributeValue{
+		"id": &types.AttributeValueMemberS{Value: id},
+	}
+
+	// Сначала получаем словарь, чтобы узнать имя файла для удаления из S3
 	result, err := dbDynamo.Get(ctx, applingodictionary.TableSchema.TableName, key)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	if len(result.Item) == 0 {
-		return nil, &api.HandleError{Status: http.StatusNotFound, Err: err}
+		return nil, &api.HandleError{Status: http.StatusNotFound, Err: errors.New("dictionary not found")}
 	}
 
 	var item applingodictionary.SchemaItem
 	if err = attributevalue.UnmarshalMap(result.Item, &item); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
+
+	// Удаляем файл из S3
 	if err = s3Bucket.Delete(ctx, item.Filename, serviceDictionaryBucket); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
+
+	// Удаляем запись из DynamoDB
 	if err = dbDynamo.Delete(ctx, applingodictionary.TableSchema.TableName, key); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return handleDataDeleteResponse{Status: "OK"}, nil
+
+	return nil, nil // DELETE возвращает 204 No Content
 }

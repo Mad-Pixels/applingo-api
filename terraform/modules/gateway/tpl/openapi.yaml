@@ -4,171 +4,67 @@ info:
   description: "${project}-${name} endpoint"
   version: "1.0"
 paths:
-  /device/v1/category/{action}:
-    get:
-      parameters:
-        - name: action
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: "Successful operation"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-          content:
-            application/json:
-              schema:
-                type: object
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-category-query"].arn}/invocations"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-      security:
-        - DeviceAuthorizer: []
-
-  /device/v1/dictionary/{action}:
+  /v1/errors:
     post:
-      parameters:
-        - name: action
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: post
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - app_version
+                - os_version
+                - device
+                - error_message
+                - error_original
+                - error_type
+                - timestamp
+                - replica_id
+              properties:
+                app_version:
+                  type: string
+                  description: "Application version"
+                os_version:
+                  type: string
+                  description: "Operating system version"
+                device:
+                  type: string
+                  description: "Device information"
+                error_message:
+                  type: string
+                  description: "Error message"
+                error_original:
+                  type: string
+                  description: "Original error"
+                error_type:
+                  type: string
+                  description: "Type of error"
+                timestamp:
+                  type: integer
+                  description: "Time when error occurred"
+                replica_id:
+                  type: string
+                  description: "Replica identifier"
+                additional_info:
+                  type: object
+                  additionalProperties: true
+                  description: "Additional error information"
       responses:
         "200":
-          description: "Successful response"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
+          description: "Error successfully logged"
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionary-query"].arn}/invocations"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-      security:
-        - DeviceAuthorizer: []
-
-  /v1/category/{action}:
-    get:
-      responses:
-        "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-          content:
-            application/json:
-              schema:
-                type: object
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-category-query"].arn}/invocations"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-
-  /v1/dictionary/{action}:
-    post:
-      parameters:
-        - name: action
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: "Successful response"
-          content:
-            application/json:
-              schema:
-                type: object
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionary-query"].arn}/invocations"
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-    
-  /v1/dictionary/manage/{action}:
-    post:
-      parameters:
-        - name: action
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: "Successful response"
-          content:
-            application/json:
-              schema:
-                type: object
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionary-manage"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-errors"].arn}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -192,7 +88,7 @@ paths:
             Access-Control-Allow-Credentials:
               schema:
                 type: "string"
-          content: {}
+          content: { }
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -202,7 +98,282 @@ paths:
             statusCode: "200"
             responseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,PUT'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/dictionaries/{id}/presigned-urls:
+    post:
+      operationId: post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: operation
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ upload, download ]
+      responses:
+        "200":
+          description: "Successfully generated presigned URL"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: "Presigned S3 URL"
+                  expires_in:
+                    type: integer
+                    description: "URL expiration time in seconds"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+  /v1/dictionaries:
+    get:
+      operationId: get
+      parameters:
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+          description: "Sort criteria"
+        - name: subcategory
+          in: query
+          schema:
+            type: string
+          description: "Filter by subcategory"
+        - name: last_evaluated
+          in: query
+          schema:
+            type: string
+          description: "Pagination token"
+        - name: is_public
+          in: query
+          schema:
+            type: boolean
+          description: "Filter by public status"
+      responses:
+        "200":
+          description: "Successfully retrieved dictionaries"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        category:
+                          type: string
+                        subcategory:
+                          type: string
+                        author:
+                          type: string
+                        dictionary:
+                          type: string
+                        description:
+                          type: string
+                        created_at:
+                          type: integer
+                        rating:
+                          type: integer
+                        is_public:
+                          type: integer
+                  last_evaluated:
+                    type: string
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    post:
+      operationId: post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "201":
+          description: "Dictionary successfully created"
+          content:
+            application/json:
+              schema:
+                type: object
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    delete:
+      operationId: delete
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "Dictionary successfully deleted"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "204"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: { }
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/categories:
+    get:
+      operationId: get
+      responses:
+        "200":
+          description: "Successfully retrieved categories"
+          content:
+            application/json:
+              schema:
+                type: object
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-categories"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    post:
+      operationId: post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "201":
+          description: "Category successfully created"
+          content:
+            application/json:
+              schema:
+                type: object
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-categories"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    delete:
+      operationId: delete
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "Category successfully deleted"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-categories"].arn}/invocations"
+        responses:
+          default:
+            statusCode: "204"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: { }
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         passthroughBehavior: "when_no_match"
 

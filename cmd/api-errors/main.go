@@ -14,13 +14,11 @@ import (
 )
 
 var (
-	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
-	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	awsRegion               = os.Getenv("AWS_REGION")
+	serviceErrorsBucket = os.Getenv("SERVICE_ERRORS_BUCKET")
+	awsRegion           = os.Getenv("AWS_REGION")
 
 	validate *validator.Validate
 	s3Bucket *cloud.Bucket
-	dbDynamo *cloud.Dynamo
 )
 
 func init() {
@@ -31,7 +29,6 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
-	dbDynamo = cloud.NewDynamo(cfg)
 	validate = validator.New()
 }
 
@@ -39,12 +36,10 @@ func main() {
 	lambda.Start(
 		api.NewLambda(
 			api.Config{
-				EnableRequestLogging: true,
+				EnableRequestLogging: false,
 			},
 			map[string]api.HandleFunc{
-				"upload": handleUpload,
-				"delete": handleDataDelete,
-				"put":    handleDataPut,
+				"post": handlePost,
 			},
 		).Handle,
 	)

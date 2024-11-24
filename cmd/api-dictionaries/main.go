@@ -2,15 +2,13 @@ package main
 
 import (
 	"context"
-	"os"
-	"runtime/debug"
-
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
-
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
+	"os"
+	"runtime/debug"
 )
 
 var (
@@ -41,8 +39,9 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"query":    handleDataQuery,
-				"download": handleDownload,
+				"get":    handleGet,
+				"post":   handlePost,
+				"delete": handleDelete,
 			},
 		).Handle,
 	)

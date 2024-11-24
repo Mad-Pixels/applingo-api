@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
 
@@ -12,7 +13,7 @@ import (
 )
 
 // HandleFunc is the type for action handlers.
-type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage) (any, *HandleError)
+type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage, map[string]string) (any, *HandleError)
 
 // HandleError implement error from handlers.
 type HandleError struct {
@@ -55,7 +56,7 @@ func (a *API) logRequest(req events.APIGatewayProxyRequest) {
 		Msg("Received API Gateway event")
 }
 
-// Handle processes API Gateway proxy events, routing them to specific handlers based on the "action" field.
+// Handle processes API Gateway proxy events, routing them to specific handlers based on HTTP method and path.
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -64,19 +65,31 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 		a.logRequest(req)
 	}
 
-	action := req.PathParameters["action"]
-	if action == "" {
-		a.log.Error().Msg("Action not specified in path parameters")
+	// Определяем операцию на основе HTTP метода
+	operationId := req.HTTPMethod
+	if operationId == "" {
+		a.log.Error().Msg("HTTP method not specified in request")
 		return errResponse(http.StatusBadRequest)
 	}
-	handler, ok := a.handlers[action]
+
+	operationId = strings.ToLower(operationId) // конвертируем в нижний регистр для соответствия с operationId в OpenAPI
+
+	handler, ok := a.handlers[operationId]
 	if !ok {
-		a.log.Error().Str("action", action).Msg("Unknown action")
+		a.log.Error().
+			Str("operationId", operationId).
+			Str("method", req.HTTPMethod).
+			Str("path", req.Path).
+			Msg("Unknown operation")
 		return errResponse(http.StatusNotFound)
 	}
-	result, handleError := handler(ctx, a.log, json.RawMessage(req.Body))
+
+	result, handleError := handler(ctx, a.log, json.RawMessage(req.Body), req.QueryStringParameters)
 	if handleError != nil {
-		a.log.Error().Err(handleError.Err).Str("action", action).Msg("Handle error")
+		a.log.Error().
+			Err(handleError.Err).
+			Str("operationId", operationId).
+			Msg("Handle error")
 		return errResponse(handleError.Status)
 	}
 	return okResponse(result)

@@ -32,7 +32,7 @@ type handleDataPutResponse struct {
 	Status string `json:"status"`
 }
 
-func handleDataPut(ctx context.Context, _ zerolog.Logger, raw json.RawMessage) (any, *api.HandleError) {
+func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ map[string]string) (any, *api.HandleError) {
 	var req handleDataPutRequest
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
