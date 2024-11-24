@@ -6,51 +6,13 @@ info:
 paths:
   /v1/errors:
     post:
-      operationId: post
+      operationId: postError
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - app_version
-                - os_version
-                - device
-                - error_message
-                - error_original
-                - error_type
-                - timestamp
-                - replica_id
-              properties:
-                app_version:
-                  type: string
-                  description: "Application version"
-                os_version:
-                  type: string
-                  description: "Operating system version"
-                device:
-                  type: string
-                  description: "Device information"
-                error_message:
-                  type: string
-                  description: "Error message"
-                error_original:
-                  type: string
-                  description: "Original error"
-                error_type:
-                  type: string
-                  description: "Type of error"
-                timestamp:
-                  type: integer
-                  description: "Time when error occurred"
-                replica_id:
-                  type: string
-                  description: "Replica identifier"
-                additional_info:
-                  type: object
-                  additionalProperties: true
-                  description: "Additional error information"
+              $ref: '#/components/schemas/ErrorLog'
       responses:
         "200":
           description: "Error successfully logged"
@@ -70,53 +32,19 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     options:
       responses:
         "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-          content: { }
+          $ref: '#/components/responses/CORSResponse'
       x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        passthroughBehavior: "when_no_match"
+        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
 
   /v1/dictionaries/{id}/presigned-urls:
     post:
-      operationId: post
+      operationId: postPresignedUrl
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: operation
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [ upload, download ]
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/OperationParam'
       responses:
         "200":
           description: "Successfully generated presigned URL"
@@ -142,28 +70,12 @@ paths:
 
   /v1/dictionaries:
     get:
-      operationId: get
+      operationId: getDictionaries
       parameters:
-        - name: sort_by
-          in: query
-          schema:
-            type: string
-          description: "Sort criteria"
-        - name: subcategory
-          in: query
-          schema:
-            type: string
-          description: "Filter by subcategory"
-        - name: last_evaluated
-          in: query
-          schema:
-            type: string
-          description: "Pagination token"
-        - name: is_public
-          in: query
-          schema:
-            type: boolean
-          description: "Filter by public status"
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SubcategoryParam'
+        - $ref: '#/components/parameters/LastEvaluatedParam'
+        - $ref: '#/components/parameters/IsPublicParam'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -175,26 +87,7 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        category:
-                          type: string
-                        subcategory:
-                          type: string
-                        author:
-                          type: string
-                        dictionary:
-                          type: string
-                        description:
-                          type: string
-                        created_at:
-                          type: integer
-                        rating:
-                          type: integer
-                        is_public:
-                          type: integer
+                      $ref: '#/components/schemas/Dictionary'
                   last_evaluated:
                     type: string
       x-amazon-apigateway-integration:
@@ -205,23 +98,21 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     post:
-      operationId: post
+      operationId: postDictionary
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/Dictionary'
       responses:
         "201":
           description: "Dictionary successfully created"
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Dictionary'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
@@ -230,15 +121,10 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     delete:
-      operationId: delete
+      operationId: deleteDictionary
       parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IdParam'
       responses:
         "204":
           description: "Dictionary successfully deleted"
@@ -250,41 +136,16 @@ paths:
             statusCode: "204"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     options:
       responses:
         "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-          content: { }
+          $ref: '#/components/responses/CORSResponse'
       x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        passthroughBehavior: "when_no_match"
+        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
 
   /v1/categories:
     get:
-      operationId: get
+      operationId: getCategories
       responses:
         "200":
           description: "Successfully retrieved categories"
@@ -300,23 +161,21 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     post:
-      operationId: post
+      operationId: postCategory
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/Category'
       responses:
         "201":
           description: "Category successfully created"
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Category'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-categories"].arn}/invocations"
@@ -325,15 +184,10 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     delete:
-      operationId: delete
+      operationId: deleteCategory
       parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IdParam'
       responses:
         "204":
           description: "Category successfully deleted"
@@ -345,39 +199,141 @@ paths:
             statusCode: "204"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-
     options:
       responses:
         "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-          content: { }
+          $ref: '#/components/responses/CORSResponse'
       x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        passthroughBehavior: "when_no_match"
-
+        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
 components:
+  schemas:
+    ErrorLog:
+      type: object
+      required:
+        - app_version
+        - os_version
+        - device
+        - error_message
+        - error_original
+        - error_type
+        - timestamp
+        - replica_id
+      properties:
+        app_version:
+          type: string
+          description: "Application version"
+        os_version:
+          type: string
+          description: "Operating system version"
+        device:
+          type: string
+          description: "Device information"
+        error_message:
+          type: string
+          description: "Error message"
+        error_original:
+          type: string
+          description: "Original error"
+        error_type:
+          type: string
+          description: "Type of error"
+        timestamp:
+          type: integer
+          description: "Time when error occurred"
+        replica_id:
+          type: string
+          description: "Replica identifier"
+        additional_info:
+          type: object
+          additionalProperties: true
+          description: "Additional error information"
+    Dictionary:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        author:
+          type: string
+        dictionary:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+        rating:
+          type: integer
+        is_public:
+          type: integer
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    OperationParam:
+      name: operation
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - upload
+          - download
+    SortByParam:
+      name: sort_by
+      in: query
+      schema:
+        type: string
+      description: "Sort criteria"
+    SubcategoryParam:
+      name: subcategory
+      in: query
+      schema:
+        type: string
+      description: "Filter by subcategory"
+    LastEvaluatedParam:
+      name: last_evaluated
+      in: query
+      schema:
+        type: string
+      description: "Pagination token"
+    IsPublicParam:
+      name: is_public
+      in: query
+      schema:
+        type: boolean
+      description: "Filter by public status"
+  responses:
+    CORSResponse:
+      description: "CORS support"
+      headers:
+        Access-Control-Allow-Origin:
+          schema:
+            type: "string"
+        Access-Control-Allow-Methods:
+          schema:
+            type: "string"
+        Access-Control-Allow-Headers:
+          schema:
+            type: "string"
+        Access-Control-Allow-Credentials:
+          schema:
+            type: "string"
+      content: {}
   securitySchemes:
     DeviceAuthorizer:
       type: "apiKey"
@@ -389,7 +345,19 @@ components:
         authorizerUri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["authorizer-device"].arn}/invocations"
         identitySource: ${use_localstack ? join(",", ["method.request.header.x-timestamp", "method.request.header.x-signature"]) : "method.request.header.x-timestamp,method.request.header.x-signature"}
         authorizerResultTtlInSeconds: 30
-
+  x-amazon-apigateway-integrations:
+    CORSOptionsIntegration:
+      type: "mock"
+      requestTemplates:
+        application/json: "{\"statusCode\": 200}"
+      responses:
+        default:
+          statusCode: "200"
+          responseParameters:
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      passthroughBehavior: "when_no_match"
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
   Statement:
