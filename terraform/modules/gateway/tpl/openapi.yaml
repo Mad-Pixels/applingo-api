@@ -6,6 +6,8 @@ info:
 paths:
   /v1/errors:
     post:
+      # security:
+      #   - DeviceAuthorizer: []
       operationId: postError
       requestBody:
         required: true
@@ -35,16 +37,54 @@ paths:
     options:
       responses:
         "200":
-          $ref: '#/components/responses/CORSResponse'
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
       x-amazon-apigateway-integration:
-        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
 
-  /v1/dictionaries/{id}/presigned-urls:
+  /v1/dictionaries/presigned-urls:
     post:
+      security: []
       operationId: postPresignedUrl
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-        - $ref: '#/components/parameters/OperationParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - operation
+              properties:
+                dictionary:
+                  type: string
+                operation:
+                  type: string
+                  enum:
+                    - upload
+                    - download
       responses:
         "200":
           description: "Successfully generated presigned URL"
@@ -67,9 +107,40 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
 
   /v1/dictionaries:
     get:
+      security: []
       operationId: getDictionaries
       parameters:
         - $ref: '#/components/parameters/SortByParam'
@@ -99,6 +170,8 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     post:
+      # security:
+      #   - DeviceAuthorizer: []
       operationId: postDictionary
       requestBody:
         required: true
@@ -121,7 +194,41 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/dictionaries/{id}:
     delete:
+      security:
+        - DeviceAuthorizer: []
       operationId: deleteDictionary
       parameters:
         - $ref: '#/components/parameters/IdParam'
@@ -139,9 +246,33 @@ paths:
     options:
       responses:
         "200":
-          $ref: '#/components/responses/CORSResponse'
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
       x-amazon-apigateway-integration:
-        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
 
   /v1/categories:
     get:
@@ -162,6 +293,8 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     post:
+      security:
+        - DeviceAuthorizer: []
       operationId: postCategory
       requestBody:
         required: true
@@ -184,7 +317,41 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/categories/{id}:
     delete:
+      security:
+        - DeviceAuthorizer: []
       operationId: deleteCategory
       parameters:
         - $ref: '#/components/parameters/IdParam'
@@ -202,9 +369,34 @@ paths:
     options:
       responses:
         "200":
-          $ref: '#/components/responses/CORSResponse'
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+          content: {}
       x-amazon-apigateway-integration:
-        $ref: '#/components/x-amazon-apigateway-integrations/CORSOptionsIntegration'
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
 components:
   schemas:
     ErrorLog:
@@ -356,7 +548,7 @@ components:
           responseParameters:
             method.response.header.Access-Control-Allow-Origin: "'*'"
             method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
-            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
       passthroughBehavior: "when_no_match"
 x-amazon-apigateway-policy:
   Version: "2012-10-17"

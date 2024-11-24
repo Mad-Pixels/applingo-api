@@ -13,7 +13,10 @@
             "dynamodb:Query",
             "dynamodb:ListTables"
           ],
-          "Resource": "${dictionary_table_arn}"
+          "Resource": [
+            "${dictionary_table_arn}",
+            "${dictionary_table_arn}/index/*"
+          ]
         },
         {
           "Effect": "Allow",
