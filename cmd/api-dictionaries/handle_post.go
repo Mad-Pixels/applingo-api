@@ -39,7 +39,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		Category:    req.Category,
 		Subcategory: req.Subcategory,
 		Description: req.Description,
-		IsPublic:    applingodictionary.BoolToInt(req.IsPublic),
+		IsPublic:    req.IsPublic,
 		CreatedAt:   int(time.Now().Unix()),
 		Rating:      0,
 	}

@@ -57,9 +57,6 @@ func (a *API) logError(req events.APIGatewayProxyRequest, opKey string, err erro
 }
 
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	if a.cfg.EnableRequestLogging {
 		a.logRequest(req)
 	}
@@ -88,8 +85,13 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 			nil,
 		)
 	}
+
+	okStatus := http.StatusOK
+	if req.HTTPMethod == "POST" {
+		okStatus = http.StatusCreated
+	}
 	return gatewayResponse(
-		http.StatusOK,
+		okStatus,
 		result,
 		nil,
 	)

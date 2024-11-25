@@ -28,5 +28,5 @@ type PostRequest struct {
 	Author      string `json:"author"`
 	Category    string `json:"category"`
 	Subcategory string `json:"subcategory"`
-	IsPublic    bool   `json:"is_public"`
+	IsPublic    int    `json:"is_public"`
 }
