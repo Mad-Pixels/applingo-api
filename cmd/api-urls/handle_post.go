@@ -18,9 +18,8 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	var req urls.PostRequest
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{
-			Status:  http.StatusBadRequest,
-			Message: "Invalid request format",
-			Err:     err,
+			Status: http.StatusBadRequest,
+			Err:    err,
 		}
 	}
 
@@ -31,9 +30,8 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		return handleDownload(ctx, req)
 	default:
 		return nil, &api.HandleError{
-			Status:  http.StatusBadRequest,
-			Message: fmt.Sprintf("Unknown operation: %s", req.Operation),
-			Err:     fmt.Errorf("invalid operation"),
+			Status: http.StatusBadRequest,
+			Err:    fmt.Errorf("invalid operation"),
 		}
 	}
 }
@@ -41,18 +39,16 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 func handleUpload(ctx context.Context, req urls.PostRequest) (any, *api.HandleError) {
 	if req.ContentType == "" || req.Name == "" {
 		return nil, &api.HandleError{
-			Status:  http.StatusBadRequest,
-			Message: "Content type and name are required for upload operation",
-			Err:     fmt.Errorf("missing required fields"),
+			Status: http.StatusBadRequest,
+			Err:    fmt.Errorf("missing required fields"),
 		}
 	}
 
 	url, err := s3Bucket.UploadURL(ctx, req.Name, serviceProcessingBucket, string(req.ContentType))
 	if err != nil {
 		return nil, &api.HandleError{
-			Status:  http.StatusInternalServerError,
-			Message: "Failed to generate upload URL",
-			Err:     err,
+			Status: http.StatusInternalServerError,
+			Err:    err,
 		}
 	}
 
@@ -65,18 +61,16 @@ func handleUpload(ctx context.Context, req urls.PostRequest) (any, *api.HandleEr
 func handleDownload(ctx context.Context, req urls.PostRequest) (any, *api.HandleError) {
 	if req.Name == "" {
 		return nil, &api.HandleError{
-			Status:  http.StatusBadRequest,
-			Message: "Dictionary name is required for download operation",
-			Err:     fmt.Errorf("missing required fields"),
+			Status: http.StatusBadRequest,
+			Err:    fmt.Errorf("missing required fields"),
 		}
 	}
 
 	url, err := s3Bucket.DownloadURL(ctx, req.Name, serviceDictionaryBucket)
 	if err != nil {
 		return nil, &api.HandleError{
-			Status:  http.StatusNotFound,
-			Message: "Dictionary not found",
-			Err:     err,
+			Status: http.StatusNotFound,
+			Err:    err,
 		}
 	}
 

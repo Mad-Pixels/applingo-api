@@ -6,12 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
+	v1 "github.com/Mad-Pixels/applingo-api/openapi-interface/v1"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/dictionaries"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -25,9 +25,8 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	var req dictionaries.PostRequest
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{
-			Status:  http.StatusBadRequest,
-			Message: "Invalid request format",
-			Err:     err,
+			Status: http.StatusBadRequest,
+			Err:    err,
 		}
 	}
 	id := generateDictionaryID(req.Name, req.Author)
@@ -49,9 +48,8 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	if err != nil {
 		logger.Error().Err(err).Str("id", id).Msg("Failed to prepare item for DynamoDB")
 		return nil, &api.HandleError{
-			Status:  http.StatusInternalServerError,
-			Message: "Failed to prepare dictionary data",
-			Err:     err,
+			Status: http.StatusInternalServerError,
+			Err:    err,
 		}
 	}
 
@@ -64,19 +62,17 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {
 			return nil, &api.HandleError{
-				Status:  http.StatusConflict,
-				Message: fmt.Sprintf("Dictionary with name '%s' by author '%s' already exists", req.Name, req.Author),
-				Err:     err,
+				Status: http.StatusConflict,
+				Err:    err,
 			}
 		}
 		logger.Error().Err(err).Str("id", id).Msg("Failed to save dictionary to DynamoDB")
 		return nil, &api.HandleError{
-			Status:  http.StatusInternalServerError,
-			Message: "Failed to save dictionary",
-			Err:     err,
+			Status: http.StatusInternalServerError,
+			Err:    err,
 		}
 	}
-	return nil, nil
+	return v1.SuccessResponse, nil
 }
 
 func generateDictionaryID(name, author string) string {

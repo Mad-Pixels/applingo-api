@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
+	v1 "github.com/Mad-Pixels/applingo-api/openapi-interface/v1"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/reports"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
@@ -48,5 +49,5 @@ func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ op
 	if err = s3Bucket.Put(ctx, key, serviceErrorsBucket, bytes.NewReader(data), cloud.ContentTypeJSON); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return nil, nil
+	return v1.SuccessResponse, nil
 }
