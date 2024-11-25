@@ -2,7 +2,7 @@ module "ecr-repository-api" {
   source = "../../modules/ecr"
 
   project         = local.project
-  repository_name = "api"
+  repository_name = "images"
 }
 
 module "s3-dictionary-bucket" {

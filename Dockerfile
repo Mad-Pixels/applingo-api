@@ -24,6 +24,7 @@ COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./dynamodb-interface ./dynamodb-interface
+COPY ./openapi-interface ./openapi-interface
 
 ENV GOARCH=amd64
 RUN --mount=type=cache,target=${GOCACHE} \
@@ -59,6 +60,7 @@ COPY ./cmd/${FUNC_NAME}/ ./
 COPY ./vendor ./vendor
 COPY ./pkg ./pkg
 COPY ./dynamodb-interface ./dynamodb-interface
+COPY ./openapi-interface ./openapi-interface
 
 ENV GOARCH=arm64
 RUN --mount=type=cache,target=${GOCACHE} \

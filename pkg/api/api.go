@@ -3,37 +3,33 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strings"
 
+	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rs/zerolog"
 )
 
-// HandleFunc is the type for action handlers.
-type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage, map[string]string) (any, *HandleError)
+type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage, openapi.QueryParams) (any, *HandleError)
 
-// HandleError implement error from handlers.
 type HandleError struct {
-	Err    error
-	Status int
+	Err     error
+	Status  int
+	Message string
 }
 
-// Config for api object.
 type Config struct {
 	EnableRequestLogging bool
 }
 
-// API handles Lambda API Gateway proxy requests.
 type API struct {
 	cfg      Config
 	log      zerolog.Logger
 	handlers map[string]HandleFunc
 }
 
-// NewLambda creates a new API instance.
 func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 	if handlers == nil {
 		panic("handlers map cannot be nil")
@@ -45,7 +41,6 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 	}
 }
 
-// logRequest logs detailed request information.
 func (a *API) logRequest(req events.APIGatewayProxyRequest) {
 	a.log.Info().
 		Str("path", req.Path).
@@ -56,7 +51,6 @@ func (a *API) logRequest(req events.APIGatewayProxyRequest) {
 		Msg("Received API Gateway event")
 }
 
-// Handle processes API Gateway proxy events, routing them to specific handlers based on HTTP method and path.
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -65,32 +59,53 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 		a.logRequest(req)
 	}
 
-	// Определяем операцию на основе HTTP метода
-	operationId := req.HTTPMethod
-	if operationId == "" {
-		a.log.Error().Msg("HTTP method not specified in request")
-		return errResponse(http.StatusBadRequest)
-	}
-
-	operationId = strings.ToLower(operationId) // конвертируем в нижний регистр для соответствия с operationId в OpenAPI
-
-	handler, ok := a.handlers[operationId]
+	operationKey := fmt.Sprintf("%s %s", req.HTTPMethod, req.Path)
+	handler, ok := a.handlers[operationKey]
 	if !ok {
-		a.log.Error().
-			Str("operationId", operationId).
-			Str("method", req.HTTPMethod).
-			Str("path", req.Path).
-			Msg("Unknown operation")
-		return errResponse(http.StatusNotFound)
+		return toGatewayResponse(http.StatusNotFound, openapi.Response{
+			Error: fmt.Sprintf("Unknown operation: %s", operationKey),
+		})
 	}
 
-	result, handleError := handler(ctx, a.log, json.RawMessage(req.Body), req.QueryStringParameters)
+	queryParams := openapi.NewQueryParams(req.QueryStringParameters)
+	result, handleError := handler(ctx, a.log, json.RawMessage(req.Body), queryParams)
+
 	if handleError != nil {
 		a.log.Error().
 			Err(handleError.Err).
-			Str("operationId", operationId).
+			Str("operation", operationKey).
 			Msg("Handle error")
-		return errResponse(handleError.Status)
+
+		errorMessage := handleError.Message
+		if errorMessage == "" {
+			errorMessage = http.StatusText(handleError.Status)
+		}
+
+		return toGatewayResponse(handleError.Status, openapi.Response{
+			Error: errorMessage,
+		})
 	}
-	return okResponse(result)
+
+	if result == nil && req.HTTPMethod == http.MethodPost {
+		return toGatewayResponse(http.StatusOK, openapi.DefaultSuccessResponse)
+	}
+
+	return toGatewayResponse(http.StatusOK, openapi.Response{
+		Data: result,
+	})
+}
+
+func toGatewayResponse(statusCode int, body openapi.Response) (events.APIGatewayProxyResponse, error) {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, err
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: statusCode,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body: string(jsonBody),
+	}, nil
 }

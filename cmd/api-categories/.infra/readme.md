@@ -6,18 +6,8 @@ Lambda for query dictionary categories and sub-categories.
 ## Define variables
 
 ```bash
-api="6g4m711q2r"
-
-# localstack
-url="http://localhost:4566/restapis/${api}/prod/_user_request_"
-
-api_path_query="v1/categories"
-```
-
-## Define body
-```bash
-# empty
-body='{}'
+api="vp0yxvxfow"
+url="http://localhost:4566/restapis/${api}/prod/_user_request_/v1/categories"
 ```
 
 ## device/v1/category/query
@@ -33,6 +23,5 @@ curl -X POST ${url}/${device_path_query} \
 
 ## v1/category/query
 ```bash
-curl -X GET ${url}/${api_path_query} \
-    -H "Content-Type: application/json"
+curl -X GET ${url} -H "Content-Type: application/json"
 ```

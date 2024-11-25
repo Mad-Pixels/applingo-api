@@ -19,7 +19,7 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"get": handleQuery,
+				"GET /v1/categories": handleGet,
 			},
 		).Handle,
 	)

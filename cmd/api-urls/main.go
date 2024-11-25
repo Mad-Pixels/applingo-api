@@ -9,7 +9,6 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/go-playground/validator/v10"
 )
 
 var (
@@ -17,7 +16,6 @@ var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	awsRegion               = os.Getenv("AWS_REGION")
 
-	validate *validator.Validate
 	s3Bucket *cloud.Bucket
 )
 
@@ -29,7 +27,6 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
-	validate = validator.New()
 }
 
 func main() {
@@ -39,7 +36,7 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"post": handlePost,
+				"POST /v1/urls": handlePost,
 			},
 		).Handle,
 	)

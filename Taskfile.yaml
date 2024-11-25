@@ -14,7 +14,7 @@ vars:
   trivy: v0.54.1
   terraform: 1.9.5
   terraform_docs: v0.18.0
-  api_image_name: applingo-api
+  api_image_name: applingo-images
 
 tasks:
   default:

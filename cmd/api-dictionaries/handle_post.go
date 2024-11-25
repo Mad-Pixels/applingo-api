@@ -6,10 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/dictionaries"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
@@ -18,31 +21,18 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type handleDataPutRequest struct {
-	Description string `json:"description" validate:"required"`
-	Filename    string `json:"filename" validate:"required"`
-	Name        string `json:"name" validate:"required,min=4,max=32"`
-	Author      string `json:"author" validate:"required"`
-	Category    string `json:"category" validate:"required"`
-	Subcategory string `json:"subcategory" validate:"required"`
-	IsPublic    bool   `json:"is_public" validate:"required"`
-}
-
-type handleDataPutResponse struct {
-	Status string `json:"status"`
-}
-
-func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ map[string]string) (any, *api.HandleError) {
-	var req handleDataPutRequest
-	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+	var req dictionaries.PostRequest
+	if err := serializer.UnmarshalJSON(body, &req); err != nil {
+		return nil, &api.HandleError{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid request format",
+			Err:     err,
+		}
 	}
-	if err := validate.Struct(&req); err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
-	}
-	id := hex.EncodeToString(md5.New().Sum([]byte(req.Name + "-" + req.Author)))
+	id := generateDictionaryID(req.Name, req.Author)
 
-	schemaItem := applingodictionary.SchemaItem{
+	item := applingodictionary.SchemaItem{
 		Id:          id,
 		Name:        req.Name,
 		Author:      req.Author,
@@ -54,20 +44,43 @@ func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ ma
 		CreatedAt:   int(time.Now().Unix()),
 		Rating:      0,
 	}
-	item, err := applingodictionary.PutItem(schemaItem)
+
+	dynamoItem, err := applingodictionary.PutItem(item)
 	if err != nil {
-		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
+		logger.Error().Err(err).Str("id", id).Msg("Failed to prepare item for DynamoDB")
+		return nil, &api.HandleError{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to prepare dictionary data",
+			Err:     err,
+		}
 	}
-	if err = dbDynamo.Put(ctx, applingodictionary.TableSchema.TableName, item,
-		expression.AttributeNotExists(expression.Name("id"))); err != nil {
-		var cfe *types.ConditionalCheckFailedException
-		if errors.As(err, &cfe) {
+
+	if err = dbDynamo.Put(
+		ctx,
+		applingodictionary.TableSchema.TableName,
+		dynamoItem,
+		expression.AttributeNotExists(expression.Name("id")),
+	); err != nil {
+		var conditionErr *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionErr) {
 			return nil, &api.HandleError{
-				Status: http.StatusConflict,
-				Err:    errors.New("dictionary with id: '" + id + "' already exists"),
+				Status:  http.StatusConflict,
+				Message: fmt.Sprintf("Dictionary with name '%s' by author '%s' already exists", req.Name, req.Author),
+				Err:     err,
 			}
 		}
-		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
+		logger.Error().Err(err).Str("id", id).Msg("Failed to save dictionary to DynamoDB")
+		return nil, &api.HandleError{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to save dictionary",
+			Err:     err,
+		}
 	}
-	return handleDataPutResponse{Status: "OK"}, nil
+	return nil, nil
+}
+
+func generateDictionaryID(name, author string) string {
+	hash := md5.New()
+	hash.Write([]byte(name + "-" + author))
+	return hex.EncodeToString(hash.Sum(nil))
 }
