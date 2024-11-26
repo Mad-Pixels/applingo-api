@@ -5,24 +5,24 @@ import (
 	"encoding/json"
 
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
-	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/categories"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 
 	"github.com/rs/zerolog"
 )
 
 func handleGet(_ context.Context, _ zerolog.Logger, _ json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
-	response := categories.GetResponse{
-		FrontCategory: []categories.Item{
-			{Name: "he"},
-			{Name: "ru"},
-			{Name: "en"},
+	response := applingoapi.CategoriesData{
+		FrontSide: []applingoapi.CategoryItemV1{
+			{Code: "he"},
+			{Code: "ru"},
+			{Code: "en"},
 		},
-		BackCategory: []categories.Item{
-			{Name: "he"},
-			{Name: "ru"},
-			{Name: "en"},
+		BackSide: []applingoapi.CategoryItemV1{
+			{Code: "he"},
+			{Code: "ru"},
+			{Code: "en"},
 		},
 	}
-	return response, nil
+	return openapi.DataResponseCategories(response), nil
 }

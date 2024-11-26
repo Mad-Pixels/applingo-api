@@ -11,8 +11,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
-	v1 "github.com/Mad-Pixels/applingo-api/openapi-interface/v1"
-	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/dictionaries"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
@@ -22,7 +21,7 @@ import (
 )
 
 func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
-	var req dictionaries.PostRequest
+	var req applingoapi.RequestPostDictionariesV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{
 			Status: http.StatusBadRequest,
@@ -39,7 +38,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		Category:    req.Category,
 		Subcategory: req.Subcategory,
 		Description: req.Description,
-		IsPublic:    req.IsPublic,
+		IsPublic:    applingodictionary.BoolToInt(req.Public),
 		CreatedAt:   int(time.Now().Unix()),
 		Rating:      0,
 	}
@@ -72,7 +71,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 			Err:    err,
 		}
 	}
-	return v1.SuccessResponse, nil
+	return openapi.DataResponseSuccess, nil
 }
 
 func generateDictionaryID(name, author string) string {

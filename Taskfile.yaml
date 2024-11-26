@@ -23,8 +23,8 @@ tasks:
       - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
     silent: true
 
-  go/generate:
-    desc: Run codegen.
+  go/generate/dynamo:
+    desc: Run DynamoDB codegen from ./dynamodb-interface/.tmpl
     dir: "{{.git_root}}/dynamodb-interface"
     cmds:
       - go run main.go
@@ -57,7 +57,7 @@ tasks:
     dir: "{{.git_root}}"
     deps:
       - _go/version/check
-      - go/generate
+      - go/generate/dynamo
     cmds:
       - |
         if [ -d "{{.git_root}}/vendor" ]; then
@@ -103,7 +103,28 @@ tasks:
       - _go/install/fumpt
     cmd: gofumpt -l -w .
     silent: true
+  
+  _go/install/oapi-codegen:
+    desc: Install oapi
+    deps:
+      - _go/version/check
+    cmds:
+      - go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+    sources:
+      - "{{.go_root}}/bin/oapi-codegen"
+    internal: true
+    silent: true
 
+  go/generate/openapi:
+    desc: Generate GoLang models from openapi.yml
+    deps:
+      - _go/install/oapi-codegen
+    dir: "{{.git_root}}/openapi-interface"
+    cmds:
+      - mkdir -p ./gen/applingoapi
+      - oapi-codegen -generate types -o ./gen/applingoapi/applingoapi.go -package applingoapi ./.tmpl/openapi.yaml
+    silent: true
+    
   _go/install/imports:
     desc: Install 'goimports'.
     deps:

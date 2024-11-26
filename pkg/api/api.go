@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
-	v1 "github.com/Mad-Pixels/applingo-api/openapi-interface/v1"
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/pkg/errors"
@@ -69,7 +68,7 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 		}
 		return gatewayResponse(
 			http.StatusNotFound,
-			v1.APIResponse{Message: http.StatusText(http.StatusNotFound)},
+			openapi.DataResponseMessage(http.StatusText(http.StatusNotFound)),
 			nil,
 		)
 	}
@@ -81,7 +80,7 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 		}
 		return gatewayResponse(
 			handleError.Status,
-			v1.APIResponse{Message: http.StatusText(handleError.Status)},
+			openapi.DataResponseMessage(http.StatusText(handleError.Status)),
 			nil,
 		)
 	}

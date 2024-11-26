@@ -9,7 +9,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
-	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/dictionaries"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -21,10 +21,14 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const pageLimit = 40
+
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	params, err := dictionaries.NewQueryParams(baseParams)
-	if err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+	params := applingoapi.GetDictionariesV1Params{
+		SortBy:        baseParams.GetStringPtr("sort_by"),
+		Subcategory:   baseParams.GetStringPtr("subcategory"),
+		LastEvaluated: baseParams.GetStringPtr("last_evaluated"),
+		Public:        baseParams.GetBoolPtr("public"),
 	}
 
 	queryInput, err := buildQueryInput(params)
@@ -36,7 +40,6 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-
 	result, err := dbDynamo.Query(ctx, applingodictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
@@ -44,17 +47,17 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 
 	var (
 		wg      sync.WaitGroup
-		itemsCh = make(chan dictionaries.Item, len(result.Items))
+		itemsCh = make(chan applingoapi.DictionaryItemV1, len(result.Items))
 	)
-	response := dictionaries.GetResponse{
-		Items: make([]dictionaries.Item, 0, len(result.Items)),
+	response := applingoapi.DictionariesData{
+		Items: make([]applingoapi.DictionaryItemV1, 0, len(result.Items)),
 	}
 	for _, item := range result.Items {
 		wg.Add(1)
 		go func(item map[string]types.AttributeValue) {
 			defer wg.Done()
 
-			var dict dictionaries.Item
+			var dict applingoapi.DictionaryItemV1
 			if err := attributevalue.UnmarshalMap(item, &dict); err != nil {
 				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 				return
@@ -79,25 +82,23 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		if err != nil {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
-		response.LastEvaluated = base64.StdEncoding.EncodeToString(lastEvaluatedKeyJSON)
+		page := base64.StdEncoding.EncodeToString(lastEvaluatedKeyJSON)
+		response.LastEvaluated = &page
 	}
-	return response, nil
+	return openapi.DataResponseDictionaries(response), nil
 }
 
-func buildQueryInput(params *dictionaries.QueryParams) (*cloud.QueryInput, error) {
+func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	isPublic := params.IsPublic()
-	subcategory := params.Subcategory()
-
 	switch {
-	case isPublic != nil && *isPublic && subcategory != "":
-		qb.WithSubcategory(subcategory)
-		qb.WithIsPublic(applingodictionary.BoolToInt(true))
-	case isPublic != nil && *isPublic:
-		qb.WithIsPublic(applingodictionary.BoolToInt(true))
-	case subcategory != "":
-		qb.WithSubcategory(subcategory)
+	case params.Public != nil && params.Subcategory != nil:
+		qb.WithIsPublic(applingodictionary.BoolToInt(*params.Public))
+		qb.WithSubcategory(*params.Subcategory)
+	case params.Public != nil:
+		qb.WithIsPublic(applingodictionary.BoolToInt(*params.Public))
+	case params.Subcategory != nil:
+		qb.WithSubcategory(*params.Subcategory)
 	}
 	qb.OrderByDesc()
 
@@ -117,9 +118,8 @@ func buildQueryInput(params *dictionaries.QueryParams) (*cloud.QueryInput, error
 		filterCond = additionalFilter
 	}
 
-	lastEvaluated := params.LastEvaluated()
-	if lastEvaluated != "" {
-		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(lastEvaluated)
+	if params.LastEvaluated != nil {
+		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
 		}
@@ -132,7 +132,6 @@ func buildQueryInput(params *dictionaries.QueryParams) (*cloud.QueryInput, error
 			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
 		}
 	}
-
 	projectionFields := applingodictionary.IndexProjections[indexName]
 
 	return &cloud.QueryInput{
@@ -140,7 +139,7 @@ func buildQueryInput(params *dictionaries.QueryParams) (*cloud.QueryInput, error
 		KeyCondition:      keyCondition,
 		FilterCondition:   filterCond,
 		ProjectionFields:  projectionFields,
-		Limit:             dictionaries.PageLimit,
+		Limit:             pageLimit,
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
 	}, nil

@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
-	v1 "github.com/Mad-Pixels/applingo-api/openapi-interface/v1"
-	"github.com/Mad-Pixels/applingo-api/openapi-interface/v1/reports"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -19,21 +18,21 @@ import (
 )
 
 func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
-	var req reports.PostRequest
+	var req applingoapi.RequestPostReportsV1
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	var (
 		key  = time.Now().UTC().Format("logs-2006-01-02.json")
-		logs []reports.PostRequest
+		logs []applingoapi.RequestPostReportsV1
 	)
 	reader, err := s3Bucket.Get(ctx, key, serviceErrorsBucket)
 	if err != nil {
 		if !errors.Is(err, cloud.ErrBucketObjectNotFound) {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
-		logs = make([]reports.PostRequest, 0)
+		logs = make([]applingoapi.RequestPostReportsV1, 0)
 	} else {
 		defer reader.Close()
 		if err = json.NewDecoder(reader).Decode(&logs); err != nil {
@@ -49,5 +48,5 @@ func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ op
 	if err = s3Bucket.Put(ctx, key, serviceErrorsBucket, bytes.NewReader(data), cloud.ContentTypeJSON); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	return v1.SuccessResponse, nil
+	return openapi.DataResponseSuccess, nil
 }

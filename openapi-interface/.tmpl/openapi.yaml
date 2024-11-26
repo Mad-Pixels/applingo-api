@@ -20,7 +20,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-reports"].arn}/invocations"
@@ -122,7 +122,7 @@ paths:
         - $ref: '#/components/parameters/SortByParam'
         - $ref: '#/components/parameters/SubcategoryParam'
         - $ref: '#/components/parameters/LastEvaluatedParam'
-        - $ref: '#/components/parameters/IsPublicParam'
+        - $ref: '#/components/parameters/PublicParam'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -152,7 +152,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
@@ -243,6 +243,123 @@ paths:
 
 components:
   schemas:
+    CategoryItemV1:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+
+    DictionaryItemV1:
+      type: object
+      required:
+        - name
+        - category
+        - subcategory
+        - author
+        - dictionary
+        - description
+        - created_at
+        - rating
+        - public
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        author:
+          type: string
+        dictionary:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+        rating:
+          type: integer
+        public:
+          type: boolean
+
+    CategoriesData:
+      type: object
+      required:
+        - back_side
+        - front_side
+      properties:
+        front_side:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryItemV1'
+        back_side:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryItemV1'
+
+    DictionariesData:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DictionaryItemV1'
+        last_evaluated:
+          type: string
+
+    UrlsData:
+      type: object
+      required:
+        - url
+        - expires_in
+      properties:
+        url:
+          type: string
+          description: "Presigned URL"
+        expires_in:
+          type: integer
+          description: "URL expiration time in seconds"
+
+    MessageData:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "ok"
+
+    RequestPostDictionariesV1:
+      type: object
+      required:
+        - description
+        - filename
+        - name
+        - author
+        - category
+        - subcategory
+        - public
+      properties:
+        description:
+          type: string
+        filename:
+          type: string
+        name:
+          type: string
+          minLength: 4
+          maxLength: 32
+        author:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        public:
+          type: boolean
+
     RequestPostReportsV1:
       type: object
       required:
@@ -288,6 +405,7 @@ components:
       type: object
       required:
         - operation
+        - identifier
       properties:
         operation:
           type: string
@@ -300,120 +418,42 @@ components:
             - text/csv
             - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
             - application/vnd.ms-excel
-        name:
+        identifier:
           type: string
           minLength: 4
           maxLength: 32
 
-    ResponsePostUrlsV1:
+    ResponseGetCategoriesV1:
       type: object
       required:
-        - url
-        - expires_in
+        - data
       properties:
-        url:
-          type: string
-          description: "Presigned URL"
-        expires_in:
-          type: integer
-          description: "URL expiration time in seconds"
-
-    DictionaryItemV1:
-      type: object
-      required:
-        - name
-        - category
-        - subcategory
-        - author
-        - dictionary
-        - description
-        - created_at
-        - rating
-        - is_public
-      properties:
-        name:
-          type: string
-        category:
-          type: string
-        subcategory:
-          type: string
-        author:
-          type: string
-        dictionary:
-          type: string
-        description:
-          type: string
-        created_at:
-          type: integer
-        rating:
-          type: integer
-        is_public:
-          type: integer
-
-    RequestPostDictionariesV1:
-      type: object
-      required:
-        - description
-        - filename
-        - name
-        - author
-        - category
-        - subcategory
-        - is_public
-      properties:
-        description:
-          type: string
-        filename:
-          type: string
-        name:
-          type: string
-          minLength: 4
-          maxLength: 32
-        author:
-          type: string
-        category:
-          type: string
-        subcategory:
-          type: string
-        is_public:
-          type: boolean
+        data:
+          $ref: '#/components/schemas/CategoriesData'
 
     ResponseGetDictionariesV1:
       type: object
       required:
-        - items
+        - data
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/DictionaryItemV1'
-        last_evaluated:
-          type: string
+        data:
+          $ref: '#/components/schemas/DictionariesData'
 
-    CategoryItemV1:
+    ResponsePostUrlsV1:
       type: object
+      required:
+        - data
       properties:
-        name:
-          type: string
+        data:
+          $ref: '#/components/schemas/UrlsData'
 
-    ResponseGetCategoriesV1:
+    ResponseMessage:
       type: object
+      required:
+        - data
       properties:
-        front_category:
-          type: array
-          items:
-            $ref: '#/components/schemas/CategoryItemV1'
-        back_category:
-          type: array
-          items:
-            $ref: '#/components/schemas/CategoryItemV1'
-
-    SuccessResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "ok"
+        data:
+          $ref: '#/components/schemas/MessageData'
 
   parameters:
     IdParam:
@@ -444,8 +484,8 @@ components:
         type: string
       description: "Pagination token"
 
-    IsPublicParam:
-      name: is_public
+    PublicParam:
+      name: public
       in: query
       schema:
         type: boolean

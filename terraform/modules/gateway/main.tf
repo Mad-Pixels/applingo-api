@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 locals {
-  manifest = templatefile("${path.module}/tpl/openapi.yaml", {
+  manifest = templatefile("../../../openapi-interface/.tmpl/openapi.yaml", {
     project             = var.project
     name                = var.api_name
     use_localstack      = var.use_localstack
