@@ -4,26 +4,30 @@ import (
 	"net/http"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
-
 	"github.com/aws/aws-lambda-go/events"
 )
 
-func response(statusCode int, body any) (events.APIGatewayProxyResponse, error) {
+func gatewayResponse(statusCode int, body any, headers map[string]string) (events.APIGatewayProxyResponse, error) {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+
+	if _, exists := headers["Content-Type"]; !exists {
+		headers["Content-Type"] = "application/json"
+	}
+
 	jsonBody, err := serializer.MarshalJSON(body)
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    headers,
+			Body:       http.StatusText(http.StatusInternalServerError),
+		}, err
 	}
+
 	return events.APIGatewayProxyResponse{
-		Headers:    map[string]string{"Content-Type": "application/json"},
-		Body:       string(jsonBody),
 		StatusCode: statusCode,
+		Headers:    headers,
+		Body:       string(jsonBody),
 	}, nil
-}
-
-func errResponse(statusCode int) (events.APIGatewayProxyResponse, error) {
-	return response(statusCode, map[string]string{"error": http.StatusText(statusCode)})
-}
-
-func okResponse(data any) (events.APIGatewayProxyResponse, error) {
-	return response(http.StatusOK, map[string]any{"data": data})
 }
