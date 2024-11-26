@@ -21,6 +21,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
+        "400":
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "406":
+          description: "Not Acceptable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "415":
+          description: "Unsupported Media Type"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "500":
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_reports}/invocations"
@@ -37,16 +74,36 @@ paths:
             Access-Control-Allow-Origin:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
             Access-Control-Allow-Methods:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
             Access-Control-Allow-Headers:
               schema:
                 type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
             Access-Control-Allow-Credentials:
               schema:
                 type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
           content: {}
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -76,6 +133,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePostUrlsV1'
+        "406":
+          description: "Not Acceptable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "415":
+          description: "Unsupported Media Type"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_urls}/invocations"
@@ -92,16 +173,36 @@ paths:
             Access-Control-Allow-Origin:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
             Access-Control-Allow-Methods:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
             Access-Control-Allow-Headers:
               schema:
                 type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
             Access-Control-Allow-Credentials:
               schema:
                 type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
           content: {}
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -130,6 +231,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetDictionariesV1'
+        "404":
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "406":
+          description: "Not Acceptable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
@@ -153,6 +278,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
+        "406":
+          description: "Not Acceptable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "415":
+          description: "Unsupported Media Type"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
@@ -169,16 +318,36 @@ paths:
             Access-Control-Allow-Origin:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
             Access-Control-Allow-Methods:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
             Access-Control-Allow-Headers:
               schema:
                 type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
             Access-Control-Allow-Credentials:
               schema:
                 type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
           content: {}
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -202,6 +371,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetCategoriesV1'
+        "404":
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "406":
+          description: "Not Acceptable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
@@ -218,16 +411,36 @@ paths:
             Access-Control-Allow-Origin:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
             Access-Control-Allow-Methods:
               schema:
                 type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
             Access-Control-Allow-Headers:
               schema:
                 type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
             Access-Control-Allow-Credentials:
               schema:
                 type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
           content: {}
+        "429":
+          description: "Too Many Requests"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Undefined Error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -250,6 +463,10 @@ components:
       properties:
         code:
           type: string
+          minLength: 2
+          maxLength: 2
+          pattern: "^[a-z]{2}$"
+      additionalProperties: false
 
     DictionaryItemV1:
       type: object
@@ -266,22 +483,41 @@ components:
       properties:
         name:
           type: string
+          minLength: 6
+          maxLength: 32
+          pattern: "^.+$"
         category:
           type: string
+          enum:
+          - language
         subcategory:
           type: string
+          minLength: 5
+          maxLength: 5
+          pattern: "^[a-z]{2}-[a-z]{2}$"
         author:
           type: string
+          minLength: 2
+          maxLength: 16
+          pattern: "^.+$"
         dictionary:
           type: string
+          minLength: 40
+          maxLength: 40
+          pattern: "^.+$"
         description:
           type: string
+          minLength: 10
+          maxLength: 256
         created_at:
           type: integer
+          format: int64
         rating:
           type: integer
+          format: int32
         public:
           type: boolean
+      additionalProperties: false
 
     CategoriesData:
       type: object
@@ -293,10 +529,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryItemV1'
+          maxItems: 100
         back_side:
           type: array
           items:
             $ref: '#/components/schemas/CategoryItemV1'
+          maxItems: 100
+      additionalProperties: false
 
     DictionariesData:
       type: object
@@ -307,8 +546,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DictionaryItemV1'
+          maxItems: 100
         last_evaluated:
           type: string
+          format: base64
+          maxLength: 1048576
+          pattern: ^[A-Za-z0-9+/]*={0,2}$
+      additionalProperties: false
 
     UrlsData:
       type: object
@@ -319,9 +563,11 @@ components:
         url:
           type: string
           description: "Presigned URL"
+          format: uri
         expires_in:
           type: integer
           description: "URL expiration time in seconds"
+      additionalProperties: false
 
     MessageData:
       type: object
@@ -331,6 +577,7 @@ components:
         message:
           type: string
           example: "ok"
+      additionalProperties: false
 
     RequestPostDictionariesV1:
       type: object
@@ -345,61 +592,95 @@ components:
       properties:
         description:
           type: string
+          minLength: 10
+          maxLength: 256
+          pattern: ^.+$
         filename:
           type: string
+          minLength: 1
+          maxLength: 256
+          pattern: ^.+$
         name:
           type: string
-          minLength: 4
+          minLength: 6
           maxLength: 32
+          pattern: "^.+$"
         author:
           type: string
+          minLength: 2
+          maxLength: 16
+          pattern: "^.+$"
         category:
           type: string
+          enum:
+          - language
         subcategory:
           type: string
+          minLength: 5
+          maxLength: 5
+          pattern: "^[a-z]{2}-[a-z]{2}$"
         public:
           type: boolean
+      additionalProperties: false
 
     RequestPostReportsV1:
       type: object
       required:
+        - app_identifier
         - app_version
-        - os_version
-        - device
+        - device_os
+        - device_name
         - error_message
         - error_original
         - error_type
         - timestamp
-        - replica_id
       properties:
+        app_identifier:
+          type: string
+          description: "App replica uniq identifier"
+          maxLength: 36
+          minLength: 36
+          pattern: ^.+$
         app_version:
           type: string
           description: "Application version"
-        os_version:
+          pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"
+          maxLength: 32
+        device_os:
           type: string
-          description: "Operating system version"
-        device:
+          description: "Device Operating system"
+          pattern: "^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$"
+          maxLength: 32
+        device_name:
           type: string
           description: "Device information"
+          minLength: 2
+          maxLength: 128
+          pattern: ^.+$
         error_message:
           type: string
           description: "Error message"
+          minLength: 1
+          maxLength: 1024
+          pattern: ^.+$
         error_original:
           type: string
           description: "Original error"
+          minLength: 1
+          maxLength: 1024
+          pattern: ^.+$
         error_type:
           type: string
           description: "Type of error"
         timestamp:
           type: integer
           description: "Time when error occurred"
-        replica_id:
-          type: string
-          description: "Replica identifier"
-        additional_info:
+          format: int64
+        metadata:
           type: object
           additionalProperties: true
-          description: "Additional error information"
+          description: "Error metadata"
+      additionalProperties: false
 
     RequestPostUrlsV1:
       type: object
@@ -412,16 +693,12 @@ components:
           enum:
             - upload
             - download
-        content_type:
-          type: string
-          enum:
-            - text/csv
-            - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-            - application/vnd.ms-excel
         identifier:
           type: string
           minLength: 4
-          maxLength: 32
+          maxLength: 40
+          pattern: ^.+$
+      additionalProperties: false
 
     ResponseGetCategoriesV1:
       type: object
@@ -430,6 +707,7 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CategoriesData'
+      additionalProperties: false
 
     ResponseGetDictionariesV1:
       type: object
@@ -438,6 +716,7 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DictionariesData'
+      additionalProperties: false
 
     ResponsePostUrlsV1:
       type: object
@@ -446,6 +725,7 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UrlsData'
+      additionalProperties: false
 
     ResponseMessage:
       type: object
@@ -454,6 +734,7 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/MessageData'
+      additionalProperties: false
 
   parameters:
     IdParam:

@@ -35,7 +35,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		Name:        req.Name,
 		Author:      req.Author,
 		Filename:    req.Filename,
-		Category:    req.Category,
+		Category:    string(req.Category),
 		Subcategory: req.Subcategory,
 		Description: req.Description,
 		IsPublic:    applingodictionary.BoolToInt(req.Public),
