@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -100,28 +101,27 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 
 	// Выбираем индекс в зависимости от предоставленных параметров
 	if params.Level != nil && params.Subcategory != nil {
-		// Используем индекс с hash_key: public#level#subcategory
+		compositeKey := fmt.Sprintf("public_%s_%s", *params.Level, *params.Subcategory)
 		if sortBy == "date" {
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByDateIndexHashKey(compositeKey)
 		} else {
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(compositeKey)
 		}
 	} else if params.Level != nil {
-		// Используем индекс с hash_key: public#level
+		compositeKey := fmt.Sprintf("public_%s", *params.Level)
 		if sortBy == "date" {
-			qb.WithPublicLevelByDateIndexHashKey(*params.Level)
+			qb.WithPublicLevelByDateIndexHashKey(compositeKey)
 		} else {
-			qb.WithPublicLevelByRatingIndexHashKey(*params.Level)
+			qb.WithPublicLevelByRatingIndexHashKey(compositeKey)
 		}
 	} else if params.Subcategory != nil {
-		// Используем индекс с hash_key: public#subcategory
+		compositeKey := fmt.Sprintf("public_%s", *params.Subcategory)
 		if sortBy == "date" {
-			qb.WithPublicSubcategoryByDateIndexHashKey(*params.Subcategory)
+			qb.WithPublicSubcategoryByDateIndexHashKey(compositeKey)
 		} else {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(*params.Subcategory)
+			qb.WithPublicSubcategoryByRatingIndexHashKey(compositeKey)
 		}
 	} else {
-		// Если нет ни Level, ни Subcategory, то использовать индекс невозможно
 		return nil, errors.New("Level or Subcategory must be provided when querying public dictionaries")
 	}
 
@@ -134,15 +134,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
 		}
-		var lastEvaluatedKeyMap map[string]interface{}
+		var lastEvaluatedKeyMap map[string]types.AttributeValue
 		if err := json.Unmarshal(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
 		}
-		exclusiveStartKey, err := attributevalue.MarshalMap(lastEvaluatedKeyMap)
-		if err != nil {
-			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
-		}
-		qb.StartFrom(exclusiveStartKey)
+		qb.StartFrom(lastEvaluatedKeyMap)
 	}
 
 	// Устанавливаем лимит на количество элементов
@@ -154,7 +150,7 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	)
 
 	// Строим запрос
-	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
+	indexName, keyCondition, filterCondition, _, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +174,6 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		ProjectionFields:  projectionFields,
 		Limit:             pageLimit,
 		ScanForward:       false,
-		ExclusiveStartKey: exclusiveStartKey,
+		ExclusiveStartKey: qb.ExclusiveStartKey,
 	}, nil
 }

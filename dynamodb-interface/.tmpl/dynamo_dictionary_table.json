@@ -5,10 +5,11 @@
   "attributes": [
     { "name": "id", "type": "S" },
     { "name": "subcategory", "type": "S" },
-    { "name": "created_at", "type": "N" },
+    { "name": "created", "type": "N" },
     { "name": "rating", "type": "N" },
-    { "name": "is_public", "type": "N" },
-    { "name": "level", "type": "S" }
+    { "name": "public_level_subcategory", "type": "S" },
+    { "name": "public_level", "type": "S" },
+    { "name": "public_subcategory", "type": "S" }
   ],
   "common_attributes": [
     { "name": "name", "type": "S" },
@@ -17,13 +18,15 @@
     { "name": "description", "type": "S" },
     { "name": "filename", "type": "S" },
     { "name": "dictionary", "type": "S" },
-    { "name": "topic", "type": "S" }
+    { "name": "topic", "type": "S" },
+    { "name": "public", "type": "N" },
+    { "name": "level", "type": "S" }
   ],
   "secondary_indexes": [
     {
       "name": "PublicLevelSubcategoryByDateIndex",
-      "hash_key": "public#level#subcategory",
-      "range_key": "created_at",
+      "hash_key": "public_level_subcategory",
+      "range_key": "created",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
         "dictionary",
@@ -32,7 +35,7 @@
         "category",
         "author",
         "rating",
-        "is_public",
+        "public",
         "level",
         "subcategory",
         "topic"
@@ -40,7 +43,7 @@
     },
     {
       "name": "PublicLevelSubcategoryByRatingIndex",
-      "hash_key": "public#level#subcategory",
+      "hash_key": "public_level_subcategory",
       "range_key": "rating",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -49,8 +52,8 @@
         "description",
         "category",
         "author",
-        "created_at",
-        "is_public",
+        "created",
+        "public",
         "level", 
         "subcategory",
         "topic"
@@ -58,8 +61,8 @@
     },
     {
       "name": "PublicLevelByDateIndex",
-      "hash_key": "public#level",
-      "range_key": "created_at",
+      "hash_key": "public_level",
+      "range_key": "created",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
         "dictionary",
@@ -69,14 +72,14 @@
         "subcategory",
         "author",
         "rating",
-        "is_public",
+        "public",
         "level",
         "topic"
       ]
     },
     {
       "name": "PublicLevelByRatingIndex",
-      "hash_key": "public#level",
+      "hash_key": "public_level",
       "range_key": "rating",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -86,16 +89,16 @@
         "category",
         "subcategory",
         "author",
-        "created_at",
-        "is_public",
+        "created",
+        "public",
         "level",
         "topic"
       ]
     },
     {
       "name": "PublicSubcategoryByDateIndex",
-      "hash_key": "public#subcategory",
-      "range_key": "created_at",
+      "hash_key": "public_subcategory",
+      "range_key": "created",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
         "dictionary",
@@ -104,7 +107,7 @@
         "category",
         "author",
         "rating",
-        "is_public",
+        "public",
         "level",
         "subcategory",
         "topic"
@@ -112,7 +115,7 @@
     },
     {
       "name": "PublicSubcategoryByRatingIndex",
-      "hash_key": "public#subcategory",
+      "hash_key": "public_subcategory",
       "range_key": "rating",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -121,8 +124,8 @@
         "description",
         "category",
         "author",
-        "created_at",
-        "is_public",
+        "created",
+        "public",
         "level",
         "subcategory",
         "topic"

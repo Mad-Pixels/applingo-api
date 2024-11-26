@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -31,16 +32,19 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	id := generateDictionaryID(req.Name, req.Author)
 
 	item := applingodictionary.SchemaItem{
-		Id:          id,
-		Name:        req.Name,
-		Author:      req.Author,
-		Filename:    req.Filename,
-		Category:    string(req.Category),
-		Subcategory: req.Subcategory,
-		Description: req.Description,
-		IsPublic:    applingodictionary.BoolToInt(req.Public),
-		CreatedAt:   int(time.Now().Unix()),
-		Rating:      0,
+		Id:                     id,
+		Name:                   req.Name,
+		Author:                 req.Author,
+		Filename:               req.Filename,
+		Category:               string(req.Category),
+		Subcategory:            req.Subcategory,
+		Description:            req.Description,
+		Public:                 applingodictionary.BoolToInt(req.Public),
+		Created:                int(time.Now().Unix()),
+		Rating:                 0,
+		PublicLevelSubcategory: fmt.Sprintf("true%s%s", "A1", req.Subcategory),
+		PublicLevel:            fmt.Sprintf("trueA1"),
+		PublicSubcategory:      fmt.Sprintf("true%s", req.Subcategory),
 	}
 
 	dynamoItem, err := applingodictionary.PutItem(item)

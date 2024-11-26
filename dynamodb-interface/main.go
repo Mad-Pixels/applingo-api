@@ -188,49 +188,17 @@ func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}({{SafeName .Name | 
 
 {{range .SecondaryIndexes}}
 {{if gt (len .HashKeyParts) 0}}
-{{ $methodParams := "" }}
-{{ range $index, $part := .HashKeyParts }}
-    {{ if not $part.IsConstant }}
-        {{ $paramName := (SafeName $part.Value | ToLowerCamelCase) }}
-        {{ $paramType := (TypeGoAttr $part.Value $.AllAttributes) }}
-        {{ if eq $methodParams "" }}
-            {{ $methodParams = printf "%s %s" $paramName $paramType }}
-        {{ else }}
-            {{ $methodParams = printf "%s, %s %s" $methodParams $paramName $paramType }}
-        {{ end }}
-    {{ end }}
-{{ end }}
-func (qb *QueryBuilder) With{{ToCamelCase .Name}}HashKey({{ $methodParams }}) *QueryBuilder {
-    {{ range .HashKeyParts }}
-    {{ if not .IsConstant }}
-    qb.With{{ SafeName .Value | ToCamelCase }}({{ SafeName .Value | ToLowerCamelCase }})
-    {{ end }}
-    {{ end }}
+func (qb *QueryBuilder) With{{ToCamelCase .Name}}HashKey({{ .HashKey }} {{TypeGoAttr .HashKey $.AllAttributes}}) *QueryBuilder {
+    qb.With{{ SafeName .HashKey | ToCamelCase }}({{ .HashKey }})
     return qb
 }
 {{end}}
 {{end}}
 
 {{range .SecondaryIndexes}}
-{{if gt (len .RangeKeyParts) 0}}
-{{ $methodParams := "" }}
-{{ range $index, $part := .RangeKeyParts }}
-    {{ if not $part.IsConstant }}
-        {{ $paramName := (SafeName $part.Value | ToLowerCamelCase) }}
-        {{ $paramType := (TypeGoAttr $part.Value $.AllAttributes) }}
-        {{ if eq $methodParams "" }}
-            {{ $methodParams = printf "%s %s" $paramName $paramType }}
-        {{ else }}
-            {{ $methodParams = printf "%s, %s %s" $methodParams $paramName $paramType }}
-        {{ end }}
-    {{ end }}
-{{ end }}
-func (qb *QueryBuilder) With{{ToCamelCase .Name}}RangeKey({{ $methodParams }}) *QueryBuilder {
-    {{ range .RangeKeyParts }}
-    {{ if not .IsConstant }}
-    qb.With{{ SafeName .Value | ToCamelCase }}({{ SafeName .Value | ToLowerCamelCase }})
-    {{ end }}
-    {{ end }}
+{{if .RangeKey}}
+func (qb *QueryBuilder) With{{ToCamelCase .Name}}RangeKey({{ .RangeKey }} {{TypeGoAttr .RangeKey $.AllAttributes}}) *QueryBuilder {
+    qb.With{{ SafeName .RangeKey | ToCamelCase }}({{ .RangeKey }})
     return qb
 }
 {{end}}
@@ -333,7 +301,7 @@ func (qb *QueryBuilder) buildCompositeKeyCondition(parts []CompositeKeyPart) exp
             valueStr = fmt.Sprintf("%v", value)
         }
         if i > 0 {
-            compositeKeyValue += "#"
+            compositeKeyValue += "_"
         }
         compositeKeyValue += valueStr
     }
@@ -346,7 +314,7 @@ func (qb *QueryBuilder) getCompositeKeyName(parts []CompositeKeyPart) string {
     for _, part := range parts {
         names = append(names, part.Value)
     }
-    return strings.Join(names, "#")
+    return strings.Join(names, "_")
 }
 
 func (qb *QueryBuilder) BuildQuery() (*dynamodb.QueryInput, error) {
@@ -611,7 +579,7 @@ func parseCompositeKey(key string, allAttributes []Attribute) []CompositeKeyPart
 	if key == "" {
 		return nil
 	}
-	parts := strings.Split(key, "#")
+	parts := strings.Split(key, "_")
 	var result []CompositeKeyPart
 	for _, part := range parts {
 		if isAttribute(part, allAttributes) {
