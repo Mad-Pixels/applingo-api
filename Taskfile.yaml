@@ -58,6 +58,7 @@ tasks:
     deps:
       - _go/version/check
       - go/generate/dynamo
+      - go/generate/openapi
     cmds:
       - |
         if [ -d "{{.git_root}}/vendor" ]; then
@@ -352,6 +353,17 @@ tasks:
         for m in $modules; do
           terraform-docs markdown table --output-file README.md --output-mode inject $m
         done
+    silent: true
+
+  api/docs/run:
+    desc: Run Swagger
+    cmds:
+      - echo "Running on http://localhost:18080"
+      - |
+        docker run -p 18080:8080 \
+        -e SWAGGER_JSON=/api/openapi.yaml \
+        -v {{.git_root}}/openapi-interface/.tmpl/openapi.yaml:/api/openapi.yaml \
+        swaggerapi/swagger-ui
     silent: true
 
   _localstack/install:

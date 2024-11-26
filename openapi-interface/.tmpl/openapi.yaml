@@ -23,7 +23,7 @@ paths:
                 $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-reports"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_reports}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -78,7 +78,7 @@ paths:
                 $ref: '#/components/schemas/ResponsePostUrlsV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-urls"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_urls}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -132,7 +132,7 @@ paths:
                 $ref: '#/components/schemas/ResponseGetDictionariesV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -155,7 +155,7 @@ paths:
                 $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-dictionaries"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
         responses:
           default:
             statusCode: "201"
@@ -204,7 +204,7 @@ paths:
                 $ref: '#/components/schemas/ResponseGetCategoriesV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["api-categories"].arn}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -490,18 +490,6 @@ components:
       schema:
         type: boolean
       description: "Filter by public status"
-
-  # securitySchemes:
-  #   DeviceAuthorizer:
-  #     type: "apiKey"
-  #     name: "x-timestamp"
-  #     in: "header"
-  #     x-amazon-apigateway-authtype: "custom"
-  #     x-amazon-apigateway-authorizer:
-  #       type: "request"
-  #       authorizerUri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${invoke_lambdas_arns["authorizer-device"].arn}/invocations"
-  #       identitySource: ${use_localstack ? join(",", ["method.request.header.x-timestamp", "method.request.header.x-signature"]) : "method.request.header.x-timestamp,method.request.header.x-signature"}
-  #       authorizerResultTtlInSeconds: 30
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
