@@ -7,7 +7,8 @@
     { "name": "subcategory", "type": "S" },
     { "name": "created_at", "type": "N" },
     { "name": "rating", "type": "N" },
-    { "name": "is_public", "type": "N" }
+    { "name": "is_public", "type": "N" },
+    { "name": "level", "type": "S" }
   ],
   "common_attributes": [
     { "name": "name", "type": "S" },
@@ -15,12 +16,49 @@
     { "name": "category", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "filename", "type": "S" },
-    { "name": "dictionary", "type": "S" }
+    { "name": "dictionary", "type": "S" },
+    { "name": "topic", "type": "S" }
   ],
   "secondary_indexes": [
     {
-      "name": "PublicByDateIndex",
-      "hash_key": "is_public",
+      "name": "PublicLevelSubcategoryByDateIndex",
+      "hash_key": "public#level#subcategory",
+      "range_key": "created_at",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "dictionary",
+        "name",
+        "description",
+        "category",
+        "author",
+        "rating",
+        "is_public",
+        "level",
+        "subcategory",
+        "topic"
+      ]
+    },
+    {
+      "name": "PublicLevelSubcategoryByRatingIndex",
+      "hash_key": "public#level#subcategory",
+      "range_key": "rating",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": [
+        "dictionary",
+        "name",
+        "description",
+        "category",
+        "author",
+        "created_at",
+        "is_public",
+        "level", 
+        "subcategory",
+        "topic"
+      ]
+    },
+    {
+      "name": "PublicLevelByDateIndex",
+      "hash_key": "public#level",
       "range_key": "created_at",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -30,12 +68,15 @@
         "category",
         "subcategory",
         "author",
-        "rating"
+        "rating",
+        "is_public",
+        "level",
+        "topic"
       ]
     },
     {
-      "name": "PublicByRatingIndex",
-      "hash_key": "is_public",
+      "name": "PublicLevelByRatingIndex",
+      "hash_key": "public#level",
       "range_key": "rating",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -45,12 +86,15 @@
         "category",
         "subcategory",
         "author",
-        "created_at"
+        "created_at",
+        "is_public",
+        "level",
+        "topic"
       ]
     },
     {
-      "name": "SubcategoryByDateIndex",
-      "hash_key": "subcategory",
+      "name": "PublicSubcategoryByDateIndex",
+      "hash_key": "public#subcategory",
       "range_key": "created_at",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -59,12 +103,16 @@
         "description",
         "category",
         "author",
-        "rating"
+        "rating",
+        "is_public",
+        "level",
+        "subcategory",
+        "topic"
       ]
     },
     {
-      "name": "SubcategoryByRatingIndex",
-      "hash_key": "subcategory",
+      "name": "PublicSubcategoryByRatingIndex",
+      "hash_key": "public#subcategory",
       "range_key": "rating",
       "projection_type": "INCLUDE",
       "non_key_attributes": [
@@ -73,7 +121,11 @@
         "description",
         "category",
         "author",
-        "created_at"
+        "created_at",
+        "is_public",
+        "level",
+        "subcategory",
+        "topic"
       ]
     }
   ]

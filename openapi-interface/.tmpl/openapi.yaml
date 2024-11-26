@@ -139,6 +139,7 @@ paths:
         - $ref: '#/components/parameters/SubcategoryParam'
         - $ref: '#/components/parameters/LastEvaluatedParam'
         - $ref: '#/components/parameters/PublicParam'
+        - $ref: '#/components/parameters/LevelParam'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -299,6 +300,8 @@ components:
         - created_at
         - rating
         - public
+        - level
+        - topic
       properties:
         name:
           type: string
@@ -336,6 +339,10 @@ components:
           format: int32
         public:
           type: boolean
+        level: 
+          type: string
+        topic: 
+          type: string
       additionalProperties: false
 
     CategoriesData:
@@ -590,6 +597,13 @@ components:
       schema:
         type: boolean
       description: "Filter by public status"
+
+    LevelParam:
+      name: level
+      in: query 
+      schema: 
+        type: string 
+      description: "Filter by language level"
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"

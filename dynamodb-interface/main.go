@@ -24,12 +24,19 @@ type Attribute struct {
 	Type string `json:"type"`
 }
 
+type CompositeKeyPart struct {
+	IsConstant bool
+	Value      string
+}
+
 type SecondaryIndex struct {
-	Name             string   `json:"name"`
-	HashKey          string   `json:"hash_key"`
-	RangeKey         string   `json:"range_key"`
+	Name             string `json:"name"`
+	HashKey          string `json:"hash_key"`
+	HashKeyParts     []CompositeKeyPart
+	RangeKey         string `json:"range_key"`
+	RangeKeyParts    []CompositeKeyPart
 	ProjectionType   string   `json:"projection_type"`
-	NonKeyAttributes []string `json:"non_key_attributes,omitempty"`
+	NonKeyAttributes []string `json:"non_key_attributes"`
 }
 
 const codeTemplate = `
@@ -40,6 +47,7 @@ package {{.PackageName}}
 import (
     "fmt"
     "context"
+    "strings"
 
     "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -94,10 +102,17 @@ type Attribute struct {
     Type string
 }
 
+type CompositeKeyPart struct {
+    IsConstant bool
+    Value      string
+}
+
 type SecondaryIndex struct {
     Name             string
     HashKey          string
+    HashKeyParts     []CompositeKeyPart
     RangeKey         string
+    RangeKeyParts    []CompositeKeyPart
     ProjectionType   string
     NonKeyAttributes []string
 }
@@ -171,6 +186,56 @@ func (qb *QueryBuilder) With{{SafeName .Name | ToCamelCase}}({{SafeName .Name | 
 }
 {{end}}
 
+{{range .SecondaryIndexes}}
+{{if gt (len .HashKeyParts) 0}}
+{{ $methodParams := "" }}
+{{ range $index, $part := .HashKeyParts }}
+    {{ if not $part.IsConstant }}
+        {{ $paramName := (SafeName $part.Value | ToLowerCamelCase) }}
+        {{ $paramType := (TypeGoAttr $part.Value $.AllAttributes) }}
+        {{ if eq $methodParams "" }}
+            {{ $methodParams = printf "%s %s" $paramName $paramType }}
+        {{ else }}
+            {{ $methodParams = printf "%s, %s %s" $methodParams $paramName $paramType }}
+        {{ end }}
+    {{ end }}
+{{ end }}
+func (qb *QueryBuilder) With{{ToCamelCase .Name}}HashKey({{ $methodParams }}) *QueryBuilder {
+    {{ range .HashKeyParts }}
+    {{ if not .IsConstant }}
+    qb.With{{ SafeName .Value | ToCamelCase }}({{ SafeName .Value | ToLowerCamelCase }})
+    {{ end }}
+    {{ end }}
+    return qb
+}
+{{end}}
+{{end}}
+
+{{range .SecondaryIndexes}}
+{{if gt (len .RangeKeyParts) 0}}
+{{ $methodParams := "" }}
+{{ range $index, $part := .RangeKeyParts }}
+    {{ if not $part.IsConstant }}
+        {{ $paramName := (SafeName $part.Value | ToLowerCamelCase) }}
+        {{ $paramType := (TypeGoAttr $part.Value $.AllAttributes) }}
+        {{ if eq $methodParams "" }}
+            {{ $methodParams = printf "%s %s" $paramName $paramType }}
+        {{ else }}
+            {{ $methodParams = printf "%s, %s %s" $methodParams $paramName $paramType }}
+        {{ end }}
+    {{ end }}
+{{ end }}
+func (qb *QueryBuilder) With{{ToCamelCase .Name}}RangeKey({{ $methodParams }}) *QueryBuilder {
+    {{ range .RangeKeyParts }}
+    {{ if not .IsConstant }}
+    qb.With{{ SafeName .Value | ToCamelCase }}({{ SafeName .Value | ToLowerCamelCase }})
+    {{ end }}
+    {{ end }}
+    return qb
+}
+{{end}}
+{{end}}
+
 func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expression.ConditionBuilder, map[string]types.AttributeValue, error) {
     var index *SecondaryIndex
     var keyCond expression.KeyConditionBuilder
@@ -178,14 +243,13 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
 
     // Try to find an index that matches the provided keys
     for _, idx := range TableSchema.SecondaryIndexes {
-        if qb.UsedKeys[idx.HashKey] {
+        if idx.HashKeyParts != nil && qb.hasAllKeys(idx.HashKeyParts) {
             index = &idx
-            // Build KeyCondition
-            keyCond = expression.Key(idx.HashKey).Equal(expression.Value(qb.Attributes[idx.HashKey]))
-            
-            // Check for range key conditions
-            if rangeCond, exists := qb.RangeConditions[idx.RangeKey]; exists {
-                keyCond = keyCond.And(rangeCond)
+            keyCond = qb.buildCompositeKeyCondition(idx.HashKeyParts)
+
+            if idx.RangeKeyParts != nil && qb.hasAllKeys(idx.RangeKeyParts) {
+                rangeKeyCond := qb.buildCompositeKeyCondition(idx.RangeKeyParts)
+                keyCond = keyCond.And(rangeKeyCond)
             } else if idx.RangeKey != "" && qb.UsedKeys[idx.RangeKey] {
                 keyCond = keyCond.And(expression.Key(idx.RangeKey).Equal(expression.Value(qb.Attributes[idx.RangeKey])))
             }
@@ -247,6 +311,42 @@ func (qb *QueryBuilder) Build() (string, expression.KeyConditionBuilder, *expres
     }
 
     return index.Name, keyCond, filterCond, qb.ExclusiveStartKey, nil
+}
+
+func (qb *QueryBuilder) hasAllKeys(parts []CompositeKeyPart) bool {
+    for _, part := range parts {
+        if !part.IsConstant && !qb.UsedKeys[part.Value] {
+            return false
+        }
+    }
+    return true
+}
+
+func (qb *QueryBuilder) buildCompositeKeyCondition(parts []CompositeKeyPart) expression.KeyConditionBuilder {
+    var compositeKeyValue string
+    for i, part := range parts {
+        var valueStr string
+        if part.IsConstant {
+            valueStr = part.Value
+        } else {
+            value := qb.Attributes[part.Value]
+            valueStr = fmt.Sprintf("%v", value)
+        }
+        if i > 0 {
+            compositeKeyValue += "#"
+        }
+        compositeKeyValue += valueStr
+    }
+    compositeKeyName := qb.getCompositeKeyName(parts)
+    return expression.Key(compositeKeyName).Equal(expression.Value(compositeKeyValue))
+}
+
+func (qb *QueryBuilder) getCompositeKeyName(parts []CompositeKeyPart) string {
+    var names []string
+    for _, part := range parts {
+        names = append(names, part.Value)
+    }
+    return strings.Join(names, "#")
 }
 
 func (qb *QueryBuilder) BuildQuery() (*dynamodb.QueryInput, error) {
@@ -462,8 +562,18 @@ func processSchemaFile(jsonPath, rootDir string) {
 		"SafeName":         safeName,
 		"TypeGo":           typeGo,
 		"TypeZero":         typeZero,
+		"TypeGoAttr":       typeGoAttr,
 	}
 	allAttributes := append(schema.Attributes, schema.CommonAttributes...)
+
+	// Заполнение HashKeyParts и RangeKeyParts
+	for i, idx := range schema.SecondaryIndexes {
+		schema.SecondaryIndexes[i].HashKeyParts = parseCompositeKey(idx.HashKey, allAttributes)
+		schema.SecondaryIndexes[i].RangeKeyParts = parseCompositeKey(idx.RangeKey, allAttributes)
+
+		// Вывод отладки
+		fmt.Printf("Index: %s, HashKeyParts: %+v, RangeKeyParts: %+v\n", idx.Name, schema.SecondaryIndexes[i].HashKeyParts, schema.SecondaryIndexes[i].RangeKeyParts)
+	}
 
 	schemaMap := map[string]interface{}{
 		"PackageName":      packageName,
@@ -495,6 +605,31 @@ func processSchemaFile(jsonPath, rootDir string) {
 		return
 	}
 	fmt.Printf("Successfully generated %s!\n", schema.TableName)
+}
+
+func parseCompositeKey(key string, allAttributes []Attribute) []CompositeKeyPart {
+	if key == "" {
+		return nil
+	}
+	parts := strings.Split(key, "#")
+	var result []CompositeKeyPart
+	for _, part := range parts {
+		if isAttribute(part, allAttributes) {
+			result = append(result, CompositeKeyPart{IsConstant: false, Value: part})
+		} else {
+			result = append(result, CompositeKeyPart{IsConstant: true, Value: part})
+		}
+	}
+	return result
+}
+
+func isAttribute(name string, attributes []Attribute) bool {
+	for _, attr := range attributes {
+		if attr.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func toCamelCase(s string) string {
@@ -581,4 +716,13 @@ func typeZero(dynamoType string) string {
 	default:
 		return "nil"
 	}
+}
+
+func typeGoAttr(attrName string, attributes []Attribute) string {
+	for _, attr := range attributes {
+		if attr.Name == attrName {
+			return typeGo(attr.Type)
+		}
+	}
+	return "interface{}"
 }
