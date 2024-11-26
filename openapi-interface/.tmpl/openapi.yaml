@@ -21,43 +21,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
-        "400":
-          description: "Bad Request"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "406":
-          description: "Not Acceptable"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "415":
-          description: "Unsupported Media Type"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "500":
-          description: "Internal Server Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_reports}/invocations"
@@ -92,18 +55,6 @@ paths:
                 maxLength: 5
                 pattern: "^(true|false)$"
           content: {}
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -133,30 +84,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePostUrlsV1'
-        "406":
-          description: "Not Acceptable"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "415":
-          description: "Unsupported Media Type"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_urls}/invocations"
@@ -191,18 +118,6 @@ paths:
                 maxLength: 5
                 pattern: "^(true|false)$"
           content: {}
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -231,30 +146,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetDictionariesV1'
-        "404":
-          description: "Not Found"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "406":
-          description: "Not Acceptable"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
@@ -274,30 +165,6 @@ paths:
       responses:
         "201":
           description: "Dictionary successfully created"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "406":
-          description: "Not Acceptable"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "415":
-          description: "Unsupported Media Type"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
           content:
             application/json:
               schema:
@@ -336,18 +203,6 @@ paths:
                 maxLength: 5
                 pattern: "^(true|false)$"
           content: {}
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
@@ -371,30 +226,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetCategoriesV1'
-        "404":
-          description: "Not Found"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "406":
-          description: "Not Acceptable"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
@@ -429,18 +260,6 @@ paths:
                 maxLength: 5
                 pattern: "^(true|false)$"
           content: {}
-        "429":
-          description: "Too Many Requests"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Undefined Error"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         type: "mock"
         requestTemplates:
