@@ -1,0 +1,22 @@
+{
+    "policy": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetObject"
+          ],
+          "Resource": [
+            "${dictionary_bucket_arn}/*",
+            "${dictionary_bucket_arn}"
+          ]
+        }
+      ]
+    },
+    "memory_size": 128,
+    "timeout": 2,
+    "envs": {
+      "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}"
+    }
+  }

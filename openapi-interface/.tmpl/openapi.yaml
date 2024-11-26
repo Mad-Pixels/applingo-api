@@ -1,0 +1,600 @@
+openapi: "3.0.1"
+info:
+  title: "${project}"
+  description: "${project}-${name} endpoint"
+  version: "1.0"
+
+paths:
+  /v1/reports:
+    post:
+      operationId: PostReportsV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostReportsV1'
+      responses:
+        "200":
+          description: "Report successfully logged"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_reports}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/urls:
+    post:
+      operationId: PostUrlsV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostUrlsV1'
+      responses:
+        "200":
+          description: "Successfully generated presigned URL"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePostUrlsV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_urls}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/dictionaries:
+    get:
+      operationId: GetDictionariesV1
+      parameters:
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SubcategoryParam'
+        - $ref: '#/components/parameters/LastEvaluatedParam'
+        - $ref: '#/components/parameters/PublicParam'
+      responses:
+        "200":
+          description: "Successfully retrieved dictionaries"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetDictionariesV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    post:
+      operationId: PostDictionariesV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostDictionariesV1'
+      responses:
+        "201":
+          description: "Dictionary successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+  /v1/categories:
+    get:
+      operationId: GetCategoriesV1
+      responses:
+        "200":
+          description: "Successfully retrieved categories"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetCategoriesV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+
+components:
+  schemas:
+    CategoryItemV1:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: "^[a-z]{2}$"
+      additionalProperties: false
+
+    DictionaryItemV1:
+      type: object
+      required:
+        - name
+        - category
+        - subcategory
+        - author
+        - dictionary
+        - description
+        - created_at
+        - rating
+        - public
+      properties:
+        name:
+          type: string
+          minLength: 6
+          maxLength: 32
+          pattern: "^.+$"
+        category:
+          type: string
+          enum:
+          - language
+        subcategory:
+          type: string
+          minLength: 5
+          maxLength: 5
+          pattern: "^[a-z]{2}-[a-z]{2}$"
+        author:
+          type: string
+          minLength: 2
+          maxLength: 16
+          pattern: "^.+$"
+        dictionary:
+          type: string
+          minLength: 40
+          maxLength: 40
+          pattern: "^.+$"
+        description:
+          type: string
+          minLength: 10
+          maxLength: 256
+        created_at:
+          type: integer
+          format: int64
+        rating:
+          type: integer
+          format: int32
+        public:
+          type: boolean
+      additionalProperties: false
+
+    CategoriesData:
+      type: object
+      required:
+        - back_side
+        - front_side
+      properties:
+        front_side:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryItemV1'
+          maxItems: 100
+        back_side:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryItemV1'
+          maxItems: 100
+      additionalProperties: false
+
+    DictionariesData:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DictionaryItemV1'
+          maxItems: 100
+        last_evaluated:
+          type: string
+          format: base64
+          maxLength: 1048576
+          pattern: ^[A-Za-z0-9+/]*={0,2}$
+      additionalProperties: false
+
+    UrlsData:
+      type: object
+      required:
+        - url
+        - expires_in
+      properties:
+        url:
+          type: string
+          description: "Presigned URL"
+          format: uri
+        expires_in:
+          type: integer
+          description: "URL expiration time in seconds"
+      additionalProperties: false
+
+    MessageData:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "ok"
+      additionalProperties: false
+
+    RequestPostDictionariesV1:
+      type: object
+      required:
+        - description
+        - filename
+        - name
+        - author
+        - category
+        - subcategory
+        - public
+      properties:
+        description:
+          type: string
+          minLength: 10
+          maxLength: 256
+          pattern: ^.+$
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 256
+          pattern: ^.+$
+        name:
+          type: string
+          minLength: 6
+          maxLength: 32
+          pattern: "^.+$"
+        author:
+          type: string
+          minLength: 2
+          maxLength: 16
+          pattern: "^.+$"
+        category:
+          type: string
+          enum:
+          - language
+        subcategory:
+          type: string
+          minLength: 5
+          maxLength: 5
+          pattern: "^[a-z]{2}-[a-z]{2}$"
+        public:
+          type: boolean
+      additionalProperties: false
+
+    RequestPostReportsV1:
+      type: object
+      required:
+        - app_identifier
+        - app_version
+        - device_os
+        - device_name
+        - error_message
+        - error_original
+        - error_type
+        - timestamp
+      properties:
+        app_identifier:
+          type: string
+          description: "App replica uniq identifier"
+          maxLength: 36
+          minLength: 36
+          pattern: ^.+$
+        app_version:
+          type: string
+          description: "Application version"
+          pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"
+          maxLength: 32
+        device_os:
+          type: string
+          description: "Device Operating system"
+          pattern: "^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$"
+          maxLength: 32
+        device_name:
+          type: string
+          description: "Device information"
+          minLength: 2
+          maxLength: 128
+          pattern: ^.+$
+        error_message:
+          type: string
+          description: "Error message"
+          minLength: 1
+          maxLength: 1024
+          pattern: ^.+$
+        error_original:
+          type: string
+          description: "Original error"
+          minLength: 1
+          maxLength: 1024
+          pattern: ^.+$
+        error_type:
+          type: string
+          description: "Type of error"
+        timestamp:
+          type: integer
+          description: "Time when error occurred"
+          format: int64
+        metadata:
+          type: object
+          additionalProperties: true
+          description: "Error metadata"
+      additionalProperties: false
+
+    RequestPostUrlsV1:
+      type: object
+      required:
+        - operation
+        - identifier
+      properties:
+        operation:
+          type: string
+          enum:
+            - upload
+            - download
+        identifier:
+          type: string
+          minLength: 4
+          maxLength: 40
+          pattern: ^.+$
+      additionalProperties: false
+
+    ResponseGetCategoriesV1:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/CategoriesData'
+      additionalProperties: false
+
+    ResponseGetDictionariesV1:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/DictionariesData'
+      additionalProperties: false
+
+    ResponsePostUrlsV1:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/UrlsData'
+      additionalProperties: false
+
+    ResponseMessage:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/MessageData'
+      additionalProperties: false
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+    SortByParam:
+      name: sort_by
+      in: query
+      schema:
+        type: string
+      description: "Sort criteria"
+
+    SubcategoryParam:
+      name: subcategory
+      in: query
+      schema:
+        type: string
+      description: "Filter by subcategory"
+
+    LastEvaluatedParam:
+      name: last_evaluated
+      in: query
+      schema:
+        type: string
+      description: "Pagination token"
+
+    PublicParam:
+      name: public
+      in: query
+      schema:
+        type: boolean
+      description: "Filter by public status"
+
+x-amazon-apigateway-policy:
+  Version: "2012-10-17"
+  Statement:
+    - Effect: "Allow"
+      Principal: "*"
+      Action: "execute-api:Invoke"
+      Resource: "arn:aws:execute-api:${region}:${account_id}:*/*"

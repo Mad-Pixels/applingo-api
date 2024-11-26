@@ -52,9 +52,6 @@ func NewLambda(cfg Config, handler HandleFunc) *Trigger {
 // Handle processes AWS Lambda events by applying the handler function to each record.
 // It supports various event types such as DynamoDB and SQS events, and processes records in parallel.
 func (t *Trigger) Handle(ctx context.Context, event map[string]json.RawMessage) error {
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	records, err := t.getRecords(event)
 	if err != nil {
 		t.log.Error().Err(err).Msg("Failed to get records from event")
