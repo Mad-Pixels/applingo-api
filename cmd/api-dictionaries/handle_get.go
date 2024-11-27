@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -93,42 +92,53 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	// Устанавливаем сортировку по умолчанию - "date"
-	sortBy := "date"
-	if params.SortBy != nil && (*params.SortBy == "date" || *params.SortBy == "rating") {
+	// Определяем public (всегда должен быть)
+	isPublic := 1 // true по умолчанию
+	if params.Public != nil && !*params.Public {
+		isPublic = 0
+	}
+	sortBy := "date" // значение по умолчанию
+	if params.SortBy != nil {
 		sortBy = *params.SortBy
 	}
 
-	// Выбираем индекс в зависимости от предоставленных параметров
+	// Определяем сортировку (date по умолчанию)
+	useRatingSort := sortBy == "rating"
+
+	// Выбираем индекс и строим ключи в зависимости от параметров
 	if params.Level != nil && params.Subcategory != nil {
-		compositeKey := fmt.Sprintf("public_%s_%s", *params.Level, *params.Subcategory)
-		if sortBy == "date" {
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(compositeKey)
+		// Случай: public + level + subcategory
+		if useRatingSort {
+			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(isPublic, *params.Level, *params.Subcategory)
 		} else {
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(compositeKey)
+			qb.WithPublicLevelSubcategoryByDateIndexHashKey(isPublic, *params.Level, *params.Subcategory)
 		}
 	} else if params.Level != nil {
-		compositeKey := fmt.Sprintf("public_%s", *params.Level)
-		if sortBy == "date" {
-			qb.WithPublicLevelByDateIndexHashKey(compositeKey)
+		// Случай: public + level
+		if useRatingSort {
+			qb.WithPublicLevelByRatingIndexHashKey(isPublic, *params.Level)
 		} else {
-			qb.WithPublicLevelByRatingIndexHashKey(compositeKey)
+			qb.WithPublicLevelByDateIndexHashKey(isPublic, *params.Level)
 		}
 	} else if params.Subcategory != nil {
-		compositeKey := fmt.Sprintf("public_%s", *params.Subcategory)
-		if sortBy == "date" {
-			qb.WithPublicSubcategoryByDateIndexHashKey(compositeKey)
+		// Случай: public + subcategory
+		if useRatingSort {
+			qb.WithPublicSubcategoryByRatingIndexHashKey(isPublic, *params.Subcategory)
 		} else {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(compositeKey)
+			qb.WithPublicSubcategoryByDateIndexHashKey(isPublic, *params.Subcategory)
 		}
 	} else {
-		return nil, errors.New("Level or Subcategory must be provided when querying public dictionaries")
+		// Случай: только public
+		if useRatingSort {
+			qb.WithPublicByRatingIndexHashKey(isPublic)
+		} else {
+			qb.WithPublicByDateIndexHashKey(isPublic)
+		}
 	}
 
-	// Устанавливаем сортировку по убыванию
 	qb.OrderByDesc()
 
-	// Обрабатываем LastEvaluatedKey для пагинации
+	// Обработка пагинации
 	if params.LastEvaluated != nil {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
@@ -141,21 +151,18 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		qb.StartFrom(lastEvaluatedKeyMap)
 	}
 
-	// Устанавливаем лимит на количество элементов
 	qb.Limit(pageLimit)
 
-	// Создаем дополнительный фильтр для проверки наличия атрибута "dictionary"
+	// Добавляем фильтр на проверку dictionary
 	additionalFilter := expression.Name("dictionary").AttributeExists().And(
 		expression.Name("dictionary").NotEqual(expression.Value("")),
 	)
 
-	// Строим запрос
-	indexName, keyCondition, filterCondition, _, err := qb.Build()
+	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
 
-	// Комбинируем существующий фильтр с дополнительным
 	var filterCond expression.ConditionBuilder
 	if filterCondition != nil {
 		filterCond = filterCondition.And(additionalFilter)
@@ -163,17 +170,13 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		filterCond = additionalFilter
 	}
 
-	// Получаем поля для проекции
-	projectionFields := applingodictionary.IndexProjections[indexName]
-
-	// Возвращаем сформированный запрос
 	return &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
 		FilterCondition:   filterCond,
-		ProjectionFields:  projectionFields,
+		ProjectionFields:  applingodictionary.IndexProjections[indexName],
 		Limit:             pageLimit,
 		ScanForward:       false,
-		ExclusiveStartKey: qb.ExclusiveStartKey,
+		ExclusiveStartKey: exclusiveStartKey,
 	}, nil
 }

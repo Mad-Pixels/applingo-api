@@ -415,6 +415,8 @@ components:
         - category
         - subcategory
         - public
+        - level 
+        - topic
       properties:
         description:
           type: string
@@ -447,6 +449,10 @@ components:
           pattern: "^[a-z]{2}-[a-z]{2}$"
         public:
           type: boolean
+        level: 
+          type: string
+        topic:
+          type: string
       additionalProperties: false
 
     RequestPostReportsV1:

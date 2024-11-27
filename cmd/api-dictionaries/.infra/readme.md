@@ -6,7 +6,7 @@ Lambda for manage dictionaries.
 ## Define variables
 
 ```bash
-api="op3r1apk2i"
+api="vp0yxvxfow"
 url="http://localhost:4566/restapis/${api}/prod/_user_request_/v1/dictionaries"
 ```
 
@@ -19,6 +19,6 @@ curl -X GET "${url}?is_public=true" -H "Content-Type: application/json"  \
     -H "x-signature: ${signature}"
 
 curl -X POST ${url} \
-    -d '{"description": "description", "filename": "1.csv", "name": "test dictionary", "author": "author", "category": "language", "subcategory": "ru-he", "public": true}' \
+    -d '{"description": "description", "filename": "1.csv", "name": "test dictionary", "author": "author", "category": "language", "subcategory": "ru-he", "public": true, "level": "A1"}' \
     -H "Content-Type: application/json" 
 ```

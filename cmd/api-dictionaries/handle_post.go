@@ -31,20 +31,30 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	}
 	id := generateDictionaryID(req.Name, req.Author)
 
+	// Convert bool to int for public field
+	isPublic := applingodictionary.BoolToInt(req.Public)
+
+	// Create composites keys using # as separator
+	publicLevelSubcategory := fmt.Sprintf("%d#%s#%s", isPublic, req.Level, req.Subcategory)
+	publicLevel := fmt.Sprintf("%d#%s", isPublic, req.Level)
+	publicSubcategory := fmt.Sprintf("%d#%s", isPublic, req.Subcategory)
+
 	item := applingodictionary.SchemaItem{
-		Id:                     id,
-		Name:                   req.Name,
-		Author:                 req.Author,
-		Filename:               req.Filename,
-		Category:               string(req.Category),
-		Subcategory:            req.Subcategory,
-		Description:            req.Description,
-		Public:                 applingodictionary.BoolToInt(req.Public),
-		Created:                int(time.Now().Unix()),
-		Rating:                 0,
-		PublicLevelSubcategory: fmt.Sprintf("true%s%s", "A1", req.Subcategory),
-		PublicLevel:            fmt.Sprintf("trueA1"),
-		PublicSubcategory:      fmt.Sprintf("true%s", req.Subcategory),
+		Id:          id,
+		Name:        req.Name,
+		Author:      req.Author,
+		Filename:    req.Filename,
+		Category:    string(req.Category),
+		Subcategory: req.Subcategory,
+		Description: req.Description,
+		IsPublic:    isPublic,
+		Level:       req.Level,
+		Created:     int(time.Now().Unix()),
+		Rating:      0,
+		// Composite keys
+		IsPublicLevelSubcategory: publicLevelSubcategory,
+		IsPublicLevel:            publicLevel,
+		IsPublicSubcategory:      publicSubcategory,
 	}
 
 	dynamoItem, err := applingodictionary.PutItem(item)
