@@ -49,6 +49,17 @@ module "dynamo-dictionary-table" {
   stream_enabled       = true
 }
 
+module "dynamo-subcategory-table" {
+  source = "../../modules/dynamo"
+
+  project              = local.project
+  table_name           = local.subcategory_dynamo_schema.table_name
+  hash_key             = local.subcategory_dynamo_schema.hash_key
+  attributes           = local.subcategory_dynamo_schema.attributes
+  secondary_index_list = local.subcategory_dynamo_schema.secondary_indexes
+  stream_enabled       = false
+}
+
 module "dictionary_put_csv_queue" {
   source = "../../modules/sqs"
 

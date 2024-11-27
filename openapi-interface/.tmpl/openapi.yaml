@@ -220,6 +220,8 @@ paths:
   /v1/categories:
     get:
       operationId: GetCategoriesV1
+      parameters:
+        - $ref: '#/components/parameters/SideParam'
       responses:
         "200":
           description: "Successfully retrieved categories"
@@ -286,6 +288,11 @@ components:
           minLength: 2
           maxLength: 2
           pattern: "^[a-z]{2}$"
+        side: 
+          type: string
+          enum:
+            - front
+            - back
       additionalProperties: false
 
     DictionaryItemV1:
@@ -610,6 +617,15 @@ components:
       schema: 
         type: string 
       description: "Filter by language level"
+
+    SideParam:
+      name: side 
+      in: query 
+      schema: 
+        type: string
+        enum:
+          - front 
+          - back
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
