@@ -22,4 +22,8 @@ var (
 	DataResponseDictionaries = func(data applingoapi.DictionariesData) applingoapi.ResponseGetDictionariesV1 {
 		return applingoapi.ResponseGetDictionariesV1{Data: data}
 	}
+
+	DataResponseLevels = func(data applingoapi.LevelsData) applingoapi.ResponseGetLevelsV1 {
+		return applingoapi.ResponseGetLevelsV1{Data: data}
+	}
 )

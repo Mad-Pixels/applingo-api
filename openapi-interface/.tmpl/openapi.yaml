@@ -275,9 +275,84 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
         passthroughBehavior: "when_no_match"
-
+  
+  /v1/levels:
+    get:
+      operationId: GetLevelsV1
+      responses:
+        "200":
+          description: "Successfully retrieved levels"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetLevelsV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_levels}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+                maxLength: 255
+                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+                maxLength: 1024
+                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+            Access-Control-Allow-Credentials:
+              schema:
+                type: "string"
+                maxLength: 5
+                pattern: "^(true|false)$"
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+        passthroughBehavior: "when_no_match"
+  
 components:
   schemas:
+    LevelItemV1:
+      type: object
+      required:
+        - code
+        - level
+      properties:
+        code: 
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: "^[A-Z]{1}[0-9]{1}$"
+        level:
+          type: string
+          minLength: 5
+          maxLength: 20
+          pattern: "^[a-z-]+$"
+      additionalProperties: false
+
     CategoryItemV1:
       type: object
       required:
@@ -369,6 +444,17 @@ components:
             $ref: '#/components/schemas/CategoryItemV1'
           maxItems: 100
       additionalProperties: false
+    
+    LevelsData:
+      type: object
+      required:
+        - items
+      properties:
+        items: 
+          type: array
+          items:
+            $ref: '#/components/schemas/LevelItemV1'
+          maxItems: 6
 
     DictionariesData:
       type: object
@@ -546,6 +632,15 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CategoriesData'
+      additionalProperties: false
+    
+    ResponseGetLevelsV1:
+      type: object
+      required:
+        - data 
+      properties:
+        data: 
+          $ref: '#/components/schemas/LevelsData'
       additionalProperties: false
 
     ResponseGetDictionariesV1:

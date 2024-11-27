@@ -10,4 +10,8 @@ locals {
   subcategory_dynamo_schema = jsondecode(
     file("${path.module}/../../../dynamodb-interface/.tmpl/dynamo_subcategory_table.json")
   )
+
+  level_dynamo_schema = jsondecode(
+    file("${path.module}/../../../dynamodb-interface/.tmpl/dynamo_level_table.json")
+  )
 }

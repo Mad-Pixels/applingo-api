@@ -6,8 +6,6 @@
   ],
   "common_attributes": [
     { "name": "code", "type": "S" },
-    { "level": "level", "type": "S" },
-    { "name": "description", "type": "S" }
+    { "name": "level", "type": "S" }
   ]
 }
-  
