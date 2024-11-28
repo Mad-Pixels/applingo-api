@@ -217,26 +217,41 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
         passthroughBehavior: "when_no_match"
 
-  /v1/categories:
+  /v1/subcategories:
     get:
-      operationId: GetCategoriesV1
+      operationId: GetSubcategoriesV1
       parameters:
         - $ref: '#/components/parameters/SideParam'
       responses:
         "200":
-          description: "Successfully retrieved categories"
+          description: "Successfully retrieved subcategories"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseGetCategoriesV1'
+                $ref: '#/components/schemas/ResponseGetSubcategoriesV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
         responses:
           default:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    post:
+      operationId: PostSubcategoriesV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostSubcategoriesV1'
+      responses:
+        "201":
+          description: "Dictionary successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
     options:
       responses:
         "200":
@@ -353,7 +368,7 @@ components:
           pattern: "^[a-z-]+$"
       additionalProperties: false
 
-    CategoryItemV1:
+    SubcategoryItemV1:
       type: object
       required:
         - code
@@ -436,12 +451,12 @@ components:
         front_side:
           type: array
           items:
-            $ref: '#/components/schemas/CategoryItemV1'
+            $ref: '#/components/schemas/SubcategoryItemV1'
           maxItems: 100
         back_side:
           type: array
           items:
-            $ref: '#/components/schemas/CategoryItemV1'
+            $ref: '#/components/schemas/SubcategoryItemV1'
           maxItems: 100
       additionalProperties: false
     
@@ -498,6 +513,29 @@ components:
           example: "ok"
       additionalProperties: false
 
+    RequestPostSubcategoriesV1:
+      type: object
+      required:
+        - side
+        - code
+        - description
+      properties:
+        side: 
+          type: string
+          enum:
+            - front
+            - back
+        code: 
+          type: string
+          maxLength: 2
+          minLength: 2
+          pattern: "^[a-z]{2}$" 
+        description:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[a-z]+$"  
+
     RequestPostDictionariesV1:
       type: object
       required:
@@ -515,12 +553,12 @@ components:
           type: string
           minLength: 10
           maxLength: 256
-          pattern: ^.+$
+          pattern: "^.+$"
         filename:
           type: string
           minLength: 1
           maxLength: 256
-          pattern: ^.+$
+          pattern: "^.+$"
         name:
           type: string
           minLength: 6
@@ -625,7 +663,7 @@ components:
           pattern: ^.+$
       additionalProperties: false
 
-    ResponseGetCategoriesV1:
+    ResponseGetSubcategoriesV1:
       type: object
       required:
         - data

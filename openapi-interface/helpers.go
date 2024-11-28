@@ -15,8 +15,8 @@ var (
 		return applingoapi.ResponsePostUrlsV1{Data: data}
 	}
 
-	DataResponseCategories = func(data applingoapi.CategoriesData) applingoapi.ResponseGetCategoriesV1 {
-		return applingoapi.ResponseGetCategoriesV1{Data: data}
+	DataResponseSubcategories = func(data applingoapi.CategoriesData) applingoapi.ResponseGetSubcategoriesV1 {
+		return applingoapi.ResponseGetSubcategoriesV1{Data: data}
 	}
 
 	DataResponseDictionaries = func(data applingoapi.DictionariesData) applingoapi.ResponseGetDictionariesV1 {

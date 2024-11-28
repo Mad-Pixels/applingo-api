@@ -34,7 +34,8 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/categories": handleGet,
+				"GET /v1/categories":  handleGet,
+				"POST /v1/categories": handlePost,
 			},
 		).Handle,
 	)

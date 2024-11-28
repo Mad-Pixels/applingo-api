@@ -21,14 +21,14 @@ import (
 const pageLimit = 1000
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	var paramSide *applingoapi.GetCategoriesV1ParamsSide
+	var paramSide *applingoapi.GetSubcategoriesV1ParamsSide
 	if baseSide := baseParams.GetStringPtr("side"); baseSide != nil {
 		switch *baseSide {
-		case "front":
-			convertedSide := applingoapi.Front
+		case string(applingoapi.SideParamFront):
+			convertedSide := applingoapi.GetSubcategoriesV1ParamsSideFront
 			paramSide = &convertedSide
-		case "back":
-			convertedSide := applingoapi.Back
+		case string(applingoapi.SideParamBack):
+			convertedSide := applingoapi.GetSubcategoriesV1ParamsSideBack
 			paramSide = &convertedSide
 		default:
 			return nil, &api.HandleError{
@@ -37,7 +37,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 			}
 		}
 	}
-	params := applingoapi.GetCategoriesV1Params{
+	params := applingoapi.GetSubcategoriesV1Params{
 		Side: paramSide,
 	}
 
@@ -68,7 +68,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 
 	var (
 		wg      sync.WaitGroup
-		itemsCh = make(chan applingoapi.CategoryItemV1, len(items))
+		itemsCh = make(chan applingoapi.SubcategoryItemV1, len(items))
 	)
 	response := applingoapi.CategoriesData{}
 
@@ -77,7 +77,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		go func(item map[string]types.AttributeValue) {
 			defer wg.Done()
 
-			var category applingoapi.CategoryItemV1
+			var category applingoapi.SubcategoryItemV1
 			if err := attributevalue.UnmarshalMap(item, &category); err != nil {
 				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 				return
@@ -93,19 +93,19 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	for item := range itemsCh {
 		if item.Side != nil {
 			switch *item.Side {
-			case applingoapi.CategoryItemV1SideFront:
+			case applingoapi.SubcategoryItemV1SideFront:
 				item.Side = nil
 				response.FrontSide = append(response.FrontSide, item)
-			case applingoapi.CategoryItemV1SideBack:
+			case applingoapi.SubcategoryItemV1SideBack:
 				item.Side = nil
 				response.BackSide = append(response.BackSide, item)
 			}
 		}
 	}
-	return openapi.DataResponseCategories(response), nil
+	return openapi.DataResponseSubcategories(response), nil
 }
 
-func buildQueryInput(params applingoapi.GetCategoriesV1Params) (*cloud.QueryInput, error) {
+func buildQueryInput(params applingoapi.GetSubcategoriesV1Params) (*cloud.QueryInput, error) {
 	qb := applingosubcategory.NewQueryBuilder()
 	if params.Side != nil {
 		qb.WithSideIndexHashKey(string(*params.Side))
