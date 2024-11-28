@@ -22,11 +22,11 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, _ 
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
+
 	var items []applingoapi.LevelItemV1
 	if err := attributevalue.UnmarshalListOfMaps(result.Items, &items); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-
 	return openapi.DataResponseLevels(applingoapi.LevelsData{
 		Items: items,
 	}), nil

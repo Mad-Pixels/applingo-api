@@ -24,10 +24,9 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-	id := generateSubcategoryID(req.Code, string(req.Side))
 
 	item := applingosubcategory.SchemaItem{
-		Id:          id,
+		Id:          generateSubcategoryID(req.Code, string(req.Side)),
 		Code:        req.Code,
 		Side:        string(req.Side),
 		Description: req.Description,

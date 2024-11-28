@@ -152,6 +152,36 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    delete:
+      operationId: DeleteDictionariesV1
+      parameters: 
+        - $ref: '#/components/parameters/ParamDictionariesName'
+          required: true
+        - $ref: '#/components/parameters/ParamDictionariesAuthor'
+          required: true
+        - $ref: '#/components/parameters/ParamDictionariesSubcategory'
+          required: true
+      responses:
+        "200":
+          description: "Successfully retrieved dictionaries"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetDictionariesV1'
+        "404":
+          description: "Dictionary not found"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
     options:
       responses:
         "200":
@@ -219,6 +249,33 @@ paths:
         responses:
           default:
             statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      operationId: "DeleteSubcategoriesV1"
+      parameters:
+        - $ref: '#/components/parameters/ParamSubcategoriesSideRequired' 
+        - $ref: '#/components/parameters/ParamSubcategoriesCodeRequired'
+      responses:
+        "200":
+          description: "Subcategory successfully deleted"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        "404":
+          description: "Subcategory not found"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-request-validator: All
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
+        responses:
+          default:
+            statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     options:
@@ -291,6 +348,11 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
   
+x-amazon-apigateway-request-validators:
+  All:
+    validateRequestBody: true
+    validateRequestParameters: true
+
 components:
   headers:
     AccessControlAllowOrigin:
@@ -323,7 +385,52 @@ components:
       example: "true"
 
   schemas:
+    #
+    #
+    # General 
+    #
+    #
+    GeneralSide:
+      type: string
+      enum:
+        - front
+        - back
+      description: "Specifies the side (front/back) of the subcategory"
+    
+    GeneralAuthor:
+      type: string
+      description: "Name of the author of the dictionary"
+      minLength: 2
+      maxLength: 24
+      pattern: "^[A-z0-9_,\\.-]+$"
 
+    GeneralCategory:
+      type: string
+      enum:
+        - language
+      description: "Main category for the dictionary"
+    
+    GeneralUrlOp:
+      type: string
+      enum:
+        - upload
+        - download
+      description: "Urls operations"
+    
+    GeneralDictSort:
+      type: string
+      enum:
+        - date
+        - rating
+      description: "Dictionaries sort criteria"
+    
+    GeneralDictName:
+      type: string
+      description: "Short name of the dictionary"
+      minLength: 6
+      maxLength: 32
+      pattern: "^[A-z0-9_,\\.#-]+$"
+    
     #
     #
     # ITEMS 
@@ -362,10 +469,7 @@ components:
           minLength: 2
           pattern: "^[a-z]{2}$" 
         side: 
-          type: string
-          enum:
-            - front
-            - back
+          $ref: '#/components/schemas/GeneralSide'
       additionalProperties: false
 
     DictionaryItemV1:
@@ -384,16 +488,9 @@ components:
         - topic
       properties:
         name:
-          type: string
-          description: "Short name of the dictionary"
-          minLength: 6
-          maxLength: 32
-          pattern: "^[A-z0-9_,\\.#-]+$"
+          $ref: '#/components/schemas/GeneralDictName'
         category:
-          type: string
-          description: "Main category for the dictionary"
-          enum:
-          - language
+          $ref: '#/components/schemas/GeneralCategory'
         subcategory:
           type: string
           description: "Language subcategory in ISO format"
@@ -401,11 +498,7 @@ components:
           maxLength: 5
           pattern: "^[a-z]{2}-[a-z]{2}$"
         author:
-          type: string
-          description: "Name of the author of the dictionary"
-          minLength: 2
-          maxLength: 24
-          pattern: "^[A-z0-9_,\\.-]+$"
+          $ref: '#/components/schemas/GeneralAuthor'
         filename:
           type: string
           description: "Name of the file associated with the dictionary"
@@ -537,11 +630,7 @@ components:
         - description
       properties:
         side: 
-          type: string
-          description: "Specifies the side of the subcategory"
-          enum:
-            - front
-            - back
+          $ref: '#/components/schemas/GeneralSide'
         code: 
           type: string
           description: "Two-letter code"
@@ -593,10 +682,7 @@ components:
           maxLength: 24
           pattern: "^[A-z0-9_,\\.-]+$"
         category:
-          type: string
-          description: "Main category for the dictionary"
-          enum:
-          - language
+          $ref: '#/components/schemas/GeneralCategory' 
         subcategory:
           type: string
           description: "Language subcategory in ISO format"
@@ -689,11 +775,7 @@ components:
         - identifier
       properties:
         operation:
-          type: string
-          enum:
-            - upload
-            - download
-          description: "Specifies the operation to perform"
+          $ref: '#/components/schemas/GeneralUrlOp'
         identifier:
           type: string
           minLength: 4
@@ -758,11 +840,7 @@ components:
       name: sort_by
       in: query
       schema:
-        type: string
-        enum:
-          - date
-          - rating
-      description: "Dictionaries sort criteria"
+        $ref: '#/components/schemas/GeneralDictSort'
 
     ParamDictionariesSubcategory:
       name: subcategory
@@ -773,6 +851,18 @@ components:
         minLength: 5
         pattern: "^[a-z]{2}-[a-z]{2}$" 
       description: "Dictionaries filter by subcategory"
+    
+    ParamDictionariesName:
+      name: name 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/GeneralDictName'
+    
+    ParamDictionariesAuthor:
+      name: author 
+      in: query 
+      schema:
+        $ref: '#/components/schemas/GeneralAuthor'
 
     ParamDictionariesLevel:
       name: level
@@ -788,11 +878,36 @@ components:
       name: side 
       in: query 
       schema: 
-        type: string
-        enum:
-          - front 
-          - back
+        $ref: '#/components/schemas/GeneralSide'
       description: "Subcategories filter by side"
+    
+    ParamSubcategoriesSideRequired:
+      name: side 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/GeneralSide'
+      required: true
+    
+    ParamSubcategoriesCode:
+      name: code 
+      in: query
+      schema: 
+        type: string
+        description: "Two-letter code"
+        maxLength: 2
+        minLength: 2
+        pattern: "^[a-z]{2}$" 
+    
+    ParamSubcategoriesCodeRequired:
+      name: code 
+      in: query
+      schema: 
+        type: string
+        description: "Two-letter code"
+        maxLength: 2
+        minLength: 2
+        pattern: "^[a-z]{2}$" 
+      required: true
 
     ParamLastEvaluated:
       name: last_evaluated

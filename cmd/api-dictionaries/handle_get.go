@@ -21,23 +21,22 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 40
+const pageLimit = 60
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	var paramSort *applingoapi.GetDictionariesV1ParamsSortBy
+	var paramSort *applingoapi.GeneralDictSort
 	if baseSort := baseParams.GetStringPtr("sort_by"); baseSort != nil {
 		switch *baseSort {
-		case string(applingoapi.ParamDictionariesSortDate):
-			sortValue := applingoapi.GetDictionariesV1ParamsSortByDate
+		case string(applingoapi.Date):
+			sortValue := applingoapi.Date
 			paramSort = &sortValue
-		case string(applingoapi.ParamDictionariesSortRating):
-			sortValue := applingoapi.GetDictionariesV1ParamsSortByRating
+		case string(applingoapi.Rating):
+			sortValue := applingoapi.Rating
 			paramSort = &sortValue
 		default:
-			return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("invalid value for 'sort_by'")}
+			return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("invalid value for 'sort_by' param")}
 		}
 	}
-
 	params := applingoapi.GetDictionariesV1Params{
 		Subcategory:   baseParams.GetStringPtr("subcategory"),
 		LastEvaluated: baseParams.GetStringPtr("last_evaluated"),
@@ -109,11 +108,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}
-	sortBy := applingoapi.ParamDictionariesSortDate
+	sortBy := applingoapi.Date
 	if params.SortBy != nil {
 		sortBy = applingoapi.ParamDictionariesSort(*params.SortBy)
 	}
-	useRatingSort := sortBy == applingoapi.ParamDictionariesSortRating
+	useRatingSort := sortBy == applingoapi.Rating
 
 	if params.Level != nil && params.Subcategory != nil {
 		if useRatingSort {

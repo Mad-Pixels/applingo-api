@@ -34,8 +34,9 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/dictionaries":  handleGet,
-				"POST /v1/dictionaries": handlePost,
+				"GET /v1/dictionaries":    handleGet,
+				"POST /v1/dictionaries":   handlePost,
+				"DELETE /v1/dictionaries": handleDelete,
 			},
 		).Handle,
 	)
