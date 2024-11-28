@@ -28,9 +28,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	}
 	id := generateDictionaryID(req.Name, req.Author)
 
-	publicLevelSubcategory := fmt.Sprintf("%d#%s#%s", applingodictionary.BoolToInt(req.Public), req.Level, req.Subcategory)
-	publicSubcategory := fmt.Sprintf("%d#%s", applingodictionary.BoolToInt(req.Public), req.Subcategory)
-	publicLevel := fmt.Sprintf("%d#%s", applingodictionary.BoolToInt(req.Public), req.Level)
+	levelSubcategoryIsPublic := fmt.Sprintf("%s#%s#%d", req.Level, req.Subcategory, applingodictionary.BoolToInt(req.Public))
+	subcategoryIsPublic := fmt.Sprintf("%s#%d", req.Subcategory, applingodictionary.BoolToInt(req.Public))
+	levelIsPublic := fmt.Sprintf("%s#%d", req.Level, applingodictionary.BoolToInt(req.Public))
 
 	item := applingodictionary.SchemaItem{
 		Id:          id,
@@ -46,9 +46,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		Rating:      0,
 
 		// Composite keys
-		IsPublicLevelSubcategory: publicLevelSubcategory,
-		IsPublicLevel:            publicLevel,
-		IsPublicSubcategory:      publicSubcategory,
+		LevelSubcategoryIsPublic: levelSubcategoryIsPublic,
+		LevelIsPublic:            levelIsPublic,
+		SubcategoryIsPublic:      subcategoryIsPublic,
 	}
 	dynamoItem, err := applingodictionary.PutItem(item)
 	if err != nil {

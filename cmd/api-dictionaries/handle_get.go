@@ -117,21 +117,21 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 
 	if params.Level != nil && params.Subcategory != nil {
 		if useRatingSort {
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
 		} else {
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
 		}
 	} else if params.Level != nil {
 		if useRatingSort {
-			qb.WithPublicLevelByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level)
+			qb.WithPublicLevelByRatingIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
 		} else {
-			qb.WithPublicLevelByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level)
+			qb.WithPublicLevelByDateIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
 		}
 	} else if params.Subcategory != nil {
 		if useRatingSort {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Subcategory)
+			qb.WithPublicSubcategoryByRatingIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
 		} else {
-			qb.WithPublicSubcategoryByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Subcategory)
+			qb.WithPublicSubcategoryByDateIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
 		}
 	} else {
 		if useRatingSort {
