@@ -63,11 +63,11 @@ module "dynamo-subcategory-table" {
 module "dynamo-level-table" {
   source = "../../modules/dynamo"
 
-  project              = local.project
-  table_name           = local.level_dynamo_schema.table_name
-  hash_key             = local.level_dynamo_schema.hash_key
-  attributes           = local.level_dynamo_schema.attributes
-  stream_enabled       = false
+  project        = local.project
+  table_name     = local.level_dynamo_schema.table_name
+  hash_key       = local.level_dynamo_schema.hash_key
+  attributes     = local.level_dynamo_schema.attributes
+  stream_enabled = false
 }
 
 module "dictionary_put_csv_queue" {

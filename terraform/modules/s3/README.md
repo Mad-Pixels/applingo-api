@@ -18,6 +18,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [aws_s3_bucket.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket_lifecycle_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
 | [aws_s3_bucket_server_side_encryption_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
 | [aws_s3_bucket_versioning.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
 | [aws_s3_bucket_website_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_website_configuration) | resource |
@@ -33,6 +34,7 @@ No modules.
 | <a name="input_index_document"></a> [index\_document](#input\_index\_document) | Name of the index document for the S3 static web site. | `string` | `"index.html"` | no |
 | <a name="input_is_website"></a> [is\_website](#input\_is\_website) | Specifies if the S3 bucket will host a static website when set to true. | `bool` | `false` | no |
 | <a name="input_project"></a> [project](#input\_project) | Project name | `string` | n/a | yes |
+| <a name="input_rule"></a> [rule](#input\_rule) | Optional lifecycle rule configuration | <pre>object({<br>    id     = string<br>    status = string<br>    filter = object({<br>      prefix = string<br>    })<br>    transition = optional(object({<br>      days          = number<br>      storage_class = string<br>    }))<br>    expiration = optional(object({<br>      days = number<br>    }))<br>  })</pre> | `null` | no |
 | <a name="input_shared_tags"></a> [shared\_tags](#input\_shared\_tags) | Tags to add to all resources | `map` | `{}` | no |
 
 ## Outputs
