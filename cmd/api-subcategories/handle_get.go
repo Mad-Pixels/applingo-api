@@ -24,10 +24,10 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	var paramSide *applingoapi.GetSubcategoriesV1ParamsSide
 	if baseSide := baseParams.GetStringPtr("side"); baseSide != nil {
 		switch *baseSide {
-		case string(applingoapi.SideParamFront):
+		case string(applingoapi.ParamSubcategoriesSideFront):
 			convertedSide := applingoapi.GetSubcategoriesV1ParamsSideFront
 			paramSide = &convertedSide
-		case string(applingoapi.SideParamBack):
+		case string(applingoapi.ParamSubcategoriesSideBack):
 			convertedSide := applingoapi.GetSubcategoriesV1ParamsSideBack
 			paramSide = &convertedSide
 		default:

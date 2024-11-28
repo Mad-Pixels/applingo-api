@@ -24,12 +24,26 @@ import (
 const pageLimit = 40
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+	var paramSort *applingoapi.GetDictionariesV1ParamsSortBy
+	if baseSort := baseParams.GetStringPtr("sort_by"); baseSort != nil {
+		switch *baseSort {
+		case string(applingoapi.ParamDictionariesSortDate):
+			sortValue := applingoapi.GetDictionariesV1ParamsSortByDate
+			paramSort = &sortValue
+		case string(applingoapi.ParamDictionariesSortRating):
+			sortValue := applingoapi.GetDictionariesV1ParamsSortByRating
+			paramSort = &sortValue
+		default:
+			return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("invalid value for 'sort_by'")}
+		}
+	}
+
 	params := applingoapi.GetDictionariesV1Params{
-		SortBy:        baseParams.GetStringPtr("sort_by"),
 		Subcategory:   baseParams.GetStringPtr("subcategory"),
 		LastEvaluated: baseParams.GetStringPtr("last_evaluated"),
 		Level:         baseParams.GetStringPtr("level"),
 		Public:        baseParams.GetBoolPtr("public"),
+		SortBy:        paramSort,
 	}
 
 	queryInput, err := buildQueryInput(params)
@@ -95,11 +109,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}
-	sortBy := "date"
+	sortBy := applingoapi.ParamDictionariesSortDate
 	if params.SortBy != nil {
-		sortBy = *params.SortBy
+		sortBy = applingoapi.ParamDictionariesSort(*params.SortBy)
 	}
-	useRatingSort := sortBy == "rating"
+	useRatingSort := sortBy == applingoapi.ParamDictionariesSortRating
 
 	if params.Level != nil && params.Subcategory != nil {
 		if useRatingSort {

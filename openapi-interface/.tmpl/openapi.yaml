@@ -135,11 +135,11 @@ paths:
     get:
       operationId: GetDictionariesV1
       parameters:
-        - $ref: '#/components/parameters/SortByParam'
-        - $ref: '#/components/parameters/SubcategoryParam'
-        - $ref: '#/components/parameters/LastEvaluatedParam'
-        - $ref: '#/components/parameters/PublicParam'
-        - $ref: '#/components/parameters/LevelParam'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategory'
+        - $ref: '#/components/parameters/ParamDictionariesLevel'
+        - $ref: '#/components/parameters/ParamDictionariesSort'
+        - $ref: '#/components/parameters/ParamLastEvaluated'
+        - $ref: '#/components/parameters/ParamPublic'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -221,7 +221,7 @@ paths:
     get:
       operationId: GetSubcategoriesV1
       parameters:
-        - $ref: '#/components/parameters/SideParam'
+        - $ref: '#/components/parameters/ParamSubcategoriesSide'
       responses:
         "200":
           description: "Successfully retrieved subcategories"
@@ -350,6 +350,13 @@ paths:
   
 components:
   schemas:
+
+    #
+    #
+    # ITEMS 
+    #
+    #
+
     LevelItemV1:
       type: object
       required:
@@ -442,6 +449,12 @@ components:
           type: string
       additionalProperties: false
 
+    #
+    #
+    # Data
+    #
+    #
+
     CategoriesData:
       type: object
       required:
@@ -510,8 +523,14 @@ components:
       properties:
         message:
           type: string
-          example: "ok"
+          example: "message"
       additionalProperties: false
+
+    #
+    #
+    # REQUEST 
+    #
+    #
 
     RequestPostSubcategoriesV1:
       type: object
@@ -663,6 +682,12 @@ components:
           pattern: ^.+$
       additionalProperties: false
 
+    #
+    #
+    # RESPONSE
+    #
+    #
+
     ResponseGetSubcategoriesV1:
       type: object
       required:
@@ -709,49 +734,31 @@ components:
       additionalProperties: false
 
   parameters:
-    IdParam:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-
-    SortByParam:
+    ParamDictionariesSort:
       name: sort_by
       in: query
       schema:
         type: string
-      description: "Sort criteria"
+        enum:
+          - date
+          - rating
+      description: "Dictionaries sort criteria"
 
-    SubcategoryParam:
+    ParamDictionariesSubcategory:
       name: subcategory
       in: query
       schema:
         type: string
-      description: "Filter by subcategory"
+      description: "Dictionaries filter by subcategory"
 
-    LastEvaluatedParam:
-      name: last_evaluated
-      in: query
-      schema:
-        type: string
-      description: "Pagination token"
-
-    PublicParam:
-      name: public
-      in: query
-      schema:
-        type: boolean
-      description: "Filter by public status"
-
-    LevelParam:
+    ParamDictionariesLevel:
       name: level
       in: query 
       schema: 
         type: string 
-      description: "Filter by language level"
+      description: "Dictionaries filter by language level"
 
-    SideParam:
+    ParamSubcategoriesSide:
       name: side 
       in: query 
       schema: 
@@ -759,6 +766,21 @@ components:
         enum:
           - front 
           - back
+      description: "Subcategories filter by side"
+
+    ParamLastEvaluated:
+      name: last_evaluated
+      in: query
+      schema:
+        type: string
+      description: "Pagination token"
+
+    ParamPublic:
+      name: public
+      in: query
+      schema:
+        type: boolean
+      description: "Filter by public status"
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
