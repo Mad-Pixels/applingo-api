@@ -35,25 +35,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -66,7 +54,6 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
   /v1/urls:
     post:
@@ -98,25 +85,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -129,7 +104,6 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
   /v1/dictionaries:
     get:
@@ -184,25 +158,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -215,7 +177,6 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
   /v1/subcategories:
     get:
@@ -247,36 +208,32 @@ paths:
               $ref: '#/components/schemas/RequestPostSubcategoriesV1'
       responses:
         "201":
-          description: "Dictionary successfully created"
+          description: "Subcategory successfully created"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
     options:
       responses:
         "200":
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -289,7 +246,6 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
   
   /v1/levels:
     get:
@@ -315,25 +271,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -346,9 +290,38 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
   
 components:
+  headers:
+    AccessControlAllowOrigin:
+      description: "Specifies allowed origins for CORS requests"
+      schema:
+        type: string
+        maxLength: 255
+        pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+      example: "*"
+    AccessControlAllowMethods:
+      description: "Specifies allowed HTTP methods for CORS requests"
+      schema:
+        type: string
+        maxLength: 255
+        pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+      example: "GET,POST,DELETE,OPTIONS"
+    AccessControlAllowHeaders:
+      description: "Specifies allowed headers for CORS requests"
+      schema:
+        type: string
+        maxLength: 1024
+        pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+      example: "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature"
+    AccessControlAllowCredentials:
+      description: "Indicates whether credentials are allowed for CORS requests"
+      schema:
+        type: string
+        maxLength: 5
+        pattern: "^(true|false)$"
+      example: "true"
+
   schemas:
 
     #
@@ -365,14 +338,16 @@ components:
       properties:
         code: 
           type: string
-          minLength: 2
+          description: "Two-letter code"
           maxLength: 2
-          pattern: "^[A-Z]{1}[0-9]{1}$"
+          minLength: 2
+          pattern: "^[a-z]{2}$" 
         level:
           type: string
-          minLength: 5
-          maxLength: 20
-          pattern: "^[a-z-]+$"
+          description: "Proficiency level for the dictionary"
+          maxLength: 64
+          minLength: 1
+          pattern: "^[A-z0-9_,\\.-]+$"
       additionalProperties: false
 
     SubcategoryItemV1:
@@ -380,11 +355,12 @@ components:
       required:
         - code
       properties:
-        code:
+        code: 
           type: string
-          minLength: 2
+          description: "Two-letter code"
           maxLength: 2
-          pattern: "^[a-z]{2}$"
+          minLength: 2
+          pattern: "^[a-z]{2}$" 
         side: 
           type: string
           enum:
@@ -399,9 +375,9 @@ components:
         - category
         - subcategory
         - author
-        - dictionary
+        - filename
         - description
-        - created_at
+        - created
         - rating
         - public
         - level
@@ -409,44 +385,61 @@ components:
       properties:
         name:
           type: string
+          description: "Short name of the dictionary"
           minLength: 6
           maxLength: 32
-          pattern: "^.+$"
+          pattern: "^[A-z0-9_,\\.#-]+$"
         category:
           type: string
+          description: "Main category for the dictionary"
           enum:
           - language
         subcategory:
           type: string
+          description: "Language subcategory in ISO format"
           minLength: 5
           maxLength: 5
           pattern: "^[a-z]{2}-[a-z]{2}$"
         author:
           type: string
+          description: "Name of the author of the dictionary"
           minLength: 2
-          maxLength: 16
-          pattern: "^.+$"
-        dictionary:
+          maxLength: 24
+          pattern: "^[A-z0-9_,\\.-]+$"
+        filename:
           type: string
-          minLength: 40
-          maxLength: 40
-          pattern: "^.+$"
+          description: "Name of the file associated with the dictionary"
+          minLength: 4
+          maxLength: 256
+          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
         description:
           type: string
+          description: "Description of the dictionary"
           minLength: 10
           maxLength: 256
-        created_at:
+        created:
           type: integer
+          description: "Dictionary created date in UNIX format"
           format: int64
         rating:
           type: integer
+          description: "Dictionary rating"
           format: int32
         public:
           type: boolean
-        level: 
+          description: "Visibility of the dictionary"
+        level:
           type: string
+          description: "Proficiency level for the dictionary"
+          maxLength: 2
+          minLength: 2
+          pattern: "^[a-z]{2}$"
         topic: 
           type: string
+          description: "Specific topic covered in the dictionary"
+          maxLength: 128
+          minLength: 1
+          pattern: "^[A-z0-9_,\\.-]+$"
       additionalProperties: false
 
     #
@@ -496,6 +489,7 @@ components:
           maxItems: 100
         last_evaluated:
           type: string
+          description: "A token for pagination, encoded in Base64 format"
           format: base64
           maxLength: 1048576
           pattern: ^[A-Za-z0-9+/]*={0,2}$
@@ -509,11 +503,11 @@ components:
       properties:
         url:
           type: string
-          description: "Presigned URL"
+          description: "A presigned URL that provides temporary access"
           format: uri
         expires_in:
           type: integer
-          description: "URL expiration time in seconds"
+          description: "Time in seconds until the URL expires"
       additionalProperties: false
 
     MessageData:
@@ -523,6 +517,9 @@ components:
       properties:
         message:
           type: string
+          minLength: 1
+          maxLength: 128
+          pattern: "^[a-z- ]+$"
           example: "message"
       additionalProperties: false
 
@@ -541,19 +538,23 @@ components:
       properties:
         side: 
           type: string
+          description: "Specifies the side of the subcategory"
           enum:
             - front
             - back
         code: 
           type: string
+          description: "Two-letter code"
           maxLength: 2
           minLength: 2
           pattern: "^[a-z]{2}$" 
         description:
           type: string
+          description: "A brief description of the subcategory"
           minLength: 1
           maxLength: 64
-          pattern: "^[a-z]+$"  
+          pattern: "^[A-z]+$"
+      additionalProperties: false
 
     RequestPostDictionariesV1:
       type: object
@@ -570,39 +571,53 @@ components:
       properties:
         description:
           type: string
+          description: "Description of the dictionary"
           minLength: 10
           maxLength: 256
-          pattern: "^.+$"
         filename:
           type: string
-          minLength: 1
+          description: "Name of the file associated with the dictionary"
+          minLength: 4
           maxLength: 256
-          pattern: "^.+$"
+          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
         name:
           type: string
+          description: "Short name of the dictionary"
           minLength: 6
           maxLength: 32
-          pattern: "^.+$"
+          pattern: "^[A-z0-9_,\\.#-]+$"
         author:
           type: string
+          description: "Name of the author of the dictionary"
           minLength: 2
-          maxLength: 16
-          pattern: "^.+$"
+          maxLength: 24
+          pattern: "^[A-z0-9_,\\.-]+$"
         category:
           type: string
+          description: "Main category for the dictionary"
           enum:
           - language
         subcategory:
           type: string
+          description: "Language subcategory in ISO format"
           minLength: 5
           maxLength: 5
           pattern: "^[a-z]{2}-[a-z]{2}$"
         public:
           type: boolean
-        level: 
+          description: "Visibility of the dictionary"
+        level:
           type: string
+          description: "Proficiency level for the dictionary"
+          maxLength: 64
+          minLength: 1
+          pattern: "^[A-z0-9_,\\.-]+$"
         topic:
           type: string
+          description: "Specific topic covered in the dictionary"
+          maxLength: 128
+          minLength: 1
+          pattern: "^[A-z0-9_,\\.-]+$"
       additionalProperties: false
 
     RequestPostReportsV1:
@@ -619,49 +634,52 @@ components:
       properties:
         app_identifier:
           type: string
-          description: "App replica uniq identifier"
+          description: "Unique identifier for the app replica"
           maxLength: 36
           minLength: 36
-          pattern: ^.+$
+          pattern: "^[A-f0-9-]{36}$"
         app_version:
           type: string
           description: "Application version"
-          pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"
-          maxLength: 32
+          maxLength: 36
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
         device_os:
           type: string
-          description: "Device Operating system"
-          pattern: "^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$"
-          maxLength: 32
+          description: "Device operating system version"
+          maxLength: 36
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
         device_name:
           type: string
-          description: "Device information"
-          minLength: 2
-          maxLength: 128
-          pattern: ^.+$
+          description: "Device model or name"
+          maxLength: 64
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
         error_message:
           type: string
-          description: "Error message"
+          description: "Description of the error"
           minLength: 1
-          maxLength: 1024
-          pattern: ^.+$
+          maxLength: 512
         error_original:
           type: string
-          description: "Original error"
+          description: "Full original error information"
           minLength: 1
           maxLength: 1024
-          pattern: ^.+$
         error_type:
           type: string
-          description: "Type of error"
+          description: "Error type"
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-z]+$" 
         timestamp:
           type: integer
-          description: "Time when error occurred"
+          description: "Timestamp of the error occurrence in UNIX format"
           format: int64
         metadata:
           type: object
+          description: "Optional metadata with additional context for the error report"
           additionalProperties: true
-          description: "Error metadata"
       additionalProperties: false
 
     RequestPostUrlsV1:
@@ -675,11 +693,13 @@ components:
           enum:
             - upload
             - download
+          description: "Specifies the operation to perform"
         identifier:
           type: string
           minLength: 4
-          maxLength: 40
-          pattern: ^.+$
+          maxLength: 64
+          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
+          description: "A valid filename with an optional extension"
       additionalProperties: false
 
     #
@@ -749,6 +769,9 @@ components:
       in: query
       schema:
         type: string
+        maxLength: 5
+        minLength: 5
+        pattern: "^[a-z]{2}-[a-z]{2}$" 
       description: "Dictionaries filter by subcategory"
 
     ParamDictionariesLevel:
@@ -756,6 +779,9 @@ components:
       in: query 
       schema: 
         type: string 
+        maxLength: 2
+        minLength: 2
+        pattern: "^[a-z]{2}$"
       description: "Dictionaries filter by language level"
 
     ParamSubcategoriesSide:

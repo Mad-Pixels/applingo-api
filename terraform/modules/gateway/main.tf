@@ -9,11 +9,11 @@ locals {
     region         = data.aws_region.current.name
     account_id     = try(data.aws_caller_identity.current.account_id, "*")
 
-    api_dictionaries = var.invoke_lambdas_arns["api-dictionaries"].arn
-    api_categories   = var.invoke_lambdas_arns["api-categories"].arn
-    api_reports      = var.invoke_lambdas_arns["api-reports"].arn
-    api_levels       = var.invoke_lambdas_arns["api-levels"].arn
-    api_urls         = var.invoke_lambdas_arns["api-urls"].arn
+    api_subcategories = var.invoke_lambdas_arns["api-subcategories"].arn
+    api_dictionaries  = var.invoke_lambdas_arns["api-dictionaries"].arn
+    api_reports       = var.invoke_lambdas_arns["api-reports"].arn
+    api_levels        = var.invoke_lambdas_arns["api-levels"].arn
+    api_urls          = var.invoke_lambdas_arns["api-urls"].arn
   })
 }
 

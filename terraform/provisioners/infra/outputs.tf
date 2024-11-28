@@ -43,7 +43,7 @@ output "dynamo-subcategory-table_name" {
 }
 
 output "dynamo-subcategory-table_arn" {
-  value = module.dynamo-subcategory-table
+  value = module.dynamo-subcategory-table.table_arn
 }
 
 output "dynamo-level-table_name" {
