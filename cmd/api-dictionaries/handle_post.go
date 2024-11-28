@@ -24,20 +24,13 @@ import (
 func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	var req applingoapi.RequestPostDictionariesV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
-		return nil, &api.HandleError{
-			Status: http.StatusBadRequest,
-			Err:    err,
-		}
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 	id := generateDictionaryID(req.Name, req.Author)
 
-	// Convert bool to int for public field
-	isPublic := applingodictionary.BoolToInt(req.Public)
-
-	// Create composites keys using # as separator
-	publicLevelSubcategory := fmt.Sprintf("%d#%s#%s", isPublic, req.Level, req.Subcategory)
-	publicLevel := fmt.Sprintf("%d#%s", isPublic, req.Level)
-	publicSubcategory := fmt.Sprintf("%d#%s", isPublic, req.Subcategory)
+	publicLevelSubcategory := fmt.Sprintf("%d#%s#%s", applingodictionary.BoolToInt(req.Public), req.Level, req.Subcategory)
+	publicSubcategory := fmt.Sprintf("%d#%s", applingodictionary.BoolToInt(req.Public), req.Subcategory)
+	publicLevel := fmt.Sprintf("%d#%s", applingodictionary.BoolToInt(req.Public), req.Level)
 
 	item := applingodictionary.SchemaItem{
 		Id:          id,
@@ -47,23 +40,19 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		Category:    string(req.Category),
 		Subcategory: req.Subcategory,
 		Description: req.Description,
-		IsPublic:    isPublic,
+		IsPublic:    applingodictionary.BoolToInt(req.Public),
 		Level:       req.Level,
 		Created:     int(time.Now().Unix()),
 		Rating:      0,
+
 		// Composite keys
 		IsPublicLevelSubcategory: publicLevelSubcategory,
 		IsPublicLevel:            publicLevel,
 		IsPublicSubcategory:      publicSubcategory,
 	}
-
 	dynamoItem, err := applingodictionary.PutItem(item)
 	if err != nil {
-		logger.Error().Err(err).Str("id", id).Msg("Failed to prepare item for DynamoDB")
-		return nil, &api.HandleError{
-			Status: http.StatusInternalServerError,
-			Err:    err,
-		}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
 	if err = dbDynamo.Put(
@@ -74,16 +63,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	); err != nil {
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {
-			return nil, &api.HandleError{
-				Status: http.StatusConflict,
-				Err:    err,
-			}
+			return nil, &api.HandleError{Status: http.StatusConflict, Err: err}
 		}
-		logger.Error().Err(err).Str("id", id).Msg("Failed to save dictionary to DynamoDB")
-		return nil, &api.HandleError{
-			Status: http.StatusInternalServerError,
-			Err:    err,
-		}
+		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return openapi.DataResponseSuccess, nil
 }

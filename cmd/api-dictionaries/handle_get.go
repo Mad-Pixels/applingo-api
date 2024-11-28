@@ -36,7 +36,6 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-
 	dynamoQueryInput, err := dbDynamo.BuildQueryInput(*queryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
@@ -92,53 +91,43 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	// Определяем public (всегда должен быть)
-	isPublic := 1 // true по умолчанию
+	isPublic := true
 	if params.Public != nil && !*params.Public {
-		isPublic = 0
+		isPublic = false
 	}
-	sortBy := "date" // значение по умолчанию
+	sortBy := "date"
 	if params.SortBy != nil {
 		sortBy = *params.SortBy
 	}
-
-	// Определяем сортировку (date по умолчанию)
 	useRatingSort := sortBy == "rating"
 
-	// Выбираем индекс и строим ключи в зависимости от параметров
 	if params.Level != nil && params.Subcategory != nil {
-		// Случай: public + level + subcategory
 		if useRatingSort {
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(isPublic, *params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level, *params.Subcategory)
 		} else {
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(isPublic, *params.Level, *params.Subcategory)
+			qb.WithPublicLevelSubcategoryByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level, *params.Subcategory)
 		}
 	} else if params.Level != nil {
-		// Случай: public + level
 		if useRatingSort {
-			qb.WithPublicLevelByRatingIndexHashKey(isPublic, *params.Level)
+			qb.WithPublicLevelByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level)
 		} else {
-			qb.WithPublicLevelByDateIndexHashKey(isPublic, *params.Level)
+			qb.WithPublicLevelByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Level)
 		}
 	} else if params.Subcategory != nil {
-		// Случай: public + subcategory
 		if useRatingSort {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(isPublic, *params.Subcategory)
+			qb.WithPublicSubcategoryByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Subcategory)
 		} else {
-			qb.WithPublicSubcategoryByDateIndexHashKey(isPublic, *params.Subcategory)
+			qb.WithPublicSubcategoryByDateIndexHashKey(applingodictionary.BoolToInt(isPublic), *params.Subcategory)
 		}
 	} else {
-		// Случай: только public
 		if useRatingSort {
-			qb.WithPublicByRatingIndexHashKey(isPublic)
+			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
 		} else {
-			qb.WithPublicByDateIndexHashKey(isPublic)
+			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
 		}
 	}
-
 	qb.OrderByDesc()
 
-	// Обработка пагинации
 	if params.LastEvaluated != nil {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
@@ -150,14 +139,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		}
 		qb.StartFrom(lastEvaluatedKeyMap)
 	}
-
 	qb.Limit(pageLimit)
 
-	// Добавляем фильтр на проверку dictionary
 	additionalFilter := expression.Name("dictionary").AttributeExists().And(
 		expression.Name("dictionary").NotEqual(expression.Value("")),
 	)
-
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
@@ -169,7 +155,6 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	} else {
 		filterCond = additionalFilter
 	}
-
 	return &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
