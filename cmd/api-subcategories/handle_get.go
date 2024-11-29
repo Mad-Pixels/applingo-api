@@ -21,21 +21,19 @@ import (
 const pageLimit = 1000
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	var paramSide *applingoapi.GeneralSide
-	if sideParam := baseParams.GetStringPtr("side"); sideParam != nil {
-		switch *sideParam {
-		case string(applingoapi.Front):
-			sideValue := applingoapi.Front
-			paramSide = &sideValue
-		case string(applingoapi.Back):
-			sideValue := applingoapi.Back
-			paramSide = &sideValue
-		default:
-			return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("invalid value for 'side' param")}
-		}
+	validSideValues := map[applingoapi.BaseSide]struct{}{
+		applingoapi.Front: {},
+		applingoapi.Back:  {},
+	}
+	paramSide, err := openapi.ParseEnumParam(baseParams.GetStringPtr("side"), validSideValues)
+	if err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'side' param")}
 	}
 	params := applingoapi.GetSubcategoriesV1Params{
 		Side: paramSide,
+	}
+	if err := validate.Struct(&params); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	var items []map[string]types.AttributeValue
@@ -88,15 +86,15 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	}()
 
 	for item := range itemsCh {
-		if item.Side != nil {
-			switch *item.Side {
-			case applingoapi.Front:
-				item.Side = nil
-				response.FrontSide = append(response.FrontSide, item)
-			case applingoapi.Back:
-				item.Side = nil
-				response.BackSide = append(response.BackSide, item)
-			}
+		switch item.Side {
+		case applingoapi.Front:
+			response.FrontSide = append(response.FrontSide, applingoapi.SubcategoryItemV1{
+				Code: item.Code,
+			})
+		case applingoapi.Back:
+			response.BackSide = append(response.BackSide, applingoapi.SubcategoryItemV1{
+				Code: item.Code,
+			})
 		}
 	}
 	return openapi.DataResponseSubcategories(response), nil

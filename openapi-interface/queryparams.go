@@ -1,10 +1,22 @@
 package openapi
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
+
+func ParseEnumParam[T ~string](value *string, validValues map[T]struct{}) (*T, error) {
+	if value == nil {
+		return nil, nil
+	}
+	enumVal := T(*value)
+	if _, ok := validValues[enumVal]; ok {
+		return &enumVal, nil
+	}
+	return nil, errors.New("invalid enum value")
+}
 
 type QueryParams struct {
 	raw map[string]string

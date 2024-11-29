@@ -7,6 +7,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingosubcategory"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
+	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -15,7 +16,23 @@ import (
 )
 
 func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	id := generateSubcategoryID(string(*baseParams.GetStringPtr("code")), string(*baseParams.GetStringPtr("side")))
+	validSideValues := map[applingoapi.BaseSide]struct{}{
+		applingoapi.Front: {},
+		applingoapi.Back:  {},
+	}
+	paramSide, err := openapi.ParseEnumParam(baseParams.GetStringPtr("side"), validSideValues)
+	if err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'side' param")}
+	}
+	params := applingoapi.DeleteSubcategoriesV1Params{
+		Code: baseParams.GetStringPtr("code"),
+		Side: paramSide,
+	}
+	if err := validate.Struct(&params); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+	}
+
+	id := generateSubcategoryID(string(*params.Code), string(*params.Side))
 	result, err := dbDynamo.Get(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
 		"id": &types.AttributeValueMemberS{Value: id},
 	})

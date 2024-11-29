@@ -26,7 +26,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-
+	if err := validate.Struct(&req); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+	}
 	levelSubcategoryIsPublic := fmt.Sprintf("%s#%s#%d", req.Level, req.Subcategory, applingodictionary.BoolToInt(req.Public))
 	subcategoryIsPublic := fmt.Sprintf("%s#%d", req.Subcategory, applingodictionary.BoolToInt(req.Public))
 	levelIsPublic := fmt.Sprintf("%s#%d", req.Level, applingodictionary.BoolToInt(req.Public))

@@ -10,15 +10,18 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/go-playground/validator/v10"
 )
 
 var (
 	awsRegion = os.Getenv("AWS_REGION")
+	validate  *validator.Validate
 	dbDynamo  *cloud.Dynamo
 )
 
 func init() {
 	debug.SetGCPercent(500)
+	validate = validator.New()
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
 	if err != nil {

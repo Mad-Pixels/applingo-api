@@ -24,18 +24,13 @@ import (
 const pageLimit = 60
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	var paramSort *applingoapi.GeneralDictSort
-	if baseSort := baseParams.GetStringPtr("sort_by"); baseSort != nil {
-		switch *baseSort {
-		case string(applingoapi.Date):
-			sortValue := applingoapi.Date
-			paramSort = &sortValue
-		case string(applingoapi.Rating):
-			sortValue := applingoapi.Rating
-			paramSort = &sortValue
-		default:
-			return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("invalid value for 'sort_by' param")}
-		}
+	validSortValues := map[applingoapi.BaseDictSort]struct{}{
+		applingoapi.Date:   {},
+		applingoapi.Rating: {},
+	}
+	paramSort, err := openapi.ParseEnumParam(baseParams.GetStringPtr("sort_by"), validSortValues)
+	if err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'sort_by' param")}
 	}
 	params := applingoapi.GetDictionariesV1Params{
 		Subcategory:   baseParams.GetStringPtr("subcategory"),
@@ -43,6 +38,9 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		Level:         baseParams.GetStringPtr("level"),
 		Public:        baseParams.GetBoolPtr("public"),
 		SortBy:        paramSort,
+	}
+	if err := validate.Struct(&params); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	queryInput, err := buildQueryInput(params)

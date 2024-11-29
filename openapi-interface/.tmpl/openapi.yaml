@@ -155,12 +155,9 @@ paths:
     delete:
       operationId: DeleteDictionariesV1
       parameters: 
-        - $ref: '#/components/parameters/ParamDictionariesName'
-          required: true
-        - $ref: '#/components/parameters/ParamDictionariesAuthor'
-          required: true
-        - $ref: '#/components/parameters/ParamDictionariesSubcategory'
-          required: true
+        - $ref: '#/components/parameters/ParamDictionariesNameRequired'
+        - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -168,12 +165,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetDictionariesV1'
-        "404":
-          description: "Dictionary not found"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
@@ -254,8 +245,8 @@ paths:
     delete:
       operationId: "DeleteSubcategoriesV1"
       parameters:
-        - $ref: '#/components/parameters/ParamSubcategoriesSideRequired' 
-        - $ref: '#/components/parameters/ParamSubcategoriesCodeRequired'
+        - $ref: '#/components/parameters/ParamSubcategoriesSide' 
+        - $ref: '#/components/parameters/ParamSubcategoriesCode'
       responses:
         "200":
           description: "Subcategory successfully deleted"
@@ -263,13 +254,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
-        "404":
-          description: "Subcategory not found"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-      x-amazon-apigateway-request-validator: All
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
@@ -348,89 +332,147 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
   
-x-amazon-apigateway-request-validators:
-  All:
-    validateRequestBody: true
-    validateRequestParameters: true
-
 components:
   headers:
     AccessControlAllowOrigin:
-      description: "Specifies allowed origins for CORS requests"
       schema:
         type: string
-        maxLength: 255
-        pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
-      example: "*"
+        example: "*"
     AccessControlAllowMethods:
-      description: "Specifies allowed HTTP methods for CORS requests"
       schema:
         type: string
-        maxLength: 255
-        pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
-      example: "GET,POST,DELETE,OPTIONS"
+        example: "GET,POST,DELETE,OPTIONS"
     AccessControlAllowHeaders:
-      description: "Specifies allowed headers for CORS requests"
       schema:
         type: string
-        maxLength: 1024
-        pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
-      example: "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature"
+        example: "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token"
     AccessControlAllowCredentials:
-      description: "Indicates whether credentials are allowed for CORS requests"
       schema:
         type: string
-        maxLength: 5
-        pattern: "^(true|false)$"
-      example: "true"
+        example: "true"
 
   schemas:
+
     #
     #
-    # General 
+    # Base
     #
     #
-    GeneralSide:
+
+    BaseAuthor:
+      description: "Name of the author of the dictionary"
       type: string
+      minLength: 2
+      maxLength: 24
+      pattern: "^[a-zA-Z0-9_.-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
+
+    BaseDictName:
+      description: "Short name of the dictionary"
+      type: string
+      minLength: 6
+      maxLength: 32
+      pattern: "^[A-Za-z0-9_,.#-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
+
+    BaseCode:
+      description: "Two-letter code"
+      type: string
+      minLength: 2
+      maxLength: 2
+      pattern: "^[a-z]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=2"
+
+    BaseLevel:
+      description: "Proficiency level for the dictionary"
+      type: string
+      minLength: 2
+      maxLength: 2
+      pattern: "^[A-Z][0-9]$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=2"
+
+    BaseSubcategory:
+      description: "Language subcategory in ISO format"
+      type: string
+      minLength: 5
+      maxLength: 5
+      pattern: "^[a-z]{2}-[a-z]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
+
+    BaseFilename:
+      description: "Name of the file associated with the dictionary"
+      type: string
+      minLength: 4
+      maxLength: 256
+      pattern: "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9]+)?$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=4,max=256"
+
+    BaseDescription:
+      description: "Description"
+      type: string
+      minLength: 1
+      maxLength: 256
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=256"
+
+    BaseTopic:
+      type: string
+      description: "Specific topic covered in the dictionary"
+      minLength: 1
+      maxLength: 128
+      pattern: "^[A-Za-z0-9_,.-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=128"
+
+    BaseMessage:
+      type: string
+      description: "Message"
+      minLength: 1
+      maxLength: 128
+      pattern: "^[a-zA-Z0-9 -]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=128"
+
+    BaseTimestamp:
+      type: integer
+      description: "Timestamp in UNIX format"
+      format: int64
+      x-oapi-codegen-extra-tags:
+        validate: "required"
+
+    BaseSide:
+      type: string
+      description: "Specifies the side (front/back) of the subcategory"
       enum:
         - front
         - back
-      description: "Specifies the side (front/back) of the subcategory"
-    
-    GeneralAuthor:
+      
+    BaseCategory:
       type: string
-      description: "Name of the author of the dictionary"
-      minLength: 2
-      maxLength: 24
-      pattern: "^[A-z0-9_,\\.-]+$"
-
-    GeneralCategory:
-      type: string
+      description: "Main category for the dictionary"
       enum:
         - language
-      description: "Main category for the dictionary"
     
-    GeneralUrlOp:
+    BaseUrlOp:
       type: string
+      description: "Urls operations"
       enum:
         - upload
         - download
-      description: "Urls operations"
     
-    GeneralDictSort:
+    BaseDictSort:
       type: string
+      description: "Dictionaries sort criteria"
       enum:
         - date
         - rating
-      description: "Dictionaries sort criteria"
-    
-    GeneralDictName:
-      type: string
-      description: "Short name of the dictionary"
-      minLength: 6
-      maxLength: 32
-      pattern: "^[A-z0-9_,\\.#-]+$"
-    
+        
     #
     #
     # ITEMS 
@@ -443,34 +485,21 @@ components:
         - code
         - level
       properties:
-        code: 
-          type: string
-          description: "Two-letter code"
-          maxLength: 2
-          minLength: 2
-          pattern: "^[a-z]{2}$" 
+        code:
+          $ref: '#/components/schemas/BaseCode'
         level:
-          type: string
-          description: "Proficiency level for the dictionary"
-          maxLength: 64
-          minLength: 1
-          pattern: "^[A-z0-9_,\\.-]+$"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseLevel'
 
     SubcategoryItemV1:
       type: object
       required:
-        - code
+        - code 
+        - side
       properties:
         code: 
-          type: string
-          description: "Two-letter code"
-          maxLength: 2
-          minLength: 2
-          pattern: "^[a-z]{2}$" 
+          $ref: '#/components/schemas/BaseCode'
         side: 
-          $ref: '#/components/schemas/GeneralSide'
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseSide'
 
     DictionaryItemV1:
       type: object
@@ -488,32 +517,23 @@ components:
         - topic
       properties:
         name:
-          $ref: '#/components/schemas/GeneralDictName'
+          $ref: '#/components/schemas/BaseDictName'
         category:
-          $ref: '#/components/schemas/GeneralCategory'
+          $ref: '#/components/schemas/BaseCategory'
         subcategory:
-          type: string
-          description: "Language subcategory in ISO format"
-          minLength: 5
-          maxLength: 5
-          pattern: "^[a-z]{2}-[a-z]{2}$"
+          $ref: '#/components/schemas/BaseSubcategory'
         author:
-          $ref: '#/components/schemas/GeneralAuthor'
+          $ref: '#/components/schemas/BaseAuthor'
         filename:
-          type: string
-          description: "Name of the file associated with the dictionary"
-          minLength: 4
-          maxLength: 256
-          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
+          $ref: '#/components/schemas/BaseFilename'
         description:
-          type: string
-          description: "Description of the dictionary"
-          minLength: 10
-          maxLength: 256
+          $ref: '#/components/schemas/BaseDescription'
         created:
-          type: integer
-          description: "Dictionary created date in UNIX format"
-          format: int64
+          $ref: '#/components/schemas/BaseTimestamp'
+        level:
+          $ref: '#/components/schemas/BaseLevel'
+        topic: 
+          $ref: '#/components/schemas/BaseTopic'
         rating:
           type: integer
           description: "Dictionary rating"
@@ -521,19 +541,6 @@ components:
         public:
           type: boolean
           description: "Visibility of the dictionary"
-        level:
-          type: string
-          description: "Proficiency level for the dictionary"
-          maxLength: 2
-          minLength: 2
-          pattern: "^[a-z]{2}$"
-        topic: 
-          type: string
-          description: "Specific topic covered in the dictionary"
-          maxLength: 128
-          minLength: 1
-          pattern: "^[A-z0-9_,\\.-]+$"
-      additionalProperties: false
 
     #
     #
@@ -551,13 +558,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SubcategoryItemV1'
-          maxItems: 100
         back_side:
           type: array
           items:
             $ref: '#/components/schemas/SubcategoryItemV1'
-          maxItems: 100
-      additionalProperties: false
     
     LevelsData:
       type: object
@@ -568,7 +572,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LevelItemV1'
-          maxItems: 6
 
     DictionariesData:
       type: object
@@ -579,14 +582,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DictionaryItemV1'
-          maxItems: 100
         last_evaluated:
           type: string
           description: "A token for pagination, encoded in Base64 format"
           format: base64
           maxLength: 1048576
           pattern: ^[A-Za-z0-9+/]*={0,2}$
-      additionalProperties: false
 
     UrlsData:
       type: object
@@ -601,7 +602,6 @@ components:
         expires_in:
           type: integer
           description: "Time in seconds until the URL expires"
-      additionalProperties: false
 
     MessageData:
       type: object
@@ -609,12 +609,7 @@ components:
         - message
       properties:
         message:
-          type: string
-          minLength: 1
-          maxLength: 128
-          pattern: "^[a-z- ]+$"
-          example: "message"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseMessage'
 
     #
     #
@@ -630,20 +625,11 @@ components:
         - description
       properties:
         side: 
-          $ref: '#/components/schemas/GeneralSide'
+          $ref: '#/components/schemas/BaseSide'
         code: 
-          type: string
-          description: "Two-letter code"
-          maxLength: 2
-          minLength: 2
-          pattern: "^[a-z]{2}$" 
+          $ref: '#/components/schemas/BaseCode'
         description:
-          type: string
-          description: "A brief description of the subcategory"
-          minLength: 1
-          maxLength: 64
-          pattern: "^[A-z]+$"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseMessage'
 
     RequestPostDictionariesV1:
       type: object
@@ -659,52 +645,24 @@ components:
         - topic
       properties:
         description:
-          type: string
-          description: "Description of the dictionary"
-          minLength: 10
-          maxLength: 256
+          $ref: '#/components/schemas/BaseDescription'
         filename:
-          type: string
-          description: "Name of the file associated with the dictionary"
-          minLength: 4
-          maxLength: 256
-          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
+          $ref: '#/components/schemas/BaseFilename'
         name:
-          type: string
-          description: "Short name of the dictionary"
-          minLength: 6
-          maxLength: 32
-          pattern: "^[A-z0-9_,\\.#-]+$"
+          $ref: '#/components/schemas/BaseDictName'
         author:
-          type: string
-          description: "Name of the author of the dictionary"
-          minLength: 2
-          maxLength: 24
-          pattern: "^[A-z0-9_,\\.-]+$"
+          $ref: '#/components/schemas/BaseAuthor'
         category:
-          $ref: '#/components/schemas/GeneralCategory' 
+          $ref: '#/components/schemas/BaseCategory'
         subcategory:
-          type: string
-          description: "Language subcategory in ISO format"
-          minLength: 5
-          maxLength: 5
-          pattern: "^[a-z]{2}-[a-z]{2}$"
+          $ref: '#/components/schemas/BaseSubcategory'
+        level:
+          $ref: '#/components/schemas/BaseLevel'
+        topic:
+          $ref: '#/components/schemas/BaseTopic'
         public:
           type: boolean
           description: "Visibility of the dictionary"
-        level:
-          type: string
-          description: "Proficiency level for the dictionary"
-          maxLength: 64
-          minLength: 1
-          pattern: "^[A-z0-9_,\\.-]+$"
-        topic:
-          type: string
-          description: "Specific topic covered in the dictionary"
-          maxLength: 128
-          minLength: 1
-          pattern: "^[A-z0-9_,\\.-]+$"
-      additionalProperties: false
 
     RequestPostReportsV1:
       type: object
@@ -723,50 +681,64 @@ components:
           description: "Unique identifier for the app replica"
           maxLength: 36
           minLength: 36
-          pattern: "^[A-f0-9-]{36}$"
+          pattern: "^[A-f0-9-]+$"
+          x-oapi-codegen-extra-tags:
+            validate: "min=36,max=36"
         app_version:
           type: string
           description: "Application version"
           maxLength: 36
           minLength: 1
           pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=36" 
         device_os:
           type: string
           description: "Device operating system version"
           maxLength: 36
           minLength: 1
           pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=36" 
         device_name:
           type: string
           description: "Device model or name"
-          maxLength: 64
+          maxLength: 48
           minLength: 1
           pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=48" 
         error_message:
           type: string
           description: "Description of the error"
           minLength: 1
           maxLength: 512
+          x-oapi-codegen-extra-tags: 
+            validate: "required"
         error_original:
           type: string
           description: "Full original error information"
           minLength: 1
           maxLength: 1024
+          x-oapi-codegen-extra-tags: 
+            validate: "required"
         error_type:
           type: string
           description: "Error type"
           minLength: 1
           maxLength: 64
-          pattern: "^[A-z]+$" 
+          pattern: "^[A-z]+$"
+          x-oapi-codegen-extra-tags: 
+            validate: "min=1,max=64" 
         timestamp:
           type: integer
           description: "Timestamp of the error occurrence in UNIX format"
           format: int64
+          x-oapi-codegen-extra-tags:
+            validate: "required"
         metadata:
           type: object
           description: "Optional metadata with additional context for the error report"
-          additionalProperties: true
-      additionalProperties: false
 
     RequestPostUrlsV1:
       type: object
@@ -775,14 +747,9 @@ components:
         - identifier
       properties:
         operation:
-          $ref: '#/components/schemas/GeneralUrlOp'
+          $ref: '#/components/schemas/BaseUrlOp'
         identifier:
-          type: string
-          minLength: 4
-          maxLength: 64
-          pattern: "^[A-z0-9_-]+(\\.[A-z0-9]+)?$"
-          description: "A valid filename with an optional extension"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseFilename'
 
     #
     #
@@ -797,7 +764,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CategoriesData'
-      additionalProperties: false
     
     ResponseGetLevelsV1:
       type: object
@@ -806,7 +772,6 @@ components:
       properties:
         data: 
           $ref: '#/components/schemas/LevelsData'
-      additionalProperties: false
 
     ResponseGetDictionariesV1:
       type: object
@@ -815,7 +780,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DictionariesData'
-      additionalProperties: false
 
     ResponsePostUrlsV1:
       type: object
@@ -824,7 +788,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UrlsData'
-      additionalProperties: false
 
     ResponseMessage:
       type: object
@@ -833,95 +796,91 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/MessageData'
-      additionalProperties: false
 
   parameters:
     ParamDictionariesSort:
       name: sort_by
       in: query
       schema:
-        $ref: '#/components/schemas/GeneralDictSort'
+        $ref: '#/components/schemas/BaseDictSort'
 
     ParamDictionariesSubcategory:
       name: subcategory
       in: query
       schema:
-        type: string
-        maxLength: 5
-        minLength: 5
-        pattern: "^[a-z]{2}-[a-z]{2}$" 
-      description: "Dictionaries filter by subcategory"
+        $ref: '#/components/schemas/BaseSubcategory'
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
+
+    ParamDictionariesSubcategoryRequired:
+      name: subcategory
+      in: query
+      schema:
+        $ref: '#/components/schemas/BaseSubcategory'
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
     
     ParamDictionariesName:
       name: name 
       in: query 
       schema: 
-        $ref: '#/components/schemas/GeneralDictName'
+        $ref: '#/components/schemas/BaseDictName'
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
+    
+    ParamDictionariesNameRequired:
+      name: name 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/BaseDictName'
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
     
     ParamDictionariesAuthor:
       name: author 
       in: query 
       schema:
-        $ref: '#/components/schemas/GeneralAuthor'
+        $ref: '#/components/schemas/BaseAuthor'
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
+
+    ParamDictionariesAuthorRequired:
+      name: author 
+      in: query 
+      schema:
+        $ref: '#/components/schemas/BaseAuthor'
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
 
     ParamDictionariesLevel:
       name: level
       in: query 
       schema: 
-        type: string 
-        maxLength: 2
-        minLength: 2
-        pattern: "^[a-z]{2}$"
-      description: "Dictionaries filter by language level"
+        $ref: '#/components/schemas/BaseLevel'
 
     ParamSubcategoriesSide:
       name: side 
       in: query 
       schema: 
-        $ref: '#/components/schemas/GeneralSide'
-      description: "Subcategories filter by side"
-    
-    ParamSubcategoriesSideRequired:
-      name: side 
-      in: query 
-      schema: 
-        $ref: '#/components/schemas/GeneralSide'
-      required: true
+        $ref: '#/components/schemas/BaseSide'
     
     ParamSubcategoriesCode:
       name: code 
       in: query
       schema: 
-        type: string
-        description: "Two-letter code"
-        maxLength: 2
-        minLength: 2
-        pattern: "^[a-z]{2}$" 
+        $ref: '#/components/schemas/BaseCode'
     
-    ParamSubcategoriesCodeRequired:
-      name: code 
-      in: query
-      schema: 
-        type: string
-        description: "Two-letter code"
-        maxLength: 2
-        minLength: 2
-        pattern: "^[a-z]{2}$" 
-      required: true
-
     ParamLastEvaluated:
       name: last_evaluated
       in: query
       schema:
         type: string
-      description: "Pagination token"
 
     ParamPublic:
       name: public
       in: query
       schema:
         type: boolean
-      description: "Filter by public status"
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
