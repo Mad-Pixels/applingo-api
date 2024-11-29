@@ -10,15 +10,18 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/go-playground/validator/v10"
 )
 
 var (
 	awsRegion = os.Getenv("AWS_REGION")
+	validate  *validator.Validate
 	dbDynamo  *cloud.Dynamo
 )
 
 func init() {
 	debug.SetGCPercent(500)
+	validate = validator.New()
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
 	if err != nil {
@@ -34,8 +37,9 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/dictionaries":  handleGet,
-				"POST /v1/dictionaries": handlePost,
+				"GET /v1/dictionaries":    handleGet,
+				"POST /v1/dictionaries":   handlePost,
+				"DELETE /v1/dictionaries": handleDelete,
 			},
 		).Handle,
 	)

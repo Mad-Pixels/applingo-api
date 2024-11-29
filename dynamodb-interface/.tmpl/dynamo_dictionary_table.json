@@ -5,9 +5,12 @@
   "attributes": [
     { "name": "id", "type": "S" },
     { "name": "subcategory", "type": "S" },
-    { "name": "created_at", "type": "N" },
+    { "name": "created", "type": "N" },
     { "name": "rating", "type": "N" },
-    { "name": "is_public", "type": "N" }
+    { "name": "is_public", "type": "N" },
+    { "name": "level#is_public", "type": "S" },
+    { "name": "subcategory#is_public", "type": "S" },
+    { "name": "level#subcategory#is_public", "type": "S" }
   ],
   "common_attributes": [
     { "name": "name", "type": "S" },
@@ -15,66 +18,66 @@
     { "name": "category", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "filename", "type": "S" },
-    { "name": "dictionary", "type": "S" }
+    { "name": "dictionary", "type": "S" },
+    { "name": "topic", "type": "S" },
+    { "name": "level", "type": "S" }
   ],
   "secondary_indexes": [
     {
       "name": "PublicByDateIndex",
       "hash_key": "is_public",
-      "range_key": "created_at",
+      "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "dictionary",
-        "name",
-        "description",
-        "category",
-        "subcategory",
-        "author",
-        "rating"
-      ]
+      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "level", "author", "rating", "topic"]
     },
     {
-      "name": "PublicByRatingIndex",
+      "name": "PublicByRatingIndex", 
       "hash_key": "is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "dictionary",
-        "name",
-        "description",
-        "category",
-        "subcategory",
-        "author",
-        "created_at"
-      ]
+      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "level", "author", "created", "topic"]
     },
     {
-      "name": "SubcategoryByDateIndex",
-      "hash_key": "subcategory",
-      "range_key": "created_at",
+      "name": "PublicLevelByDateIndex",
+      "hash_key": "level#is_public",
+      "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "dictionary",
-        "name",
-        "description",
-        "category",
-        "author",
-        "rating"
-      ]
+      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "author", "rating", "is_public", "level", "topic"]
     },
     {
-      "name": "SubcategoryByRatingIndex",
-      "hash_key": "subcategory",
+      "name": "PublicLevelByRatingIndex",
+      "hash_key": "level#is_public", 
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": [
-        "dictionary",
-        "name",
-        "description",
-        "category",
-        "author",
-        "created_at"
-      ]
+      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "author", "created", "is_public", "level", "topic"]
+    },
+    {
+      "name": "PublicSubcategoryByDateIndex",
+      "hash_key": "subcategory#is_public",
+      "range_key": "created",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "rating", "is_public", "level", "subcategory", "topic"]
+    },
+    {  
+      "name": "PublicSubcategoryByRatingIndex",
+      "hash_key": "subcategory#is_public",
+      "range_key": "rating", 
+      "projection_type": "INCLUDE",
+      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "created", "is_public", "level", "subcategory", "topic"]
+    },
+    {
+      "name": "PublicLevelSubcategoryByDateIndex",
+      "hash_key": "level#subcategory#is_public",
+      "range_key": "created",
+      "projection_type": "INCLUDE",
+      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "rating", "is_public", "level", "subcategory", "topic"]
+    },
+    {
+      "name": "PublicLevelSubcategoryByRatingIndex", 
+      "hash_key": "level#subcategory#is_public",
+      "range_key": "rating",
+      "projection_type": "INCLUDE", 
+      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "created", "is_public", "level", "subcategory", "topic"]
     }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "table_name": "applingo-level",
+  "hash_key": "id",
+  "attributes": [
+    { "name": "id", "type": "S" }
+  ],
+  "common_attributes": [
+    { "name": "code", "type": "S" },
+    { "name": "level", "type": "S" }
+  ]
+}

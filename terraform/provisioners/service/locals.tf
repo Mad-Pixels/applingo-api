@@ -31,6 +31,8 @@ locals {
     processing_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-processing-bucket_arn
     dictionary_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
     dictionary_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-dictionary-stream_arn
+    subcategory_table_arn       = data.terraform_remote_state.infra.outputs.dynamo-subcategory-table_arn
+    level_table_arn             = data.terraform_remote_state.infra.outputs.dynamo-level-table_arn
     put_csv_sqs_queue_url       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_url
     put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
   }

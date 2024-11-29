@@ -10,27 +10,21 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/go-playground/validator/v10"
 )
 
 var (
-	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
-	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
-	awsRegion               = os.Getenv("AWS_REGION")
-
-	validate *validator.Validate
-	s3Bucket *cloud.Bucket
+	awsRegion = os.Getenv("AWS_REGION")
+	dbDynamo  *cloud.Dynamo
 )
 
 func init() {
 	debug.SetGCPercent(500)
-	validate = validator.New()
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
 	if err != nil {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
-	s3Bucket = cloud.NewBucket(cfg)
+	dbDynamo = cloud.NewDynamo(cfg)
 }
 
 func main() {
@@ -40,7 +34,7 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"POST /v1/urls": handlePost,
+				"GET /v1/levels": handleGet,
 			},
 		).Handle,
 	)

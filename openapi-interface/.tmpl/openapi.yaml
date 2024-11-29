@@ -35,25 +35,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -66,7 +54,6 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
   /v1/urls:
     post:
@@ -98,25 +85,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -129,16 +104,16 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
   /v1/dictionaries:
     get:
       operationId: GetDictionariesV1
       parameters:
-        - $ref: '#/components/parameters/SortByParam'
-        - $ref: '#/components/parameters/SubcategoryParam'
-        - $ref: '#/components/parameters/LastEvaluatedParam'
-        - $ref: '#/components/parameters/PublicParam'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategory'
+        - $ref: '#/components/parameters/ParamDictionariesLevel'
+        - $ref: '#/components/parameters/ParamDictionariesSort'
+        - $ref: '#/components/parameters/ParamLastEvaluated'
+        - $ref: '#/components/parameters/ParamPublic'
       responses:
         "200":
           description: "Successfully retrieved dictionaries"
@@ -177,58 +152,22 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-    options:
+    delete:
+      operationId: DeleteDictionariesV1
+      parameters: 
+        - $ref: '#/components/parameters/ParamDictionariesNameRequired'
+        - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
       responses:
         "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
-            Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
-            Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
-            Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
-          content: {}
-      x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
-
-  /v1/categories:
-    get:
-      operationId: GetCategoriesV1
-      responses:
-        "200":
-          description: "Successfully retrieved categories"
+          description: "Successfully retrieved dictionaries"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseGetCategoriesV1'
+                $ref: '#/components/schemas/ResponseGetDictionariesV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_categories}/invocations"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
         responses:
           default:
             statusCode: "200"
@@ -240,25 +179,13 @@ paths:
           description: "CORS support"
           headers:
             Access-Control-Allow-Origin:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^\\*|https?://[\\w\\.-]+(?:\\.[\\w\\.-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowOrigin'
             Access-Control-Allow-Methods:
-              schema:
-                type: "string"
-                maxLength: 255
-                pattern: "^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)(,(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD))*$"
+              $ref: '#/components/headers/AccessControlAllowMethods'
             Access-Control-Allow-Headers:
-              schema:
-                type: "string"
-                maxLength: 1024
-                pattern: "^[\\w\\-]+(?:,[\\w\\-]+)*$"
+              $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Allow-Credentials:
-              schema:
-                type: "string"
-                maxLength: 5
-                pattern: "^(true|false)$"
+              $ref: '#/components/headers/AccessControlAllowCredentials'
           content: {}
       x-amazon-apigateway-integration:
         type: "mock"
@@ -271,21 +198,308 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-        passthroughBehavior: "when_no_match"
 
+  /v1/subcategories:
+    get:
+      operationId: GetSubcategoriesV1
+      parameters:
+        - $ref: '#/components/parameters/ParamSubcategoriesSide'
+      responses:
+        "200":
+          description: "Successfully retrieved subcategories"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetSubcategoriesV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    post:
+      operationId: PostSubcategoriesV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostSubcategoriesV1'
+      responses:
+        "201":
+          description: "Subcategory successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      operationId: "DeleteSubcategoriesV1"
+      parameters:
+        - $ref: '#/components/parameters/ParamSubcategoriesSide' 
+        - $ref: '#/components/parameters/ParamSubcategoriesCode'
+      responses:
+        "200":
+          description: "Subcategory successfully deleted"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+  
+  /v1/levels:
+    get:
+      operationId: GetLevelsV1
+      responses:
+        "200":
+          description: "Successfully retrieved levels"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetLevelsV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_levels}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+  
 components:
+  headers:
+    AccessControlAllowOrigin:
+      schema:
+        type: string
+        example: "*"
+    AccessControlAllowMethods:
+      schema:
+        type: string
+        example: "GET,POST,DELETE,OPTIONS"
+    AccessControlAllowHeaders:
+      schema:
+        type: string
+        example: "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token"
+    AccessControlAllowCredentials:
+      schema:
+        type: string
+        example: "true"
+
   schemas:
-    CategoryItemV1:
+
+    #
+    #
+    # Base
+    #
+    #
+
+    BaseAuthor:
+      description: "Name of the author of the dictionary"
+      type: string
+      minLength: 2
+      maxLength: 24
+      pattern: "^[a-zA-Z0-9_.-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
+
+    BaseDictName:
+      description: "Short name of the dictionary"
+      type: string
+      minLength: 6
+      maxLength: 32
+      pattern: "^[A-Za-z0-9_,.#-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
+
+    BaseCode:
+      description: "Two-letter code"
+      type: string
+      minLength: 2
+      maxLength: 2
+      pattern: "^[a-z]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=2"
+
+    BaseLevel:
+      description: "Proficiency level for the dictionary"
+      type: string
+      minLength: 2
+      maxLength: 2
+      pattern: "^[A-Z][0-9]$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=2"
+
+    BaseSubcategory:
+      description: "Language subcategory in ISO format"
+      type: string
+      minLength: 5
+      maxLength: 5
+      pattern: "^[a-z]{2}-[a-z]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
+
+    BaseFilename:
+      description: "Name of the file associated with the dictionary"
+      type: string
+      minLength: 4
+      maxLength: 256
+      pattern: "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9]+)?$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=4,max=256"
+
+    BaseDescription:
+      description: "Description"
+      type: string
+      minLength: 1
+      maxLength: 256
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=256"
+
+    BaseTopic:
+      type: string
+      description: "Specific topic covered in the dictionary"
+      minLength: 1
+      maxLength: 128
+      pattern: "^[A-Za-z0-9_,.-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=128"
+
+    BaseMessage:
+      type: string
+      description: "Message"
+      minLength: 1
+      maxLength: 128
+      pattern: "^[a-zA-Z0-9 -]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "min=1,max=128"
+
+    BaseTimestamp:
+      type: integer
+      description: "Timestamp in UNIX format"
+      format: int64
+      x-oapi-codegen-extra-tags:
+        validate: "required"
+
+    BaseSide:
+      type: string
+      description: "Specifies the side (front/back) of the subcategory"
+      enum:
+        - front
+        - back
+      
+    BaseCategory:
+      type: string
+      description: "Main category for the dictionary"
+      enum:
+        - language
+    
+    BaseUrlOp:
+      type: string
+      description: "Urls operations"
+      enum:
+        - upload
+        - download
+    
+    BaseDictSort:
+      type: string
+      description: "Dictionaries sort criteria"
+      enum:
+        - date
+        - rating
+        
+    #
+    #
+    # ITEMS 
+    #
+    #
+
+    LevelItemV1:
       type: object
       required:
         - code
+        - level
       properties:
         code:
-          type: string
-          minLength: 2
-          maxLength: 2
-          pattern: "^[a-z]{2}$"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseCode'
+        level:
+          $ref: '#/components/schemas/BaseLevel'
+
+    SubcategoryItemV1:
+      type: object
+      required:
+        - code 
+        - side
+      properties:
+        code: 
+          $ref: '#/components/schemas/BaseCode'
+        side: 
+          $ref: '#/components/schemas/BaseSide'
 
     DictionaryItemV1:
       type: object
@@ -294,49 +508,45 @@ components:
         - category
         - subcategory
         - author
-        - dictionary
+        - filename
         - description
-        - created_at
+        - created
         - rating
         - public
+        - level
+        - topic
       properties:
         name:
-          type: string
-          minLength: 6
-          maxLength: 32
-          pattern: "^.+$"
+          $ref: '#/components/schemas/BaseDictName'
         category:
-          type: string
-          enum:
-          - language
+          $ref: '#/components/schemas/BaseCategory'
         subcategory:
-          type: string
-          minLength: 5
-          maxLength: 5
-          pattern: "^[a-z]{2}-[a-z]{2}$"
+          $ref: '#/components/schemas/BaseSubcategory'
         author:
-          type: string
-          minLength: 2
-          maxLength: 16
-          pattern: "^.+$"
-        dictionary:
-          type: string
-          minLength: 40
-          maxLength: 40
-          pattern: "^.+$"
+          $ref: '#/components/schemas/BaseAuthor'
+        filename:
+          $ref: '#/components/schemas/BaseFilename'
         description:
-          type: string
-          minLength: 10
-          maxLength: 256
-        created_at:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/BaseDescription'
+        created:
+          $ref: '#/components/schemas/BaseTimestamp'
+        level:
+          $ref: '#/components/schemas/BaseLevel'
+        topic: 
+          $ref: '#/components/schemas/BaseTopic'
         rating:
           type: integer
+          description: "Dictionary rating"
           format: int32
         public:
           type: boolean
-      additionalProperties: false
+          description: "Visibility of the dictionary"
+
+    #
+    #
+    # Data
+    #
+    #
 
     CategoriesData:
       type: object
@@ -347,14 +557,21 @@ components:
         front_side:
           type: array
           items:
-            $ref: '#/components/schemas/CategoryItemV1'
-          maxItems: 100
+            $ref: '#/components/schemas/SubcategoryItemV1'
         back_side:
           type: array
           items:
-            $ref: '#/components/schemas/CategoryItemV1'
-          maxItems: 100
-      additionalProperties: false
+            $ref: '#/components/schemas/SubcategoryItemV1'
+    
+    LevelsData:
+      type: object
+      required:
+        - items
+      properties:
+        items: 
+          type: array
+          items:
+            $ref: '#/components/schemas/LevelItemV1'
 
     DictionariesData:
       type: object
@@ -365,13 +582,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DictionaryItemV1'
-          maxItems: 100
         last_evaluated:
           type: string
+          description: "A token for pagination, encoded in Base64 format"
           format: base64
           maxLength: 1048576
           pattern: ^[A-Za-z0-9+/]*={0,2}$
-      additionalProperties: false
 
     UrlsData:
       type: object
@@ -381,12 +597,11 @@ components:
       properties:
         url:
           type: string
-          description: "Presigned URL"
+          description: "A presigned URL that provides temporary access"
           format: uri
         expires_in:
           type: integer
-          description: "URL expiration time in seconds"
-      additionalProperties: false
+          description: "Time in seconds until the URL expires"
 
     MessageData:
       type: object
@@ -394,9 +609,27 @@ components:
         - message
       properties:
         message:
-          type: string
-          example: "ok"
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseMessage'
+
+    #
+    #
+    # REQUEST 
+    #
+    #
+
+    RequestPostSubcategoriesV1:
+      type: object
+      required:
+        - side
+        - code
+        - description
+      properties:
+        side: 
+          $ref: '#/components/schemas/BaseSide'
+        code: 
+          $ref: '#/components/schemas/BaseCode'
+        description:
+          $ref: '#/components/schemas/BaseMessage'
 
     RequestPostDictionariesV1:
       type: object
@@ -408,39 +641,28 @@ components:
         - category
         - subcategory
         - public
+        - level 
+        - topic
       properties:
         description:
-          type: string
-          minLength: 10
-          maxLength: 256
-          pattern: ^.+$
+          $ref: '#/components/schemas/BaseDescription'
         filename:
-          type: string
-          minLength: 1
-          maxLength: 256
-          pattern: ^.+$
+          $ref: '#/components/schemas/BaseFilename'
         name:
-          type: string
-          minLength: 6
-          maxLength: 32
-          pattern: "^.+$"
+          $ref: '#/components/schemas/BaseDictName'
         author:
-          type: string
-          minLength: 2
-          maxLength: 16
-          pattern: "^.+$"
+          $ref: '#/components/schemas/BaseAuthor'
         category:
-          type: string
-          enum:
-          - language
+          $ref: '#/components/schemas/BaseCategory'
         subcategory:
-          type: string
-          minLength: 5
-          maxLength: 5
-          pattern: "^[a-z]{2}-[a-z]{2}$"
+          $ref: '#/components/schemas/BaseSubcategory'
+        level:
+          $ref: '#/components/schemas/BaseLevel'
+        topic:
+          $ref: '#/components/schemas/BaseTopic'
         public:
           type: boolean
-      additionalProperties: false
+          description: "Visibility of the dictionary"
 
     RequestPostReportsV1:
       type: object
@@ -456,50 +678,67 @@ components:
       properties:
         app_identifier:
           type: string
-          description: "App replica uniq identifier"
+          description: "Unique identifier for the app replica"
           maxLength: 36
           minLength: 36
-          pattern: ^.+$
+          pattern: "^[A-f0-9-]+$"
+          x-oapi-codegen-extra-tags:
+            validate: "min=36,max=36"
         app_version:
           type: string
           description: "Application version"
-          pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"
-          maxLength: 32
+          maxLength: 36
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=36" 
         device_os:
           type: string
-          description: "Device Operating system"
-          pattern: "^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$"
-          maxLength: 32
+          description: "Device operating system version"
+          maxLength: 36
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=36" 
         device_name:
           type: string
-          description: "Device information"
-          minLength: 2
-          maxLength: 128
-          pattern: ^.+$
+          description: "Device model or name"
+          maxLength: 48
+          minLength: 1
+          pattern: "^[A-z0-9.-]+$" 
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,max=48" 
         error_message:
           type: string
-          description: "Error message"
+          description: "Description of the error"
           minLength: 1
-          maxLength: 1024
-          pattern: ^.+$
+          maxLength: 512
+          x-oapi-codegen-extra-tags: 
+            validate: "required"
         error_original:
           type: string
-          description: "Original error"
+          description: "Full original error information"
           minLength: 1
           maxLength: 1024
-          pattern: ^.+$
+          x-oapi-codegen-extra-tags: 
+            validate: "required"
         error_type:
           type: string
-          description: "Type of error"
+          description: "Error type"
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-z]+$"
+          x-oapi-codegen-extra-tags: 
+            validate: "min=1,max=64" 
         timestamp:
           type: integer
-          description: "Time when error occurred"
+          description: "Timestamp of the error occurrence in UNIX format"
           format: int64
+          x-oapi-codegen-extra-tags:
+            validate: "required"
         metadata:
           type: object
-          additionalProperties: true
-          description: "Error metadata"
-      additionalProperties: false
+          description: "Optional metadata with additional context for the error report"
 
     RequestPostUrlsV1:
       type: object
@@ -508,25 +747,31 @@ components:
         - identifier
       properties:
         operation:
-          type: string
-          enum:
-            - upload
-            - download
+          $ref: '#/components/schemas/BaseUrlOp'
         identifier:
-          type: string
-          minLength: 4
-          maxLength: 40
-          pattern: ^.+$
-      additionalProperties: false
+          $ref: '#/components/schemas/BaseFilename'
 
-    ResponseGetCategoriesV1:
+    #
+    #
+    # RESPONSE
+    #
+    #
+
+    ResponseGetSubcategoriesV1:
       type: object
       required:
         - data
       properties:
         data:
           $ref: '#/components/schemas/CategoriesData'
-      additionalProperties: false
+    
+    ResponseGetLevelsV1:
+      type: object
+      required:
+        - data 
+      properties:
+        data: 
+          $ref: '#/components/schemas/LevelsData'
 
     ResponseGetDictionariesV1:
       type: object
@@ -535,7 +780,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DictionariesData'
-      additionalProperties: false
 
     ResponsePostUrlsV1:
       type: object
@@ -544,7 +788,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UrlsData'
-      additionalProperties: false
 
     ResponseMessage:
       type: object
@@ -553,43 +796,91 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/MessageData'
-      additionalProperties: false
 
   parameters:
-    IdParam:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-
-    SortByParam:
+    ParamDictionariesSort:
       name: sort_by
       in: query
       schema:
-        type: string
-      description: "Sort criteria"
+        $ref: '#/components/schemas/BaseDictSort'
 
-    SubcategoryParam:
+    ParamDictionariesSubcategory:
       name: subcategory
       in: query
       schema:
-        type: string
-      description: "Filter by subcategory"
+        $ref: '#/components/schemas/BaseSubcategory'
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
 
-    LastEvaluatedParam:
+    ParamDictionariesSubcategoryRequired:
+      name: subcategory
+      in: query
+      schema:
+        $ref: '#/components/schemas/BaseSubcategory'
+      x-oapi-codegen-extra-tags:
+        validate: "len=5"
+    
+    ParamDictionariesName:
+      name: name 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/BaseDictName'
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
+    
+    ParamDictionariesNameRequired:
+      name: name 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/BaseDictName'
+      x-oapi-codegen-extra-tags:
+        validate: "min=6,max=32"
+    
+    ParamDictionariesAuthor:
+      name: author 
+      in: query 
+      schema:
+        $ref: '#/components/schemas/BaseAuthor'
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
+
+    ParamDictionariesAuthorRequired:
+      name: author 
+      in: query 
+      schema:
+        $ref: '#/components/schemas/BaseAuthor'
+      x-oapi-codegen-extra-tags:
+        validate: "min=2,max=24"
+
+    ParamDictionariesLevel:
+      name: level
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/BaseLevel'
+
+    ParamSubcategoriesSide:
+      name: side 
+      in: query 
+      schema: 
+        $ref: '#/components/schemas/BaseSide'
+    
+    ParamSubcategoriesCode:
+      name: code 
+      in: query
+      schema: 
+        $ref: '#/components/schemas/BaseCode'
+    
+    ParamLastEvaluated:
       name: last_evaluated
       in: query
       schema:
         type: string
-      description: "Pagination token"
 
-    PublicParam:
+    ParamPublic:
       name: public
       in: query
       schema:
         type: boolean
-      description: "Filter by public status"
 
 x-amazon-apigateway-policy:
   Version: "2012-10-17"
