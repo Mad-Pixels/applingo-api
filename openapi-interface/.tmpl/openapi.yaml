@@ -1000,60 +1000,80 @@ components:
       in: query
       schema:
         $ref: '#/components/schemas/BaseSubcategoryRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,len=5"
 
     ParamDictionariesSubcategoryOptional:
       name: subcategory
       in: query
       schema:
         $ref: '#/components/schemas/BaseSubcategoryOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,len=5"
     
     ParamDictionariesNameRequired:
       name: name 
       in: query 
       schema: 
         $ref: '#/components/schemas/BaseDictNameRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,alphanum,min=6,max=32"
 
     ParamDictionariesNameOptional:
       name: name 
       in: query 
       schema: 
         $ref: '#/components/schemas/BaseDictNameOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,alphanum,min=6,max=32" 
     
     ParamDictionariesAuthorRequired:
       name: author 
       in: query 
       schema:
         $ref: '#/components/schemas/BaseAuthorRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,alphanum,min=2,max=24"
 
     ParamDictionariesAuthorOptional:
       name: author 
       in: query 
       schema:
         $ref: '#/components/schemas/BaseAuthorOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,alphanum,min=2,max=24"
 
     ParamDictionariesLevelRequired:
       name: level
       in: query 
       schema: 
         $ref: '#/components/schemas/BaseLevelRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,len=2"
 
     ParamDictionariesLevelOptional:
       name: level
       in: query 
       schema: 
         $ref: '#/components/schemas/BaseLevelOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,len=2"
 
     ParamSubcategoriesCodeRequired:
       name: code 
       in: query
       schema: 
         $ref: '#/components/schemas/BaseCodeRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,alpha,len=2,lowercase"
 
     ParamSubcategoriesCodeOptional:
       name: code 
       in: query
       schema: 
         $ref: '#/components/schemas/BaseCodeOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,alpha,len=2,lowercase"
     
     ParamLastEvaluated:
       name: last_evaluated
