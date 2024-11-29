@@ -25,9 +25,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	}
 
 	switch req.Operation {
-	case applingoapi.Upload:
+	case "upload":
 		return handleUpload(ctx, req)
-	case applingoapi.Download:
+	case "download":
 		return handleDownload(ctx, req)
 	default:
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid operation")}

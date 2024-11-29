@@ -359,304 +359,178 @@ components:
     # ------------------------------------------------------------------------------------------------------------------- #
     # =================================================================================================================== #
 
-    BaseAuthorRequired:
-      description: "Required author name"
+    BaseStringRequired:
       type: string
       minLength: 2
       maxLength: 24
-      pattern: "^[a-zA-Z0-9_.-]+$"
+      pattern: "^[a-zA-Z0-9_.:-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "required,alphanum,min=2,max=24"
-    
-    BaseAuthorOptional:
-      description: "Optional author name"
+        validate: "required,base_str,min=2,max=24" 
+      
+    BaseStringOptional:
       type: string
       minLength: 2
       maxLength: 24
-      pattern: "^[a-zA-Z0-9_.-]+$"
+      pattern: "^[a-zA-Z0-9_.:-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,alphanum,min=2,max=24"
+        validate: "omitempty,base_str,min=2,max=24"
 
-    BaseDictNameRequired:
-      description: "Required dictionary short name"
-      type: string
-      minLength: 6
-      maxLength: 32
-      pattern: "^[a-zA-Z0-9]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,alphanum,min=6,max=32"
-
-    BaseDictNameOptional:
-      description: "Optional dictionary short name"
-      type: string
-      minLength: 6
-      maxLength: 32
-      pattern: "^[a-zA-Z0-9]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,alphanum,min=6,max=32"
-
-    BaseCodeRequired:
-      description: "Required two-letter code"
-      type: string
+    BaseExtendedRequired:
+      type: string 
       minLength: 2
-      maxLength: 2
-      pattern: "^[a-zA-Z]{2}$"
+      maxLength: 36
+      pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
       x-oapi-codegen-extra-tags:
-        validate: "required,alpha,len=2,lowercase"
-
-    BaseCodeOptional:
-      description: "Optional two-letter code"
-      type: string
-      minLength: 2
-      maxLength: 2
-      pattern: "^[a-zA-Z]{2}$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,alpha,len=2,lowercase"
+        validate: "required,ext_str,min=2,max=24"  
     
-    BaseLevelRequired:
-      description: "Required proficiency level"
-      type: string
+    BaseExtendedOptional:
+      type: string 
       minLength: 2
-      maxLength: 2 
-      pattern: "^[a-zA-Z][0-9]$"
+      maxLength: 36
+      pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
       x-oapi-codegen-extra-tags:
-        validate: "required,len=2"
-
-    BaseLevelOptional:
-      description: "Optional proficiency level"
-      type: string
-      minLength: 2
-      maxLength: 2 
-      pattern: "^[a-zA-Z][0-9]$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,len=2"
-
-    BaseSubcategoryRequired:
-      description: "Required language subcategory"
-      type: string
-      minLength: 5
-      maxLength: 5
-      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,len=5"
-    
-    BaseSubcategoryOptional:
-      description: "Optional language subcategory"
-      type: string
-      minLength: 5
-      maxLength: 5
-      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,len=5"
-
-    BaseFilenameRequired:
-      description: "Required filename"
-      type: string
-      minLength: 4
-      maxLength: 128
-      pattern: "^[a-zA-Z0-9-_.]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=4,max=128"
-
-    BaseFilenameOptional:
-      description: "Optional filename"
-      type: string
-      minLength: 4
-      maxLength: 128
-      pattern: "^[a-zA-Z0-9-_.]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=4,max=128"
+        validate: "omitempty,ext_str,min=2,max=24"
 
     BaseDescriptionRequired:
-      description: "Required description"
       type: string
       minLength: 1
       maxLength: 256
-      pattern: "^[\\p{L}\\p{N}\\s,.!?-]+$"
+      pattern: "^.+$"
       x-oapi-codegen-extra-tags:
         validate: "required,min=1,max=256"
 
     BaseDescriptionOptional:
-      description: "Optional description"
       type: string
       minLength: 1
       maxLength: 256
-      pattern: "^[\\p{L}\\p{N}\\s,.!?-]+$"
+      pattern: "^.+$"
       x-oapi-codegen-extra-tags:
         validate: "omitempty,min=1,max=256"
 
-    BaseTopicRequired:
-      description: "Required topic"
+    BaseTextRequired:
       type: string
       minLength: 1
-      maxLength: 128
-      pattern: "^[a-zA-Z0-9]+$"
+      maxLength: 2048
+      pattern: "^.+$"
       x-oapi-codegen-extra-tags:
-        validate: "required,alphanum,min=1,max=128"
+        validate: "required,min=1,max=2048"
 
-    BaseTopicOptional:
-      description: "Optional topic"
+    BaseTextOptional:
       type: string
       minLength: 1
-      maxLength: 128
-      pattern: "^[a-zA-Z0-9]+$"
+      maxLength: 2048
+      pattern: "^.+$"
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,alphanum,min=1,max=128"
+        validate: "omitempty,min=1,max=2048"
 
-    BaseMessageRequired:
-      description: "Required message"
+    BaseCountryCodeRequired:
       type: string
-      minLength: 1
-      maxLength: 128
-      pattern: "^[\\p{L}\\p{N}\\s-]+$"
+      minLength: 2
+      maxLength: 2
+      pattern: "^[a-zA-Z]{2}$"
       x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=128"
+        validate: "required,iso3166_1_alpha2"
 
-    BaseMessageOptional:
-      description: "Optional message"
+    BaseCountryCodeOptional:
       type: string
-      minLength: 1
-      maxLength: 128
-      pattern: "^[\\p{L}\\p{N}\\s-]+$"
+      minLength: 2
+      maxLength: 2
+      pattern: "^[a-zA-Z]{2}$"
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=128"
+        validate: "omitempty,iso3166_1_alpha2"
+
+    BaseLangTagRequired:
+      type: string
+      minLength: 5
+      maxLength: 5
+      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
+      x-oapi-codegen-extra-tags:
+        validate: "required,bcp47_language_tag"
+
+    BaseLangTagOptional:
+      type: string
+      minLength: 5
+      maxLength: 5
+      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,bcp47_language_tag"
+
+    BaseLangLevelRequired:
+      type: string
+      minLength: 2
+      maxLength: 2 
+      pattern: "^[a-zA-Z]{1}[0-9]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,lang_code"
+
+    BaseLangLevelOptional:
+      type: string
+      minLength: 2
+      maxLength: 2 
+      pattern: "^[a-zA-Z]{1}[0-9]{2}$"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,lang_code"
+
+    BaseFilenameRequired:
+      type: string
+      minLength: 4
+      maxLength: 128
+      pattern: "^[a-zA-Z0-9-_.]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=4,max=128,file"
+
+    BaseFilenameOptional:
+      type: string
+      minLength: 4
+      maxLength: 128
+      pattern: "^[a-zA-Z0-9-_.]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=4,max=128,file"
 
     BaseTimestampRequired:
-      description: "Required timestamp in UNIX format"
       type: integer
       format: int64
       x-oapi-codegen-extra-tags:
         validate: "required"
 
     BaseTimestampOptional:
-      description: "Optional timestamp in UNIX format"
       type: integer
       format: int64
       x-oapi-codegen-extra-tags:
         validate: "omitempty"
 
-    BaseAppIdentifierRequired:
-      description: "Required unique identifier for the app replica"
+    BaseUuidRequired:
       type: string
-      maxLength: 36
       minLength: 36
+      maxLength: 36
       pattern: "^[A-Fa-f0-9-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "required,len=36,hexadecimal"
+        validate: "required,uuid"
 
-    BaseAppIdentifierOptional:
-      description: "Optional unique identifier for the app replica"
+    BaseUuidOptional:
       type: string
-      maxLength: 36
       minLength: 36
+      maxLength: 36
       pattern: "^[A-Fa-f0-9-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,len=36,hexadecimal"
+        validate: "omitempty,uuid"
 
-    BaseAppVersionRequired:
-      description: "Required application version"
+    BaseSemverRequired:
       type: string
-      maxLength: 36
-      minLength: 1
+      minLength: 5
+      maxLength: 15
       pattern: "^[A-Za-z0-9.-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=36"
+       validate: "required,semver" 
 
-    BaseAppVersionOptional:
-      description: "Optional application version"
+    BaseSemverOptional:
       type: string
-      maxLength: 36
-      minLength: 1
+      minLength: 5
+      maxLength: 15
       pattern: "^[A-Za-z0-9.-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=36" 
+       validate: "omitempty,semver" 
 
-    BaseDeviceOsRequired:
-      description: "Required device operating system version"
-      type: string
-      maxLength: 36
-      minLength: 1
-      pattern: "^[A-Za-z0-9.-]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=36"
-    
-    BaseDeviceOsOptional:
-      description: "Optional device operating system version"
-      type: string
-      maxLength: 36
-      minLength: 1
-      pattern: "^[A-Za-z0-9.-]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=36"
-    
-    BaseDeviceNameRequired:
-      description: "Required device model or name"
-      type: string
-      maxLength: 48
-      minLength: 1
-      pattern: "^[A-Za-z0-9.-]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=48"
-
-    BaseDeviceNameOptional:
-      description: "Optional device model or name"
-      type: string
-      maxLength: 48
-      minLength: 1
-      pattern: "^[A-Za-z0-9.-]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=48"
-
-    BaseErrorMessageRequired:
-      description: "Required description of the error"
-      type: string
-      minLength: 1
-      maxLength: 512
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=512"
-
-    BaseErrorMessageOptional:
-      description: "Optional description of the error"
-      type: string
-      minLength: 1
-      maxLength: 512
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=512"
-
-    BaseErrorOriginalRequired:
-      description: "Required full original error information"
-      type: string
-      minLength: 1
-      maxLength: 1024
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=1024"
-
-    BaseErrorOriginalOptional:
-      description: "Optional full original error information"
-      type: string
-      minLength: 1
-      maxLength: 1024
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=1024"
-
-    BaseErrorTypeRequired:
-      description: "Required error type"
-      type: string
-      minLength: 1
-      maxLength: 64
-      pattern: "^[A-Za-z]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "required,min=1,max=64,alpha"
-
-    BaseErrorTypeOptional:
-      description: "Optional error type"
-      type: string
-      minLength: 1
-      maxLength: 64
-      pattern: "^[A-Za-z]+$"
-      x-oapi-codegen-extra-tags:
-        validate: "omitempty,min=1,max=64,alpha"
-    
     BaseUrlRequired:
       description: "Required url"
       type: string
@@ -670,10 +544,9 @@ components:
       format: uri
       x-oapi-codegen-extra-tags:
         validate: "omitempty,uri" 
-
+        
     BaseSideEnum:
       type: string
-      description: "Specifies the side (front/back) of the subcategory"
       enum:
         - front
         - back
@@ -711,9 +584,9 @@ components:
         - level
       properties:
         code:
-          $ref: '#/components/schemas/BaseCodeRequired'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         level:
-          $ref: '#/components/schemas/BaseLevelRequired'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
 
     SubcategoryItemV1:
       type: object
@@ -722,7 +595,7 @@ components:
         - side
       properties:
         code: 
-          $ref: '#/components/schemas/BaseCodeRequired'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         side: 
           $ref: '#/components/schemas/BaseSideEnum'
 
@@ -742,11 +615,11 @@ components:
         - topic
       properties:
         name:
-          $ref: '#/components/schemas/BaseDictNameRequired'
+          $ref: '#/components/schemas/BaseExtendedRequired'
         subcategory:
-          $ref: '#/components/schemas/BaseSubcategoryRequired'
+          $ref: '#/components/schemas/BaseLangTagRequired'
         author:
-          $ref: '#/components/schemas/BaseAuthorRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         filename:
           $ref: '#/components/schemas/BaseFilenameRequired'
         description:
@@ -754,9 +627,9 @@ components:
         created:
           $ref: '#/components/schemas/BaseTimestampRequired'
         level:
-          $ref: '#/components/schemas/BaseLevelRequired'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
         topic: 
-          $ref: '#/components/schemas/BaseTopicRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         category:
           $ref: '#/components/schemas/BaseCategoryEnum'
         rating:
@@ -832,7 +705,7 @@ components:
         - message
       properties:
         message:
-          $ref: '#/components/schemas/BaseMessageRequired'
+          $ref: '#/components/schemas/BaseExtendedRequired'
 
     # =================================================================================================================== #
     # ------------------------------------------------------------------------------------------------------------------- #
@@ -850,9 +723,9 @@ components:
         side: 
           $ref: '#/components/schemas/BaseSideEnum'
         code: 
-          $ref: '#/components/schemas/BaseCodeRequired'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         description:
-          $ref: '#/components/schemas/BaseMessageRequired'
+          $ref: '#/components/schemas/BaseExtendedRequired'
 
     RequestPostDictionariesV1:
       type: object
@@ -872,15 +745,15 @@ components:
         filename:
           $ref: '#/components/schemas/BaseFilenameRequired'
         name:
-          $ref: '#/components/schemas/BaseDictNameRequired'
+          $ref: '#/components/schemas/BaseExtendedRequired'
         author:
-          $ref: '#/components/schemas/BaseAuthorRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         subcategory:
-          $ref: '#/components/schemas/BaseSubcategoryRequired'
+          $ref: '#/components/schemas/BaseLangTagRequired'
         level:
-          $ref: '#/components/schemas/BaseLevelRequired'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
         topic:
-          $ref: '#/components/schemas/BaseTopicRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         category:
           $ref: '#/components/schemas/BaseCategoryEnum'
         public:
@@ -900,19 +773,19 @@ components:
         - timestamp
       properties:
         app_identifier:
-          $ref: '#/components/schemas/BaseAppIdentifierRequired'
+          $ref: '#/components/schemas/BaseUuidRequired'
         app_version:
-          $ref: '#/components/schemas/BaseAppVersionRequired'
+          $ref: '#/components/schemas/BaseSemverRequired'
         device_os:
-          $ref: '#/components/schemas/BaseDeviceOsRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         device_name:
-          $ref: '#/components/schemas/BaseDeviceNameRequired'
+          $ref: '#/components/schemas/BaseStringRequired'
         error_message:
-          $ref: '#/components/schemas/BaseErrorMessageRequired' 
+          $ref: '#/components/schemas/BaseTextRequired' 
         error_original:
-          $ref: '#/components/schemas/BaseErrorOriginalRequired' 
+          $ref: '#/components/schemas/BaseTextRequired' 
         error_type:
-          $ref: '#/components/schemas/BaseErrorTypeRequired' 
+          $ref: '#/components/schemas/BaseStringRequired' 
         timestamp:
           $ref: '#/components/schemas/BaseTimestampRequired' 
         metadata:
@@ -999,39 +872,39 @@ components:
       name: subcategory
       in: query
       schema:
-        $ref: '#/components/schemas/BaseSubcategoryRequired'
+        $ref: '#/components/schemas/BaseLangTagRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,len=5"
+        validate: "required,bcp47_language_tag"
 
     ParamDictionariesSubcategoryOptional:
       name: subcategory
       in: query
       schema:
-        $ref: '#/components/schemas/BaseSubcategoryOptional'
+        $ref: '#/components/schemas/BaseLangTagOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,len=5"
+        validate: "omitempty,bcp47_language_tag"
     
     ParamDictionariesNameRequired:
       name: name 
       in: query 
       schema: 
-        $ref: '#/components/schemas/BaseDictNameRequired'
+        $ref: '#/components/schemas/BaseExtendedRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,alphanum,min=6,max=32"
+        validate: "required,ext_str,min=2,max=36"
 
     ParamDictionariesNameOptional:
       name: name 
       in: query 
       schema: 
-        $ref: '#/components/schemas/BaseDictNameOptional'
+        $ref: '#/components/schemas/BaseExtendedRequired'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,alphanum,min=6,max=32" 
+        validate: "required,ext_str,min=2,max=36"
     
     ParamDictionariesAuthorRequired:
       name: author 
       in: query 
       schema:
-        $ref: '#/components/schemas/BaseAuthorRequired'
+        $ref: '#/components/schemas/BaseStringRequired'
       x-oapi-codegen-extra-tags:
         validate: "required,alphanum,min=2,max=24"
 
@@ -1039,41 +912,41 @@ components:
       name: author 
       in: query 
       schema:
-        $ref: '#/components/schemas/BaseAuthorOptional'
+        $ref: '#/components/schemas/BaseStringOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,alphanum,min=2,max=24"
+        validate: "omitempty,base_str,min=2,max=24"
 
     ParamDictionariesLevelRequired:
       name: level
       in: query 
       schema: 
-        $ref: '#/components/schemas/BaseLevelRequired'
+        $ref: '#/components/schemas/BaseLangLevelRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,len=2"
+        validate: "required,lang_code"
 
     ParamDictionariesLevelOptional:
       name: level
       in: query 
       schema: 
-        $ref: '#/components/schemas/BaseLevelOptional'
+        $ref: '#/components/schemas/BaseLangLevelOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,len=2"
+        validate: "omitempty,lang_code"
 
     ParamSubcategoriesCodeRequired:
       name: code 
       in: query
       schema: 
-        $ref: '#/components/schemas/BaseCodeRequired'
+        $ref: '#/components/schemas/BaseCountryCodeRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,alpha,len=2,lowercase"
+        validate: "required,iso3166_1_alpha2"
 
     ParamSubcategoriesCodeOptional:
       name: code 
       in: query
       schema: 
-        $ref: '#/components/schemas/BaseCodeOptional'
+        $ref: '#/components/schemas/BaseCountryCodeOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,alpha,len=2,lowercase"
+        validate: "omitempty,iso3166_1_alpha2"
     
     ParamLastEvaluated:
       name: last_evaluated
