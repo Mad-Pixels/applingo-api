@@ -21,7 +21,7 @@ import (
 const pageLimit = 1000
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	validSideValues := map[applingoapi.BaseSide]struct{}{
+	validSideValues := map[applingoapi.BaseSideEnum]struct{}{
 		applingoapi.Front: {},
 		applingoapi.Back:  {},
 	}
