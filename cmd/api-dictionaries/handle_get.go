@@ -39,7 +39,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		Public:        baseParams.GetBoolPtr("public"),
 		SortBy:        paramSort,
 	}
-	if err := validate.Struct(&params); err != nil {
+	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 

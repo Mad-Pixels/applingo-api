@@ -28,7 +28,7 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 		Code: baseParams.GetStringPtr("code"),
 		Side: paramSide,
 	}
-	if err := validate.Struct(&params); err != nil {
+	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 

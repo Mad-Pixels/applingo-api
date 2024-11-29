@@ -662,14 +662,14 @@ components:
       type: string
       format: uri
       x-oapi-codegen-extra-tags:
-        validate: "required" 
+        validate: "required,uri" 
 
     BaseUrlOptional:
       description: "Optional url"
       type: string
       format: uri
       x-oapi-codegen-extra-tags:
-        validate: "required" 
+        validate: "omitempty,uri" 
 
     BaseSideEnum:
       type: string

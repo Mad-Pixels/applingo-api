@@ -24,7 +24,7 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-	if err := validate.Struct(&req); err != nil {
+	if err := validate.ValidateStruct(&req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
