@@ -43,5 +43,5 @@ func handleDelete(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, base
 	}); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to delete item")}
 	}
-	return openapi.DataResponseSuccess, nil
+	return nil, nil
 }
