@@ -21,21 +21,32 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 40
+const pageLimit = 60
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+	validSortValues := map[applingoapi.BaseDictSortEnum]struct{}{
+		applingoapi.Date:   {},
+		applingoapi.Rating: {},
+	}
+	paramSort, err := openapi.ParseEnumParam(baseParams.GetStringPtr("sort_by"), validSortValues)
+	if err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'sort_by' param")}
+	}
 	params := applingoapi.GetDictionariesV1Params{
-		SortBy:        baseParams.GetStringPtr("sort_by"),
 		Subcategory:   baseParams.GetStringPtr("subcategory"),
 		LastEvaluated: baseParams.GetStringPtr("last_evaluated"),
+		Level:         baseParams.GetStringPtr("level"),
 		Public:        baseParams.GetBoolPtr("public"),
+		SortBy:        paramSort,
+	}
+	if err := validate.ValidateStruct(&params); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	queryInput, err := buildQueryInput(params)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-
 	dynamoQueryInput, err := dbDynamo.BuildQueryInput(*queryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
@@ -91,25 +102,63 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	switch {
-	case params.Public != nil && params.Subcategory != nil:
-		qb.WithIsPublic(applingodictionary.BoolToInt(*params.Public))
-		qb.WithSubcategory(*params.Subcategory)
-	case params.Public != nil:
-		qb.WithIsPublic(applingodictionary.BoolToInt(*params.Public))
-	case params.Subcategory != nil:
-		qb.WithSubcategory(*params.Subcategory)
+	isPublic := true
+	if params.Public != nil && !*params.Public {
+		isPublic = false
+	}
+	sortBy := applingoapi.Date
+	if params.SortBy != nil {
+		sortBy = applingoapi.ParamDictionariesSortEnum(*params.SortBy)
+	}
+	useRatingSort := sortBy == applingoapi.Rating
+
+	if params.Level != nil && params.Subcategory != nil {
+		if useRatingSort {
+			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
+		} else {
+			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
+		}
+	} else if params.Level != nil {
+		if useRatingSort {
+			qb.WithPublicLevelByRatingIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
+		} else {
+			qb.WithPublicLevelByDateIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
+		}
+	} else if params.Subcategory != nil {
+		if useRatingSort {
+			qb.WithPublicSubcategoryByRatingIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
+		} else {
+			qb.WithPublicSubcategoryByDateIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
+		}
+	} else {
+		if useRatingSort {
+			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
+		} else {
+			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
+		}
 	}
 	qb.OrderByDesc()
 
-	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
-	if err != nil {
-		return nil, err
+	if params.LastEvaluated != nil {
+		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
+		if err != nil {
+			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
+		}
+		var lastEvaluatedKeyMap map[string]types.AttributeValue
+		if err := json.Unmarshal(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
+			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
+		}
+		qb.StartFrom(lastEvaluatedKeyMap)
 	}
+	qb.Limit(pageLimit)
 
 	additionalFilter := expression.Name("dictionary").AttributeExists().And(
 		expression.Name("dictionary").NotEqual(expression.Value("")),
 	)
+	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
+	if err != nil {
+		return nil, err
+	}
 
 	var filterCond expression.ConditionBuilder
 	if filterCondition != nil {
@@ -117,28 +166,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	} else {
 		filterCond = additionalFilter
 	}
-
-	if params.LastEvaluated != nil {
-		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
-		if err != nil {
-			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
-		}
-		var lastEvaluatedKeyMap map[string]interface{}
-		if err := serializer.UnmarshalJSON(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
-			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
-		}
-		exclusiveStartKey, err = attributevalue.MarshalMap(lastEvaluatedKeyMap)
-		if err != nil {
-			return nil, errors.New("invalid last_evaluated key: unable to marshal attribute value")
-		}
-	}
-	projectionFields := applingodictionary.IndexProjections[indexName]
-
 	return &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
 		FilterCondition:   filterCond,
-		ProjectionFields:  projectionFields,
+		ProjectionFields:  applingodictionary.IndexProjections[indexName],
 		Limit:             pageLimit,
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,

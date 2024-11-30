@@ -38,6 +38,22 @@ output "dynamo-dictionary-stream_arn" {
   value = module.dynamo-dictionary-table.stream_arn
 }
 
+output "dynamo-subcategory-table_name" {
+  value = module.dynamo-subcategory-table.table_name
+}
+
+output "dynamo-subcategory-table_arn" {
+  value = module.dynamo-subcategory-table.table_arn
+}
+
+output "dynamo-level-table_name" {
+  value = module.dynamo-level-table.table_name
+}
+
+output "dynamo-level-table_arn" {
+  value = module.dynamo-level-table.table_arn
+}
+
 output "sqs-put-csv-dead-letter-queue_url" {
   value = module.dictionary_put_csv_queue.dead_letter_queue_url
 }

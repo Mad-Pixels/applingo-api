@@ -346,7 +346,7 @@ tasks:
   terraform/docs/run:
     desc: Run 'terraform docs'
     deps:
-      - _terraform/install
+      - _terraform/docs/install
     cmds:
       - |
         modules=$(find {{.git_root}}/terraform/modules/* {{.git_root}}/terraform/provisioners/* -maxdepth 0 -type d)

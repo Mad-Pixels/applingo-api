@@ -2,13 +2,13 @@ package cloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/pkg/errors"
 )
 
 // Common errors
@@ -72,7 +72,7 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 	}
 	expr, err := builder.Build()
 	if err != nil {
-		return nil, fmt.Errorf("failed to build expression: %w", err)
+		return nil, errors.Wrap(err, "failed to build expression")
 	}
 
 	queryInput := &dynamodb.QueryInput{
@@ -91,6 +91,16 @@ func (d *Dynamo) BuildQueryInput(input QueryInput) (*dynamodb.QueryInput, error)
 		queryInput.ProjectionExpression = expr.Projection()
 	}
 	return queryInput, nil
+}
+
+// BuildScanInput creates a dynamodb.ScanInput based on the provided fields and conditions.
+func (d *Dynamo) BuildScanInput(table string, limit int32, exclusiveStartKey map[string]types.AttributeValue) *dynamodb.ScanInput {
+	input := &dynamodb.ScanInput{
+		TableName:         aws.String(table),
+		Limit:             &limit,
+		ExclusiveStartKey: exclusiveStartKey,
+	}
+	return input
 }
 
 // Put adds or updates an item in the DynamoDB table.
@@ -114,7 +124,7 @@ func (d *Dynamo) Put(ctx context.Context, table string, item map[string]types.At
 	}
 	_, err := d.client.PutItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to put item: %w", err)
+		return errors.Wrap(err, "failed to put item")
 	}
 	return nil
 }
@@ -133,7 +143,7 @@ func (d *Dynamo) Get(ctx context.Context, table string, key map[string]types.Att
 		Key:       key,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get item: %w", err)
+		return nil, errors.Wrap(err, "failed to get item")
 	}
 	return result, nil
 }
@@ -147,7 +157,7 @@ func (d *Dynamo) Query(ctx context.Context, table string, input *dynamodb.QueryI
 	input.TableName = aws.String(table)
 	result, err := d.client.Query(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return nil, errors.Wrap(err, "failed to execute query")
 	}
 	return result, nil
 }
@@ -166,7 +176,7 @@ func (d *Dynamo) Delete(ctx context.Context, table string, key map[string]types.
 		Key:       key,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete item: %w", err)
+		return errors.Wrap(err, "failed to delete item")
 	}
 	return nil
 }
@@ -186,7 +196,7 @@ func (d *Dynamo) Update(ctx context.Context, table string, key map[string]types.
 	}
 	expr, err := builder.Build()
 	if err != nil {
-		return fmt.Errorf("failed to build update expression: %w", err)
+		return errors.Wrap(err, "failed to build update expression")
 	}
 
 	input := &dynamodb.UpdateItemInput{
@@ -201,7 +211,21 @@ func (d *Dynamo) Update(ctx context.Context, table string, key map[string]types.
 	}
 	_, err = d.client.UpdateItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to update item: %w", err)
+		return errors.Wrap(err, "failed to update item")
 	}
 	return nil
+}
+
+// Scan executes a scan operation on DynamoDB table.
+func (d *Dynamo) Scan(ctx context.Context, table string, input *dynamodb.ScanInput) (*dynamodb.ScanOutput, error) {
+	if err := validateTable(table); err != nil {
+		return nil, err
+	}
+
+	input.TableName = aws.String(table)
+	result, err := d.client.Scan(ctx, input)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute scan")
+	}
+	return result, nil
 }

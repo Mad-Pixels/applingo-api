@@ -85,13 +85,14 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 		)
 	}
 
-	okStatus := http.StatusOK
-	if req.HTTPMethod == "POST" {
-		okStatus = http.StatusCreated
+	var status int
+	switch {
+	case req.HTTPMethod == "POST":
+		status = http.StatusCreated
+	case req.HTTPMethod == "DELETE":
+		status = http.StatusNoContent
+	default:
+		status = http.StatusOK
 	}
-	return gatewayResponse(
-		okStatus,
-		result,
-		nil,
-	)
+	return gatewayResponse(status, result, nil)
 }

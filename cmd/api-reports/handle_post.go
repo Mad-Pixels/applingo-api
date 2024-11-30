@@ -22,6 +22,9 @@ func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ op
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
+	if err := validate.ValidateStruct(&req); err != nil {
+		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
+	}
 
 	var (
 		key  = time.Now().UTC().Format("logs-2006-01-02.json")

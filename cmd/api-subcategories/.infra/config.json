@@ -1,0 +1,26 @@
+{
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${subcategory_table_arn}",
+          "${subcategory_table_arn}/index/*"
+        ]
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 2,
+  "envs": {}
+}
