@@ -21,6 +21,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_reports}/invocations"
@@ -71,6 +77,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePostUrlsV1'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_urls}/invocations"
@@ -109,9 +121,9 @@ paths:
     get:
       operationId: GetDictionariesV1
       parameters:
-        - $ref: '#/components/parameters/ParamDictionariesSubcategory'
-        - $ref: '#/components/parameters/ParamDictionariesLevel'
-        - $ref: '#/components/parameters/ParamDictionariesSort'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategoryOptional'
+        - $ref: '#/components/parameters/ParamDictionariesLevelOptional'
+        - $ref: '#/components/parameters/ParamDictionariesSortEnum'
         - $ref: '#/components/parameters/ParamLastEvaluated'
         - $ref: '#/components/parameters/ParamPublic'
       responses:
@@ -121,6 +133,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetDictionariesV1'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
@@ -159,18 +177,20 @@ paths:
         - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
         - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
       responses:
-        "200":
-          description: "Successfully retrieved dictionaries"
+        "204":
+          description: "Dictionary successfully deleted"
+        default:
+          description: "Got error response"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseGetDictionariesV1'
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
         responses:
           default:
-            statusCode: "200"
+            statusCode: "204"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     options:
@@ -211,6 +231,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetSubcategoriesV1'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
@@ -234,6 +260,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseMessage'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
@@ -246,10 +278,12 @@ paths:
       operationId: "DeleteSubcategoriesV1"
       parameters:
         - $ref: '#/components/parameters/ParamSubcategoriesSide' 
-        - $ref: '#/components/parameters/ParamSubcategoriesCode'
+        - $ref: '#/components/parameters/ParamSubcategoriesCodeRequired'
       responses:
-        "200":
-          description: "Subcategory successfully deleted"
+        "204":
+          description: "Dictionary successfully deleted"
+        default:
+          description: "Got error response"
           content:
             application/json:
               schema:
@@ -259,7 +293,7 @@ paths:
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
         responses:
           default:
-            statusCode: "200"
+            statusCode: "204"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     options:
@@ -298,6 +332,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseGetLevelsV1'
+        default:
+          description: "Got error response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_levels}/invocations"
@@ -353,131 +393,237 @@ components:
 
   schemas:
 
-    #
-    #
-    # Base
-    #
-    #
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Base                                                                                                                #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
 
-    BaseAuthor:
-      description: "Name of the author of the dictionary"
+    BaseStringRequired:
       type: string
       minLength: 2
       maxLength: 24
-      pattern: "^[a-zA-Z0-9_.-]+$"
+      pattern: "^[a-zA-Z0-9_.:-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "min=2,max=24"
-
-    BaseDictName:
-      description: "Short name of the dictionary"
+        validate: "required,base_str,min=2,max=24" 
+      
+    BaseStringOptional:
       type: string
-      minLength: 6
-      maxLength: 32
-      pattern: "^[A-Za-z0-9_,.#-]+$"
+      minLength: 2
+      maxLength: 24
+      pattern: "^[a-zA-Z0-9_.:-]+$"
       x-oapi-codegen-extra-tags:
-        validate: "min=6,max=32"
+        validate: "omitempty,base_str,min=2,max=24"
 
-    BaseCode:
-      description: "Two-letter code"
+    BaseExtendedRequired:
+      type: string 
+      minLength: 2
+      maxLength: 36
+      pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
+      x-oapi-codegen-extra-tags:
+        validate: "required,ext_str,min=2,max=36"  
+    
+    BaseExtendedOptional:
+      type: string 
+      minLength: 2
+      maxLength: 36
+      pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,ext_str,min=2,max=36"
+
+    BaseDescriptionRequired:
+      type: string
+      minLength: 1
+      maxLength: 256
+      pattern: "^.+$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=256"
+
+    BaseDescriptionOptional:
+      type: string
+      minLength: 1
+      maxLength: 256
+      pattern: "^.+$"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,min=1,max=256"
+
+    BaseTextRequired:
+      type: string
+      minLength: 1
+      maxLength: 2048
+      pattern: "^.+$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=2048"
+
+    BaseTextOptional:
+      type: string
+      minLength: 1
+      maxLength: 2048
+      pattern: "^.+$"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,min=1,max=2048"
+
+    BaseCountryCodeRequired:
       type: string
       minLength: 2
       maxLength: 2
-      pattern: "^[a-z]{2}$"
+      pattern: "^[a-zA-Z]{2}$"
       x-oapi-codegen-extra-tags:
-        validate: "len=2"
+        validate: "required,iso3166_1_alpha2"
 
-    BaseLevel:
-      description: "Proficiency level for the dictionary"
+    BaseCountryCodeOptional:
       type: string
       minLength: 2
       maxLength: 2
-      pattern: "^[A-Z][0-9]$"
+      pattern: "^[a-zA-Z]{2}$"
       x-oapi-codegen-extra-tags:
-        validate: "len=2"
+        validate: "omitempty,iso3166_1_alpha2"
 
-    BaseSubcategory:
-      description: "Language subcategory in ISO format"
+    BaseLangTagRequired:
       type: string
       minLength: 5
       maxLength: 5
-      pattern: "^[a-z]{2}-[a-z]{2}$"
+      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
       x-oapi-codegen-extra-tags:
-        validate: "len=5"
+        validate: "required,bcp47_language_tag"
 
-    BaseFilename:
-      description: "Name of the file associated with the dictionary"
+    BaseLangTagOptional:
+      type: string
+      minLength: 5
+      maxLength: 5
+      pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,bcp47_language_tag"
+
+    BaseLangLevelRequired:
+      type: string
+      minLength: 2
+      maxLength: 2 
+      pattern: "^[a-zA-Z][0-9]$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,lang_code"
+
+    BaseLangLevelOptional:
+      type: string
+      minLength: 2
+      maxLength: 2 
+      pattern: "^[a-zA-Z][0-9]$"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,lang_code"
+
+    BaseFilenameRequired:
       type: string
       minLength: 4
-      maxLength: 256
-      pattern: "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9]+)?$"
-      x-oapi-codegen-extra-tags:
-        validate: "min=4,max=256"
-
-    BaseDescription:
-      description: "Description"
-      type: string
-      minLength: 1
-      maxLength: 256
-      x-oapi-codegen-extra-tags:
-        validate: "min=1,max=256"
-
-    BaseTopic:
-      type: string
-      description: "Specific topic covered in the dictionary"
-      minLength: 1
       maxLength: 128
-      pattern: "^[A-Za-z0-9_,.-]+$"
+      pattern: "^[a-zA-Z0-9-_.]+$"
       x-oapi-codegen-extra-tags:
-        validate: "min=1,max=128"
+        validate: "required,min=4,max=128,file"
 
-    BaseMessage:
+    BaseFilenameOptional:
       type: string
-      description: "Message"
-      minLength: 1
+      minLength: 4
       maxLength: 128
-      pattern: "^[a-zA-Z0-9 -]+$"
+      pattern: "^[a-zA-Z0-9-_.]+$"
       x-oapi-codegen-extra-tags:
-        validate: "min=1,max=128"
+        validate: "omitempty,min=4,max=128,file"
 
-    BaseTimestamp:
+    BaseTimestampRequired:
       type: integer
-      description: "Timestamp in UNIX format"
       format: int64
       x-oapi-codegen-extra-tags:
         validate: "required"
 
-    BaseSide:
+    BaseTimestampOptional:
+      type: integer
+      format: int64
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty"
+
+    BaseUuidRequired:
       type: string
-      description: "Specifies the side (front/back) of the subcategory"
+      minLength: 36
+      maxLength: 36
+      pattern: "^[A-Fa-f0-9-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "required,uuid"
+
+    BaseUuidOptional:
+      type: string
+      minLength: 36
+      maxLength: 36
+      pattern: "^[A-Fa-f0-9-]+$"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,uuid"
+
+    BaseSemverRequired:
+      type: string
+      minLength: 5
+      maxLength: 15
+      pattern: "^[A-Za-z0-9.-]+$"
+      x-oapi-codegen-extra-tags:
+       validate: "required,semver" 
+
+    BaseSemverOptional:
+      type: string
+      minLength: 5
+      maxLength: 15
+      pattern: "^[A-Za-z0-9.-]+$"
+      x-oapi-codegen-extra-tags:
+       validate: "omitempty,semver" 
+
+    BaseUrlRequired:
+      description: "Required url"
+      type: string
+      format: uri
+      x-oapi-codegen-extra-tags:
+        validate: "required,uri" 
+
+    BaseUrlOptional:
+      description: "Optional url"
+      type: string
+      format: uri
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,uri" 
+        
+    BaseSideEnum:
+      type: string
       enum:
         - front
         - back
+      x-oapi-codegen-extra-tags:
+        validate: "required,oneof=front back"
       
-    BaseCategory:
+    BaseCategoryEnum:
       type: string
       description: "Main category for the dictionary"
       enum:
         - language
+      x-oapi-codegen-extra-tags:
+        validate: "required,oneof=language"
     
-    BaseUrlOp:
+    BaseUrlOpEnum:
       type: string
       description: "Urls operations"
       enum:
         - upload
         - download
+      x-oapi-codegen-extra-tags:
+        validate: "required,oneof=upload download"
     
-    BaseDictSort:
+    BaseDictSortEnum:
       type: string
       description: "Dictionaries sort criteria"
       enum:
         - date
         - rating
+      x-oapi-codegen-extra-tags:
+        validate: "required,oneof=date rating"
         
-    #
-    #
-    # ITEMS 
-    #
-    #
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Items                                                                                                               #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
 
     LevelItemV1:
       type: object
@@ -486,9 +632,9 @@ components:
         - level
       properties:
         code:
-          $ref: '#/components/schemas/BaseCode'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         level:
-          $ref: '#/components/schemas/BaseLevel'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
 
     SubcategoryItemV1:
       type: object
@@ -497,9 +643,9 @@ components:
         - side
       properties:
         code: 
-          $ref: '#/components/schemas/BaseCode'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         side: 
-          $ref: '#/components/schemas/BaseSide'
+          $ref: '#/components/schemas/BaseSideEnum'
 
     DictionaryItemV1:
       type: object
@@ -517,23 +663,23 @@ components:
         - topic
       properties:
         name:
-          $ref: '#/components/schemas/BaseDictName'
-        category:
-          $ref: '#/components/schemas/BaseCategory'
+          $ref: '#/components/schemas/BaseExtendedRequired'
         subcategory:
-          $ref: '#/components/schemas/BaseSubcategory'
+          $ref: '#/components/schemas/BaseLangTagRequired'
         author:
-          $ref: '#/components/schemas/BaseAuthor'
+          $ref: '#/components/schemas/BaseStringRequired'
         filename:
-          $ref: '#/components/schemas/BaseFilename'
+          $ref: '#/components/schemas/BaseFilenameRequired'
         description:
-          $ref: '#/components/schemas/BaseDescription'
+          $ref: '#/components/schemas/BaseDescriptionRequired'
         created:
-          $ref: '#/components/schemas/BaseTimestamp'
+          $ref: '#/components/schemas/BaseTimestampRequired'
         level:
-          $ref: '#/components/schemas/BaseLevel'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
         topic: 
-          $ref: '#/components/schemas/BaseTopic'
+          $ref: '#/components/schemas/BaseStringRequired'
+        category:
+          $ref: '#/components/schemas/BaseCategoryEnum'
         rating:
           type: integer
           description: "Dictionary rating"
@@ -542,11 +688,11 @@ components:
           type: boolean
           description: "Visibility of the dictionary"
 
-    #
-    #
-    # Data
-    #
-    #
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Data Response                                                                                                       #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
 
     CategoriesData:
       type: object
@@ -596,9 +742,7 @@ components:
         - expires_in
       properties:
         url:
-          type: string
-          description: "A presigned URL that provides temporary access"
-          format: uri
+          $ref: '#/components/schemas/BaseUrlRequired'
         expires_in:
           type: integer
           description: "Time in seconds until the URL expires"
@@ -609,13 +753,13 @@ components:
         - message
       properties:
         message:
-          $ref: '#/components/schemas/BaseMessage'
+          $ref: '#/components/schemas/BaseExtendedRequired'
 
-    #
-    #
-    # REQUEST 
-    #
-    #
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Data Request                                                                                                        #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
 
     RequestPostSubcategoriesV1:
       type: object
@@ -625,11 +769,11 @@ components:
         - description
       properties:
         side: 
-          $ref: '#/components/schemas/BaseSide'
+          $ref: '#/components/schemas/BaseSideEnum'
         code: 
-          $ref: '#/components/schemas/BaseCode'
+          $ref: '#/components/schemas/BaseCountryCodeRequired'
         description:
-          $ref: '#/components/schemas/BaseMessage'
+          $ref: '#/components/schemas/BaseExtendedRequired'
 
     RequestPostDictionariesV1:
       type: object
@@ -645,21 +789,21 @@ components:
         - topic
       properties:
         description:
-          $ref: '#/components/schemas/BaseDescription'
+          $ref: '#/components/schemas/BaseDescriptionRequired'
         filename:
-          $ref: '#/components/schemas/BaseFilename'
+          $ref: '#/components/schemas/BaseFilenameRequired'
         name:
-          $ref: '#/components/schemas/BaseDictName'
+          $ref: '#/components/schemas/BaseExtendedRequired'
         author:
-          $ref: '#/components/schemas/BaseAuthor'
-        category:
-          $ref: '#/components/schemas/BaseCategory'
+          $ref: '#/components/schemas/BaseStringRequired'
         subcategory:
-          $ref: '#/components/schemas/BaseSubcategory'
+          $ref: '#/components/schemas/BaseLangTagRequired'
         level:
-          $ref: '#/components/schemas/BaseLevel'
+          $ref: '#/components/schemas/BaseLangLevelRequired'
         topic:
-          $ref: '#/components/schemas/BaseTopic'
+          $ref: '#/components/schemas/BaseStringRequired'
+        category:
+          $ref: '#/components/schemas/BaseCategoryEnum'
         public:
           type: boolean
           description: "Visibility of the dictionary"
@@ -677,65 +821,21 @@ components:
         - timestamp
       properties:
         app_identifier:
-          type: string
-          description: "Unique identifier for the app replica"
-          maxLength: 36
-          minLength: 36
-          pattern: "^[A-f0-9-]+$"
-          x-oapi-codegen-extra-tags:
-            validate: "min=36,max=36"
+          $ref: '#/components/schemas/BaseUuidRequired'
         app_version:
-          type: string
-          description: "Application version"
-          maxLength: 36
-          minLength: 1
-          pattern: "^[A-z0-9.-]+$" 
-          x-oapi-codegen-extra-tags:
-            validate: "min=1,max=36" 
+          $ref: '#/components/schemas/BaseSemverRequired'
         device_os:
-          type: string
-          description: "Device operating system version"
-          maxLength: 36
-          minLength: 1
-          pattern: "^[A-z0-9.-]+$" 
-          x-oapi-codegen-extra-tags:
-            validate: "min=1,max=36" 
+          $ref: '#/components/schemas/BaseStringRequired'
         device_name:
-          type: string
-          description: "Device model or name"
-          maxLength: 48
-          minLength: 1
-          pattern: "^[A-z0-9.-]+$" 
-          x-oapi-codegen-extra-tags:
-            validate: "min=1,max=48" 
+          $ref: '#/components/schemas/BaseStringRequired'
         error_message:
-          type: string
-          description: "Description of the error"
-          minLength: 1
-          maxLength: 512
-          x-oapi-codegen-extra-tags: 
-            validate: "required"
+          $ref: '#/components/schemas/BaseTextRequired' 
         error_original:
-          type: string
-          description: "Full original error information"
-          minLength: 1
-          maxLength: 1024
-          x-oapi-codegen-extra-tags: 
-            validate: "required"
+          $ref: '#/components/schemas/BaseTextRequired' 
         error_type:
-          type: string
-          description: "Error type"
-          minLength: 1
-          maxLength: 64
-          pattern: "^[A-z]+$"
-          x-oapi-codegen-extra-tags: 
-            validate: "min=1,max=64" 
+          $ref: '#/components/schemas/BaseStringRequired' 
         timestamp:
-          type: integer
-          description: "Timestamp of the error occurrence in UNIX format"
-          format: int64
-          x-oapi-codegen-extra-tags:
-            validate: "required"
+          $ref: '#/components/schemas/BaseTimestampRequired' 
         metadata:
           type: object
           description: "Optional metadata with additional context for the error report"
@@ -747,15 +847,15 @@ components:
         - identifier
       properties:
         operation:
-          $ref: '#/components/schemas/BaseUrlOp'
+          $ref: '#/components/schemas/BaseUrlOpEnum'
         identifier:
-          $ref: '#/components/schemas/BaseFilename'
+          $ref: '#/components/schemas/BaseFilenameRequired'
 
-    #
-    #
-    # RESPONSE
-    #
-    #
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Data Response                                                                                                       #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
 
     ResponseGetSubcategoriesV1:
       type: object
@@ -797,88 +897,126 @@ components:
         data:
           $ref: '#/components/schemas/MessageData'
 
+    # =================================================================================================================== #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # Query Parameters                                                                                                    #
+    # ------------------------------------------------------------------------------------------------------------------- #
+    # =================================================================================================================== #
+
   parameters:
-    ParamDictionariesSort:
+    ParamDictionariesSortEnum:
       name: sort_by
       in: query
       schema:
-        $ref: '#/components/schemas/BaseDictSort'
-
-    ParamDictionariesSubcategory:
-      name: subcategory
-      in: query
-      schema:
-        $ref: '#/components/schemas/BaseSubcategory'
-      x-oapi-codegen-extra-tags:
-        validate: "len=5"
-
-    ParamDictionariesSubcategoryRequired:
-      name: subcategory
-      in: query
-      schema:
-        $ref: '#/components/schemas/BaseSubcategory'
-      x-oapi-codegen-extra-tags:
-        validate: "len=5"
-    
-    ParamDictionariesName:
-      name: name 
-      in: query 
-      schema: 
-        $ref: '#/components/schemas/BaseDictName'
-      x-oapi-codegen-extra-tags:
-        validate: "min=6,max=32"
-    
-    ParamDictionariesNameRequired:
-      name: name 
-      in: query 
-      schema: 
-        $ref: '#/components/schemas/BaseDictName'
-      x-oapi-codegen-extra-tags:
-        validate: "min=6,max=32"
-    
-    ParamDictionariesAuthor:
-      name: author 
-      in: query 
-      schema:
-        $ref: '#/components/schemas/BaseAuthor'
-      x-oapi-codegen-extra-tags:
-        validate: "min=2,max=24"
-
-    ParamDictionariesAuthorRequired:
-      name: author 
-      in: query 
-      schema:
-        $ref: '#/components/schemas/BaseAuthor'
-      x-oapi-codegen-extra-tags:
-        validate: "min=2,max=24"
-
-    ParamDictionariesLevel:
-      name: level
-      in: query 
-      schema: 
-        $ref: '#/components/schemas/BaseLevel'
+        $ref: '#/components/schemas/BaseDictSortEnum'
 
     ParamSubcategoriesSide:
       name: side 
       in: query 
       schema: 
-        $ref: '#/components/schemas/BaseSide'
+        $ref: '#/components/schemas/BaseSideEnum'
+
+    ParamDictionariesSubcategoryRequired:
+      name: subcategory
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/BaseLangTagRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,bcp47_language_tag"
+
+    ParamDictionariesSubcategoryOptional:
+      name: subcategory
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/BaseLangTagOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,bcp47_language_tag"
     
-    ParamSubcategoriesCode:
+    ParamDictionariesNameRequired:
+      name: name 
+      in: query 
+      required: true
+      schema: 
+        $ref: '#/components/schemas/BaseExtendedRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,ext_str,min=2,max=36"
+
+    ParamDictionariesNameOptional:
+      name: name 
+      in: query 
+      required: false
+      schema: 
+        $ref: '#/components/schemas/BaseExtendedRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,ext_str,min=2,max=36"
+    
+    ParamDictionariesAuthorRequired:
+      name: author 
+      in: query 
+      required: true
+      schema:
+        $ref: '#/components/schemas/BaseStringRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,alphanum,min=2,max=24"
+
+    ParamDictionariesAuthorOptional:
+      name: author 
+      in: query 
+      required: false
+      schema:
+        $ref: '#/components/schemas/BaseStringOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,base_str,min=2,max=24"
+
+    ParamDictionariesLevelRequired:
+      name: level
+      in: query 
+      required: true
+      schema: 
+        $ref: '#/components/schemas/BaseLangLevelRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,lang_code"
+
+    ParamDictionariesLevelOptional:
+      name: level
+      in: query 
+      required: false
+      schema: 
+        $ref: '#/components/schemas/BaseLangLevelOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,lang_code"
+
+    ParamSubcategoriesCodeRequired:
       name: code 
       in: query
+      required: true
       schema: 
-        $ref: '#/components/schemas/BaseCode'
+        $ref: '#/components/schemas/BaseCountryCodeRequired'
+      x-oapi-codegen-extra-tags:
+        validate: "required,iso3166_1_alpha2"
+
+    ParamSubcategoriesCodeOptional:
+      name: code 
+      in: query
+      required: false
+      schema: 
+        $ref: '#/components/schemas/BaseCountryCodeOptional'
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,iso3166_1_alpha2"
     
     ParamLastEvaluated:
       name: last_evaluated
       in: query
+      required: false
       schema:
         type: string
 
     ParamPublic:
       name: public
       in: query
+      required: false
       schema:
         type: boolean
 

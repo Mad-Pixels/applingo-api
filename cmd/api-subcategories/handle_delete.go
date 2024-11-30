@@ -16,7 +16,7 @@ import (
 )
 
 func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	validSideValues := map[applingoapi.BaseSide]struct{}{
+	validSideValues := map[applingoapi.BaseSideEnum]struct{}{
 		applingoapi.Front: {},
 		applingoapi.Back:  {},
 	}
@@ -28,7 +28,7 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 		Code: baseParams.GetStringPtr("code"),
 		Side: paramSide,
 	}
-	if err := validate.Struct(&params); err != nil {
+	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
@@ -48,5 +48,5 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 	}); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to delete item")}
 	}
-	return openapi.DataResponseSuccess, nil
+	return nil, nil
 }

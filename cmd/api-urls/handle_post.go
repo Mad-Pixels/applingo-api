@@ -20,14 +20,14 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-	if err := validate.Struct(&req); err != nil {
+	if err := validate.ValidateStruct(&req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
 	switch req.Operation {
-	case applingoapi.Upload:
+	case "upload":
 		return handleUpload(ctx, req)
-	case applingoapi.Download:
+	case "download":
 		return handleDownload(ctx, req)
 	default:
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid operation")}

@@ -24,7 +24,7 @@ import (
 const pageLimit = 60
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
-	validSortValues := map[applingoapi.BaseDictSort]struct{}{
+	validSortValues := map[applingoapi.BaseDictSortEnum]struct{}{
 		applingoapi.Date:   {},
 		applingoapi.Rating: {},
 	}
@@ -39,7 +39,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		Public:        baseParams.GetBoolPtr("public"),
 		SortBy:        paramSort,
 	}
-	if err := validate.Struct(&params); err != nil {
+	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
@@ -108,7 +108,7 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
-		sortBy = applingoapi.ParamDictionariesSort(*params.SortBy)
+		sortBy = applingoapi.ParamDictionariesSortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
 

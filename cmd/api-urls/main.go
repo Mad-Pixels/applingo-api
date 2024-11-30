@@ -7,10 +7,10 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/validator"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/go-playground/validator/v10"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	awsRegion               = os.Getenv("AWS_REGION")
 
-	validate *validator.Validate
+	validate *validator.Validator
 	s3Bucket *cloud.Bucket
 )
 
