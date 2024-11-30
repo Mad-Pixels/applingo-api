@@ -25,14 +25,14 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'side' param")}
 	}
 	params := applingoapi.DeleteSubcategoriesV1Params{
-		Code: baseParams.GetStringPtr("code"),
+		Code: baseParams.GetStringDefault("code", ""),
 		Side: paramSide,
 	}
 	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	id := generateSubcategoryID(string(*params.Code), string(*params.Side))
+	id := generateSubcategoryID(string(params.Code), string(*params.Side))
 	result, err := dbDynamo.Get(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
 		"id": &types.AttributeValueMemberS{Value: id},
 	})

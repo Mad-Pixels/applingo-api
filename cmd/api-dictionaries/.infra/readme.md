@@ -19,6 +19,6 @@ curl -X GET "${url}?is_public=true" -H "Content-Type: application/json"  \
     -H "x-signature: ${signature}"
 
 curl -X POST ${url} \
-    -d '{"description": "description", "filename": "1.csv", "name": "testdictionary", "author": "author", "category": "language", "subcategory": "ru-he", "public": true, "level": "A1", "topic":"topic"}' \
+    -d '{"description": "description", "filename": "1.csv", "name": "testdictionary", "author": "author", "category": "language", "subcategory": "ru-il", "public": true, "level": "A1", "topic":"topic"}' \
     -H "Content-Type: application/json" 
 ```

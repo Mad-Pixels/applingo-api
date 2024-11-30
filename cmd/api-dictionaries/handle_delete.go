@@ -17,18 +17,18 @@ import (
 
 func handleDelete(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	params := applingoapi.DeleteDictionariesV1Params{
-		Name:        baseParams.GetStringPtr("name"),
-		Author:      baseParams.GetStringPtr("author"),
-		Subcategory: baseParams.GetStringPtr("subcategory"),
+		Name:        baseParams.GetStringDefault("name", ""),
+		Author:      baseParams.GetStringDefault("author", ""),
+		Subcategory: baseParams.GetStringDefault("subcategory", ""),
 	}
 	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	id := generateDictionaryID(*params.Name, *params.Author)
+	id := generateDictionaryID(params.Name, params.Author)
 	result, err := dbDynamo.Get(ctx, applingodictionary.TableName, map[string]types.AttributeValue{
 		"id":          &types.AttributeValueMemberS{Value: id},
-		"subcategory": &types.AttributeValueMemberS{Value: *params.Subcategory},
+		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},
 	})
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to get item for deletion")}
@@ -39,7 +39,7 @@ func handleDelete(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, base
 
 	if err := dbDynamo.Delete(ctx, applingodictionary.TableName, map[string]types.AttributeValue{
 		"id":          &types.AttributeValueMemberS{Value: id},
-		"subcategory": &types.AttributeValueMemberS{Value: *params.Subcategory},
+		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},
 	}); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to delete item")}
 	}
