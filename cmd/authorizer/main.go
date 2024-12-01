@@ -13,17 +13,16 @@ import (
 )
 
 var (
-	authenticator *auth.Authenticator
+	deviceToken = os.Getenv("DEVICE_API_TOKEN")
+	jwtSecret   = os.Getenv("JWT_SECRET")
+
 	log           = logger.InitLogger()
+	authenticator *auth.Authenticator
 )
 
 func init() {
-	deviceToken := os.Getenv("AUTH_TOKEN")
-	jwtSecret := os.Getenv("JWT_SECRET")
-
 	if deviceToken == "" || jwtSecret == "" {
 		log.Fatal().Msg("AUTH_TOKEN and JWT_SECRET environment variables must be set")
-
 	}
 	authenticator = auth.NewAuthenticator(deviceToken, jwtSecret)
 }

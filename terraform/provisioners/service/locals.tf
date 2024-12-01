@@ -22,6 +22,7 @@ locals {
 
   // template variables which use in ./infra/config.json of each lambda.
   template_vars = {
+    var_jwt_secret              = var.jwt_secret
     var_device_api_token        = var.device_api_token
     log_errors_bucket_name      = data.terraform_remote_state.infra.outputs.s3-errors-bucket_name
     dictionary_bucket_name      = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
