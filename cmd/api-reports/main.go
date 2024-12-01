@@ -36,7 +36,7 @@ func main() {
 	lambda.Start(
 		api.NewLambda(
 			api.Config{
-				EnableRequestLogging: false,
+				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
 				"POST /v1/reports": handlePost,
