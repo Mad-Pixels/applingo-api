@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
@@ -24,6 +25,10 @@ import (
 const pageLimit = 60
 
 func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
+
 	validSortValues := map[applingoapi.BaseDictSortEnum]struct{}{
 		applingoapi.Date:   {},
 		applingoapi.Rating: {},

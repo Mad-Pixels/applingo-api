@@ -311,6 +311,7 @@ tasks:
       AWS_SECRET_ACCESS_KEY:   '{{.ACCESS_KEY}}'
       # service specific envs
       TF_VAR_device_api_token: '{{.DEVICE_API_TOKEN}}'
+      TF_VAR_jwt_secret:       '{{.JWT_SECRET}}'
     silent: true
     internal: true
 
@@ -436,6 +437,7 @@ tasks:
           KEY_ID:           test
           ACCESS_KEY:       test
           DEVICE_API_TOKEN: "000XXX000"
+          JWT_SECRET:       'yHc8vF9xJzZP@!kU1&3aD#LmQw$rT^GnB5Xs2Ev*Ny%pC7o'
     silent: true
 
   env/localstack/stop:
@@ -469,6 +471,10 @@ tasks:
           echo "Error: DEVICE_API_TOKEN is not set."
           exit 1
         fi
+        if [ -z "$JWT_SECRET" ]; then
+          echo "Error: JWT_SECRET is not set."
+          exit 1
+        fi
       - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
@@ -492,6 +498,7 @@ tasks:
           KEY_ID:           '{{.AWS_ACCESS_KEY_ID}}'
           ACCESS_KEY:       '{{.AWS_SECRET_ACCESS_KEY}}'
           DEVICE_API_TOKEN: '{{.DEVICE_API_TOKEN}}'
+          JWT_SECRET:       '{{.JWT_SECRET}}'
       - |
         echo "Updating all Lambda functions..."
         for dir in {{.git_root}}/cmd/*; do

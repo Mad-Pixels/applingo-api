@@ -4,6 +4,9 @@ info:
   description: "${project}-${name} endpoint"
   version: "1.0"
 
+security:
+  - LambdaAuthorizer: []
+
 paths:
   /v1/reports:
     post:
@@ -373,6 +376,18 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
   
 components:
+  securitySchemes:
+    LambdaAuthorizer:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: custom
+      x-amazon-apigateway-authorizer:
+        type: request
+        identitySource: method.request.header.Authorization,method.request.header.x-timestamp,method.request.header.x-signature
+        authorizerUri: arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${authorizer}/invocations
+        authorizerResultTtlInSeconds: 300
+ 
   headers:
     AccessControlAllowOrigin:
       schema:

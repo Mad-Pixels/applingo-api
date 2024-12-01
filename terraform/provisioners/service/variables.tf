@@ -21,6 +21,11 @@ variable "arch" {
 }
 
 variable "device_api_token" {
-  description = "Token which use for lambda request validate from device"
+  description = "Auth token which use for lambda request validate from device"
+  type        = string
+}
+
+variable "jwt_secret" {
+  description = "Auth JWT secret which use for lambda request validate from external"
   type        = string
 }
