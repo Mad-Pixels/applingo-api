@@ -13,7 +13,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.63.3
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.35.3
 	github.com/go-playground/validator/v10 v10.23.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/minio/sha256-simd v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.33.0
 	github.com/xuri/excelize/v2 v2.8.1
@@ -41,6 +43,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

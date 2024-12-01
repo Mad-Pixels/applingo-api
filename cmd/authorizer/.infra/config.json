@@ -2,6 +2,6 @@
   "memory_size": 128,
   "timeout": 1,
   "envs": {
-    "AUTH_TOKEN": "${var_device_api_token}"
+    "DEVICE_API_TOKEN": "${var_device_api_token}"
   }
 }
