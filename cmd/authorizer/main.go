@@ -3,19 +3,28 @@ package main
 import (
 	"context"
 	"os"
-	"strconv"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
+	"github.com/Mad-Pixels/applingo-api/pkg/logger"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
 )
 
-var authenticator *auth.Authenticator
+var (
+	authenticator *auth.Authenticator
+	log           = logger.InitLogger()
+)
 
 func init() {
 	deviceToken := os.Getenv("AUTH_TOKEN")
 	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if deviceToken == "" || jwtSecret == "" {
+		log.Fatal().Msg("AUTH_TOKEN and JWT_SECRET environment variables must be set")
+
+	}
 	authenticator = auth.NewAuthenticator(deviceToken, jwtSecret)
 }
 
@@ -23,7 +32,6 @@ func generatePolicy(principalID string, effect string, resource string, context 
 	if effect != "Allow" && effect != "Deny" {
 		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("invalid effect")
 	}
-
 	authResponse := events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: principalID,
 		Context:     context,
@@ -38,44 +46,19 @@ func generatePolicy(principalID string, effect string, resource string, context 
 			},
 		},
 	}
-
 	return authResponse, nil
 }
 
 func handler(ctx context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	// Device authentication
-	if timestamp, ok := req.Headers[auth.HeaderTimestamp]; ok {
-		if signature, ok := req.Headers[auth.HeaderSignature]; ok {
-			if err := authenticator.ValidateDeviceRequest(timestamp, signature); err != nil {
-				return generatePolicy("", "Deny", req.MethodArn, nil)
-			}
-			context := map[string]interface{}{
-				"permissions": auth.RolePermissions["device"],
-				"auth_type":   "device",
-			}
-			return generatePolicy("device", "Allow", req.MethodArn, context)
-		}
+	switch {
+	case req.Headers[auth.HeaderTimestamp] != "" && req.Headers[auth.HeaderSignature] != "":
+		return handleDeviceAuth(req)
+	case req.Headers[auth.HeaderAuth] != "":
+		return handleUserAuth(req)
+	default:
+		log.Error().Msg("authorization failed: No valid authentication headers found")
+		return generatePolicy("", "Deny", req.MethodArn, nil)
 	}
-
-	// JWT authentication
-	if authHeader, ok := req.Headers[auth.HeaderAuth]; ok {
-		claims, err := authenticator.ValidateJWTToken(authHeader)
-		if err != nil {
-			return generatePolicy("", "Deny", req.MethodArn, nil)
-		}
-
-		permLevel := auth.GetPermissionLevel(claims.Role)
-		context := map[string]interface{}{
-			"user_id":     claims.UserID,
-			"permissions": permLevel,
-			"role":        claims.Role,
-			"auth_type":   "jwt",
-		}
-
-		return generatePolicy(strconv.Itoa(claims.UserID), "Allow", req.MethodArn, context)
-	}
-
-	return generatePolicy("", "Deny", req.MethodArn, nil)
 }
 
 func main() {
