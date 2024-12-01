@@ -14,6 +14,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -21,7 +22,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams, reqCtx api.ReqCtx) (any, *api.HandleError) {
+	if !reqCtx.HasPermissions(auth.GetPermissionLevel(auth.User)) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
+
 	var req applingoapi.RequestPostDictionariesV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}

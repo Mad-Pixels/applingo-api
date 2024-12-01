@@ -25,7 +25,7 @@ func handleUserAuth(req events.APIGatewayCustomAuthorizerRequestTypeRequest) (ev
 		"user_id":     claims.Identifier,
 		"permissions": permLevel,
 		"role":        auth.RoleNames[claims.Role],
-		"auth_type":   "jwt",
+		"auth_type":   auth.JWT,
 	}
 	return generatePolicy(strconv.Itoa(claims.Identifier), "Allow", req.MethodArn, context)
 }

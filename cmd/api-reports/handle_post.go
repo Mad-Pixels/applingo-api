@@ -10,6 +10,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 
@@ -17,7 +18,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ openapi.QueryParams, reqCtx api.ReqCtx) (any, *api.HandleError) {
+	if !reqCtx.HasPermissions(auth.GetPermissionLevel(auth.Device)) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
+
 	var req applingoapi.RequestPostReportsV1
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}

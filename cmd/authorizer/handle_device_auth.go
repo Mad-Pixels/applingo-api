@@ -20,7 +20,7 @@ func handleDeviceAuth(req events.APIGatewayCustomAuthorizerRequestTypeRequest) (
 	}
 	context := map[string]interface{}{
 		"permissions": auth.GetPermissionLevel(auth.Device),
-		"auth_type":   auth.Device,
+		"auth_type":   auth.HMAC,
 	}
 	return generatePolicy("device", "Allow", req.MethodArn, context)
 }

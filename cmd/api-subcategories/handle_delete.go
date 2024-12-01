@@ -9,13 +9,18 @@ import (
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
+	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
-func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams, reqCtx api.ReqCtx) (any, *api.HandleError) {
+	if !reqCtx.HasPermissions(auth.GetPermissionLevel(auth.User)) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
+
 	validSideValues := map[applingoapi.BaseSideEnum]struct{}{
 		applingoapi.Front: {},
 		applingoapi.Back:  {},
