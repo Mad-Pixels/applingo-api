@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -19,8 +21,9 @@ func handleDeviceAuth(req events.APIGatewayCustomAuthorizerRequestTypeRequest) (
 		return generatePolicy("", "Deny", req.MethodArn, nil)
 	}
 	context := map[string]interface{}{
-		"permissions": auth.GetPermissionLevel(auth.Device),
-		"auth_type":   auth.HMAC,
+		"permissions": strconv.Itoa(auth.GetPermissionLevel(auth.Device)),
+		"role":        strconv.Itoa(int(auth.Device)),
+		"kind":        strconv.Itoa(int(auth.HMAC)),
 	}
 	return generatePolicy("device", "Allow", req.MethodArn, context)
 }

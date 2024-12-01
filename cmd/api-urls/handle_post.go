@@ -16,11 +16,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams, reqCtx api.ReqCtx) (any, *api.HandleError) {
-	if !reqCtx.HasPermissions(auth.GetPermissionLevel(auth.Device)) {
-		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
-	}
-
+func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	var req applingoapi.RequestPostUrlsV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
@@ -40,6 +36,9 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 }
 
 func handleUpload(ctx context.Context, req applingoapi.RequestPostUrlsV1) (any, *api.HandleError) {
+	if api.MustGetMetaData(ctx).IsDevice() || !api.MustGetMetaData(ctx).HasPermissions(auth.User) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
 	if req.Identifier == "" {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("missing required fields")}
 	}
@@ -55,6 +54,9 @@ func handleUpload(ctx context.Context, req applingoapi.RequestPostUrlsV1) (any, 
 }
 
 func handleDownload(ctx context.Context, req applingoapi.RequestPostUrlsV1) (any, *api.HandleError) {
+	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
 	if req.Identifier == "" {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("missing required fields")}
 	}

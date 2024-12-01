@@ -19,13 +19,11 @@ func handleUserAuth(req events.APIGatewayCustomAuthorizerRequestTypeRequest) (ev
 		log.Error().Err(err).Msg("JWT authentication failed")
 		return generatePolicy("", "Deny", req.MethodArn, nil)
 	}
-
-	permLevel := auth.GetPermissionLevel(claims.Role)
 	context := map[string]interface{}{
-		"user_id":     claims.Identifier,
-		"permissions": permLevel,
-		"role":        auth.RoleNames[claims.Role],
-		"auth_type":   auth.JWT,
+		"identifier":  claims.Identifier,
+		"permissions": strconv.Itoa(auth.GetPermissionLevel(auth.Device)),
+		"role":        strconv.Itoa(int(auth.Device)),
+		"kind":        strconv.Itoa(int(auth.HMAC)),
 	}
 	return generatePolicy(strconv.Itoa(claims.Identifier), "Allow", req.MethodArn, context)
 }

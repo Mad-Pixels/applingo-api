@@ -20,8 +20,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ openapi.QueryParams, reqCtx api.ReqCtx) (any, *api.HandleError) {
-	if !reqCtx.HasPermissions(auth.GetPermissionLevel(auth.User)) {
+func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+	if api.MustGetMetaData(ctx).IsDevice() || !api.MustGetMetaData(ctx).HasPermissions(auth.User) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
 
