@@ -526,6 +526,10 @@ func BoolToInt(b bool) int {
     }
     return 0
 }
+
+func IntToBool(i int) bool {
+    return i != 0
+}
 `
 
 func main() {

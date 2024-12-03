@@ -18,6 +18,10 @@ import (
 )
 
 func handlePost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+	if !api.MustGetMetaData(ctx).IsDevice() {
+		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
+	}
+
 	var req applingoapi.RequestPostReportsV1
 	if err := serializer.UnmarshalJSON(raw, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}

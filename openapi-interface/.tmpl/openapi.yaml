@@ -4,6 +4,9 @@ info:
   description: "${project}-${name} endpoint"
   version: "1.0"
 
+security:
+  - LambdaAuthorizer: []
+
 paths:
   /v1/reports:
     post:
@@ -373,6 +376,18 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
   
 components:
+  securitySchemes:
+    LambdaAuthorizer:
+      type: apiKey
+      name: x-api-auth
+      in: header
+      x-amazon-apigateway-authtype: custom
+      x-amazon-apigateway-authorizer:
+        type: request
+        identitySource: method.request.header.x-api-auth
+        authorizerUri: arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${authorizer}/invocations
+        authorizerResultTtlInSeconds: 300
+ 
   headers:
     AccessControlAllowOrigin:
       schema:
@@ -653,8 +668,8 @@ components:
         - name
         - category
         - subcategory
+        - dictionary
         - author
-        - filename
         - description
         - created
         - rating
@@ -666,10 +681,10 @@ components:
           $ref: '#/components/schemas/BaseExtendedRequired'
         subcategory:
           $ref: '#/components/schemas/BaseLangTagRequired'
+        dictionary: 
+          $ref: '#/components/schemas/BaseFilenameRequired'
         author:
           $ref: '#/components/schemas/BaseStringRequired'
-        filename:
-          $ref: '#/components/schemas/BaseFilenameRequired'
         description:
           $ref: '#/components/schemas/BaseDescriptionRequired'
         created:

@@ -14,6 +14,7 @@ locals {
     api_reports       = var.invoke_lambdas_arns["api-reports"].arn
     api_levels        = var.invoke_lambdas_arns["api-levels"].arn
     api_urls          = var.invoke_lambdas_arns["api-urls"].arn
+    authorizer        = var.invoke_lambdas_arns["authorizer"].arn
   })
 }
 
