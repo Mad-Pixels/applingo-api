@@ -67,17 +67,16 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	}
 
 	var (
-		wg      sync.WaitGroup
-		itemsCh = make(chan applingoapi.SubcategoryItemV1, len(items))
+		wg       sync.WaitGroup
+		itemsCh  = make(chan applingosubcategory.SchemaItem, len(items))
+		response = applingoapi.CategoriesData{}
 	)
-	response := applingoapi.CategoriesData{}
-
 	for _, item := range items {
 		wg.Add(1)
 		go func(item map[string]types.AttributeValue) {
 			defer wg.Done()
 
-			var category applingoapi.SubcategoryItemV1
+			var category applingosubcategory.SchemaItem
 			if err := attributevalue.UnmarshalMap(item, &category); err != nil {
 				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
 				return
@@ -91,7 +90,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 	}()
 
 	for item := range itemsCh {
-		switch item.Side {
+		switch applingoapi.BaseSideEnum(item.Side) {
 		case applingoapi.Front:
 			response.FrontSide = append(response.FrontSide, applingoapi.SubcategoryItemV1{
 				Code: item.Code,

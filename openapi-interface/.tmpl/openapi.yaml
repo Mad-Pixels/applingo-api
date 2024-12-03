@@ -668,8 +668,8 @@ components:
         - name
         - category
         - subcategory
+        - dictionary
         - author
-        - filename
         - description
         - created
         - rating
@@ -681,10 +681,10 @@ components:
           $ref: '#/components/schemas/BaseExtendedRequired'
         subcategory:
           $ref: '#/components/schemas/BaseLangTagRequired'
+        dictionary: 
+          $ref: '#/components/schemas/BaseFilenameRequired'
         author:
           $ref: '#/components/schemas/BaseStringRequired'
-        filename:
-          $ref: '#/components/schemas/BaseFilenameRequired'
         description:
           $ref: '#/components/schemas/BaseDescriptionRequired'
         created:
