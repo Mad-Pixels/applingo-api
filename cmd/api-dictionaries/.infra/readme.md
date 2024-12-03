@@ -16,8 +16,9 @@ timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
 
 curl -X GET "${url}" -H "Content-Type: application/json"  \
-    -H "x-timestamp: ${timestamp}" \
-    -H "x-signature: ${signature}"
+    -H "x-api-auth: ${timestamp}:::${signature}" 
+
+curl -X GET "${url}" 
 
 timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')

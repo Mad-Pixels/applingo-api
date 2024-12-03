@@ -379,12 +379,12 @@ components:
   securitySchemes:
     LambdaAuthorizer:
       type: apiKey
-      name: Authorization
+      name: x-api-auth
       in: header
       x-amazon-apigateway-authtype: custom
       x-amazon-apigateway-authorizer:
         type: request
-        identitySource: method.request.header.Authorization,method.request.header.x-timestamp,method.request.header.x-signature
+        identitySource: method.request.header.x-api-auth
         authorizerUri: arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${authorizer}/invocations
         authorizerResultTtlInSeconds: 300
  

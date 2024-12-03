@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/logger"
@@ -11,6 +12,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
 )
+
+const tokenSeparator = ":::"
 
 var (
 	deviceToken = os.Getenv("DEVICE_API_TOKEN")
@@ -49,13 +52,20 @@ func generatePolicy(principalID string, effect string, resource string, context 
 }
 
 func handler(ctx context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	switch {
-	case req.Headers[auth.HeaderTimestamp] != "" && req.Headers[auth.HeaderSignature] != "":
-		return handleDeviceAuth(req)
-	case req.Headers[auth.HeaderAuth] != "":
-		return handleUserAuth(req)
+	authHeader, ok := req.Headers["x-api-auth"]
+	if !ok || authHeader == "" {
+		log.Error().Msg("x-api-auth header missing")
+		return generatePolicy("", "Deny", req.MethodArn, nil)
+	}
+
+	parts := strings.Split(authHeader, tokenSeparator)
+	switch len(parts) {
+	case 1:
+		return handleUserAuth(parts[0], req)
+	case 2:
+		return handleDeviceAuth(parts[0], parts[1], req)
 	default:
-		log.Error().Msg("authorization failed: No valid authentication headers found")
+		log.Error().Msg("Invalid x-api-auth header format")
 		return generatePolicy("", "Deny", req.MethodArn, nil)
 	}
 }
