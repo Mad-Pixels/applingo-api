@@ -2,8 +2,6 @@ package cloud
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"time"
 
@@ -11,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -84,7 +83,7 @@ func (b *Bucket) UploadURL(ctx context.Context, key, bucket, contentType string)
 		ContentType: aws.String(contentType),
 	}, s3.WithPresignExpires(uploadTimeout))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate upload URL: %w", err)
+		return "", errors.Wrap(err, "failed to generate upload URL")
 	}
 	return req.URL, nil
 }
@@ -100,7 +99,7 @@ func (b *Bucket) DownloadURL(ctx context.Context, key, bucket string) (string, e
 		Key:    aws.String(key),
 	}, s3.WithPresignExpires(downloadTimeout))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate download URL: %w", err)
+		return "", errors.Wrap(err, "failed to generate download URL")
 	}
 	return req.URL, nil
 }
@@ -121,11 +120,11 @@ func (b *Bucket) DownloadToWriter(ctx context.Context, key, bucket string, w io.
 		if errors.As(err, &s3Err) {
 			return ErrBucketObjectNotFound
 		}
-		return fmt.Errorf("failed to download object: %w", err)
+		return errors.Wrap(err, "failed to download object")
 	}
 	_, err = w.Write(buffer.Bytes())
 	if err != nil {
-		return fmt.Errorf("failed to write to buffer: %w", err)
+		return errors.Wrap(err, "failed write to buffer")
 	}
 	return nil
 }
@@ -145,7 +144,7 @@ func (b *Bucket) Delete(ctx context.Context, key, bucket string) error {
 		if errors.As(err, &s3Err) {
 			return ErrBucketObjectNotFound
 		}
-		return fmt.Errorf("failed to delete object: %w", err)
+		return errors.Wrap(err, "failed to delete object")
 	}
 	return nil
 }
@@ -165,7 +164,7 @@ func (b *Bucket) Get(ctx context.Context, key, bucket string) (io.ReadCloser, er
 		if errors.As(err, &s3Err) {
 			return nil, ErrBucketObjectNotFound
 		}
-		return nil, fmt.Errorf("failed to get object: %w", err)
+		return nil, errors.Wrap(err, "failed to get object")
 	}
 	return result.Body, nil
 }
@@ -183,7 +182,7 @@ func (b *Bucket) Put(ctx context.Context, key, bucket string, body io.Reader, co
 		ContentType: aws.String(contentType),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to upload object: %w", err)
+		return errors.Wrap(err, "failed to upload object")
 	}
 	return nil
 }
@@ -203,7 +202,29 @@ func (b *Bucket) Exists(ctx context.Context, key, bucket string) (bool, error) {
 		if errors.As(err, &s3Err) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check object existence: %w", err)
+		return false, errors.Wrap(err, "failed to check object existence")
 	}
 	return true, nil
+}
+
+// Read file from bucket and return content as []byte.
+func (b *Bucket) Read(ctx context.Context, key, bucket string) ([]byte, error) {
+	if err := validateInput(key, bucket); err != nil {
+		return nil, err
+	}
+
+	result, err := b.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get object")
+	}
+	defer result.Body.Close()
+
+	data, err := io.ReadAll(result.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read content from file")
+	}
+	return data, nil
 }
