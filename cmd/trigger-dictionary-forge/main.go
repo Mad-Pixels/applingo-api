@@ -26,8 +26,8 @@ var (
 var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	serviceForgeBucket      = os.Getenv("SERVICE_FORGE_BUCKET")
-	openapiModel            = os.Getenv("OPENAPI_MODEL")
-	openapiKey              = os.Getenv("OPENAPI_KEY")
+	openaiModel             = os.Getenv("OPENAI_MODEL")
+	openaiKey               = os.Getenv("OPENAI_KEY")
 	awsRegion               = os.Getenv("AWS_REGION")
 
 	validate   *validator.Validator
@@ -50,7 +50,7 @@ func init() {
 // TODO: get content from S3 file as string.
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
 	request := GPTRequest{
-		Model: openapiModel,
+		Model: openaiModel,
 		Messages: []Message{
 			{
 				Role:    "user",
