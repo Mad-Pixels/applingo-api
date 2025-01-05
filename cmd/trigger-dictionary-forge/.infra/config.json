@@ -30,6 +30,7 @@
   "envs": {
     "OPENAI_KEY": "${var_openai_key}",
     "OPENAI_MODEL": "${var_openai_model}",
+    "OPENAI_PROMPT": "${var_forge_prompt}",
     "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",
     "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
   }

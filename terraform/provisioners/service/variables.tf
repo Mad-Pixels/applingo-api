@@ -40,3 +40,8 @@ variable "jwt_secret" {
   description = "Auth JWT secret which use for lambda request validate from external"
   type        = string
 }
+
+variable "forge_prompt" {
+  description = "OpenAI prompt filepath"
+  type        = string
+}

@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"runtime/debug"
-	"time"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -26,13 +24,13 @@ var (
 var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	serviceForgeBucket      = os.Getenv("SERVICE_FORGE_BUCKET")
+	openaiPrompt            = os.Getenv("OPENAI_PROMPT")
 	openaiModel             = os.Getenv("OPENAI_MODEL")
 	openaiKey               = os.Getenv("OPENAI_KEY")
 	awsRegion               = os.Getenv("AWS_REGION")
 
-	validate   *validator.Validator
-	s3Bucket   *cloud.Bucket
-	httpClient *http.Client
+	validate *validator.Validator
+	s3Bucket *cloud.Bucket
 )
 
 func init() {
@@ -44,22 +42,25 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
-	httpClient = &http.Client{Timeout: time.Duration(requestTimeout) * time.Second}
 }
 
-// TODO: get content from S3 file as string.
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
+	prompt, err := s3Bucket.Read(ctx, openaiPrompt, serviceForgeBucket)
+	if err != nil {
+		return err
+	}
+
 	request := GPTRequest{
 		Model: openaiModel,
 		Messages: []Message{
 			{
 				Role:    "user",
-				Content: "",
+				Content: string(prompt),
 			},
 		},
 		Temperature: temperature,
 	}
-	data, err := serializer.MarshalJSON(request)
+	payload, err := serializer.MarshalJSON(request)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
