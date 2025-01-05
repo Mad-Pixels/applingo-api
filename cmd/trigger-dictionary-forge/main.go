@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	url = ""
+	url = "https://api.openai.com/v1/chat/completions"
 
 	requestTimeout = 90
 	temperature    = 0.7
@@ -53,7 +54,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err != nil {
 		return errors.Wrap(err, "failed get prompt")
 	}
-	httpcli := httpclient.New().WithTimeout(time.Duration(requestTimeout))
+	httpcli := httpclient.New().WithTimeout(time.Duration(requestTimeout) * time.Second)
 
 	request := GPTRequest{
 		Model: openaiModel,
@@ -74,11 +75,30 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		"Authorization": "Bearer " + openaiKey,
 	}
 
-	response, err := httpcli.Post(ctx, url, string(payload), headers)
+	responseRaw, err := httpcli.Post(ctx, url, string(payload), headers)
 	if err != nil {
 		return errors.Wrap(err, "failed get response from OpenAI")
 	}
+	var response GPTResponse
+	if err := serializer.UnmarshalJSON([]byte(responseRaw), &response); err != nil {
+		return errors.Wrap(err, "failed to parse GPT response")
+	}
+	if len(response.Choices) == 0 {
+		return errors.New("empty response form GPT")
+	}
 
+	cvsData, err := toCSV(response.Choices[0].Message.Content)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert GPT response to CSV")
+	}
+	err = s3Bucket.Put(ctx, "filename", serviceProcessingBucket, bytes.NewReader(cvsData), cloud.ContentTypeCSV)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload CSV to S3")
+	}
+
+	log.Info().
+		Str("filename", "set filename").
+		Msg("successfully processed and uploaded GPT response")
 	return nil
 }
 

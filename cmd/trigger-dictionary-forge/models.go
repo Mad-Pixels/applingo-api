@@ -12,13 +12,14 @@ type GPTRequest struct {
 }
 
 type GPTResponse struct {
-	ID      string   `json:"id"`
-	Object  string   `json:"object"`
-	Created int64    `json:"created"`
-	Choices []Choice `json:"choices"`
-}
-
-type Choice struct {
-	Index   int     `json:"index"`
-	Message Message `json:"message"`
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int64  `json:"created"`
+	Choices []struct {
+		Index   int `json:"index"`
+		Message struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
 }
