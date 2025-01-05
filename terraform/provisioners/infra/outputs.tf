@@ -2,6 +2,14 @@ output "ecr-repository-api_url" {
   value = module.ecr-repository-api.repository_url
 }
 
+output "s3-forge-bucket_name" {
+  value = module.s3-forge-bucket.s3_name
+}
+
+output "s3-forge-bucket_arn" {
+  value = module.s3-forge-bucket.s3_arn
+}
+
 output "s3-dictionary-bucket_name" {
   value = module.s3-dictionary-bucket.s3_name
 }

@@ -5,6 +5,13 @@ module "ecr-repository-api" {
   repository_name = "images"
 }
 
+module "s3-forge-bucket" {
+  source = "../../modules/s3"
+
+  project     = local.project
+  bucket_name = "forge"
+}
+
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 

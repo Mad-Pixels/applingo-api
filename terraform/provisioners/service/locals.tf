@@ -25,6 +25,8 @@ locals {
     var_jwt_secret              = var.jwt_secret
     var_device_api_token        = var.device_api_token
     log_errors_bucket_name      = data.terraform_remote_state.infra.outputs.s3-errors-bucket_name
+    forge_bucket_name           = data.terraform_remote_state.infra.outputs.s3-forge-bucket_name
+    forge_bucket_arn            = data.terraform_remote_state.infra.outputs.s3-forge-bucket_arn
     dictionary_bucket_name      = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
     processing_bucket_name      = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
     log_errors_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-errors-bucket_arn
