@@ -47,6 +47,7 @@ func init() {
 	httpClient = &http.Client{Timeout: time.Duration(requestTimeout) * time.Second}
 }
 
+// TODO: get content from S3 file as string.
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
 	request := GPTRequest{
 		Model: openapiModel,

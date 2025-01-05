@@ -26,7 +26,7 @@
     ]
   },
   "memory_size": 128,
-  "timeout": 50,
+  "timeout": 120,
   "envs": {
     "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",
     "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
