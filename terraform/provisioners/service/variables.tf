@@ -25,12 +25,6 @@ variable "device_api_token" {
   type        = string
 }
 
-variable "openai_model" {
-  description = "OpenAI GPT model name"
-  type        = string
-  default     = "gpt-3.5-turbo"
-}
-
 variable "openai_key" {
   description = "OpenAI request key"
   type        = string
@@ -38,10 +32,5 @@ variable "openai_key" {
 
 variable "jwt_secret" {
   description = "Auth JWT secret which use for lambda request validate from external"
-  type        = string
-}
-
-variable "forge_prompt" {
-  description = "OpenAI prompt filepath"
   type        = string
 }

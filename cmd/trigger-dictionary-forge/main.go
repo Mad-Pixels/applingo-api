@@ -29,76 +29,101 @@ var (
 var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	serviceForgeBucket      = os.Getenv("SERVICE_FORGE_BUCKET")
-	openaiPrompt            = os.Getenv("OPENAI_PROMPT")
-	openaiModel             = os.Getenv("OPENAI_MODEL")
 	openaiKey               = os.Getenv("OPENAI_KEY")
 	awsRegion               = os.Getenv("AWS_REGION")
 
+	httpCli  *httpclient.ClientWrapper
 	validate *validator.Validator
 	s3Bucket *cloud.Bucket
 )
 
 func init() {
 	debug.SetGCPercent(500)
-	validate = validator.New()
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(awsRegion))
 	if err != nil {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
+	httpCli = httpclient.New().WithTimeout(time.Duration(requestTimeout) * time.Second)
 	s3Bucket = cloud.NewBucket(cfg)
+	validate = validator.New()
 }
 
-func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
-	prompt, err := s3Bucket.Read(ctx, openaiPrompt, serviceForgeBucket)
+func promptPrepare(ctx context.Context, req ForgeRequest) (string, error) {
+	tpl, err := s3Bucket.Read(ctx, req.OpenAIPromptName, serviceForgeBucket)
 	if err != nil {
-		return errors.Wrap(err, "failed get prompt")
+		return "", errors.Wrap(err, "failed get prompt")
 	}
-	httpcli := httpclient.New().WithTimeout(time.Duration(requestTimeout) * time.Second)
+	content, err := processTemplate(ctx, string(tpl), req)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot prepare promt content")
+	}
+	return content, nil
+}
 
-	request := GPTRequest{
-		Model: openaiModel,
+func sendGPTResponse(ctx context.Context, model string, content string) (string, error) {
+	req := GPTRequest{
+		Model: model,
 		Messages: []Message{
 			{
-				Role:    "user",
-				Content: string(prompt),
+				Role:    "forge",
+				Content: content,
 			},
 		},
 		Temperature: temperature,
-	}
-	payload, err := serializer.MarshalJSON(request)
-	if err != nil {
-		return errors.Wrap(err, "request serialization error")
 	}
 	headers := map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": "Bearer " + openaiKey,
 	}
-
-	responseRaw, err := httpcli.Post(ctx, url, string(payload), headers)
+	payload, err := serializer.MarshalJSON(req)
 	if err != nil {
-		return errors.Wrap(err, "failed get response from OpenAI")
-	}
-	var response GPTResponse
-	if err := serializer.UnmarshalJSON([]byte(responseRaw), &response); err != nil {
-		return errors.Wrap(err, "failed to parse GPT response")
-	}
-	if len(response.Choices) == 0 {
-		return errors.New("empty response form GPT")
+		return "", errors.Wrap(err, "openai request serialization failed")
 	}
 
-	cvsData, err := toCSV(response.Choices[0].Message.Content)
+	body, err := httpCli.Post(ctx, url, string(payload), headers)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert GPT response to CSV")
+		return "", errors.Wrap(err, "failed to get response from openai")
 	}
-	err = s3Bucket.Put(ctx, "filename", serviceProcessingBucket, bytes.NewReader(cvsData), cloud.ContentTypeCSV)
+	var resp GPTResponse
+	if err := serializer.UnmarshalJSON([]byte(body), &resp); err != nil {
+		return "", errors.Wrap(err, "failed to parse response from openai")
+	}
+	if len(resp.Choices) == 0 {
+		return "", errors.New("got empty response")
+	}
+	return resp.Choices[0].Message.Content, nil
+}
+
+func handler(ctx context.Context, log zerolog.Logger, body json.RawMessage) error {
+	var req ForgeRequest
+	if err := serializer.UnmarshalJSON(body, &req); err != nil {
+		return errors.Wrap(err, "bad request, cannot deserialize request data")
+	}
+	if err := validate.ValidateStruct(&req); err != nil {
+		return errors.Wrap(err, "bad request, validateion failed")
+	}
+
+	prompt, err := promptPrepare(ctx, req)
+	if err != nil {
+		return err
+	}
+	content, err := sendGPTResponse(ctx, req.OpenAIModelName, prompt)
+	if err != nil {
+		return errors.Wrap(err, "failed process openapi request")
+	}
+	table, err := processCSV(content)
+	if err != nil {
+		return errors.Wrap(err, "failed process CSV from response body")
+	}
+
+	err = s3Bucket.Put(ctx, req.DictionaryName, serviceProcessingBucket, bytes.NewReader(table), cloud.ContentTypeCSV)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload CSV to S3")
 	}
-
 	log.Info().
-		Str("filename", "set filename").
-		Msg("successfully processed and uploaded GPT response")
+		Str("filename", req.DictionaryName).
+		Msg("dictionary was created")
 	return nil
 }
 
