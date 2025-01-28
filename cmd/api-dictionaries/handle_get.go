@@ -92,6 +92,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 			Public:      applingodictionary.IntToBool(item.IsPublic),
 			Created:     int64(item.Created),
 			Words:       int32(item.Words),
+			Subcategory: item.Subcategory,
 			Description: item.Description,
 			Dictionary:  item.Dictionary,
 			Author:      item.Author,
