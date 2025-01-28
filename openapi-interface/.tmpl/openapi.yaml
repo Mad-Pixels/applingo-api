@@ -676,6 +676,7 @@ components:
         - public
         - level
         - topic
+        - words
       properties:
         name:
           $ref: '#/components/schemas/BaseExtendedRequired'
@@ -693,6 +694,10 @@ components:
           $ref: '#/components/schemas/BaseLangLevelRequired'
         topic: 
           $ref: '#/components/schemas/BaseStringRequired'
+        words:
+          type: integer
+          description: "Words count in dictionary"
+          format: int32
         category:
           $ref: '#/components/schemas/BaseCategoryEnum'
         rating:
