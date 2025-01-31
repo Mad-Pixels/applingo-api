@@ -665,6 +665,7 @@ components:
     DictionaryItemV1:
       type: object
       required:
+        - id
         - name
         - category
         - subcategory
@@ -678,6 +679,8 @@ components:
         - topic
         - words
       properties:
+        id:
+          $ref: '#/components/schemas/BaseStringRequired'
         name:
           $ref: '#/components/schemas/BaseExtendedRequired'
         subcategory:
