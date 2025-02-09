@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
@@ -35,7 +34,7 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 }
 
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	opKey := fmt.Sprintf("%s %s", req.HTTPMethod, req.Path)
+	opKey := req.RequestContext.OperationName
 
 	mCtx, err := ctxWithAuth(ctx, req)
 	if err != nil {

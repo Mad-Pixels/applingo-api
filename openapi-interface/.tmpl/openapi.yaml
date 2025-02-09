@@ -1,4 +1,4 @@
-openapi: "3.0.1"
+openapi: "3.0.3"
 info:
   title: "${project}"
   description: "${project}-${name} endpoint"
@@ -10,7 +10,7 @@ security:
 paths:
   /v1/reports:
     post:
-      operationId: PostReportsV1
+      operationId: postReportsV1
       requestBody:
         required: true
         content:
@@ -66,7 +66,7 @@ paths:
 
   /v1/urls:
     post:
-      operationId: PostUrlsV1
+      operationId: postUrlsV1
       requestBody:
         required: true
         content:
@@ -122,7 +122,7 @@ paths:
 
   /v1/dictionaries:
     get:
-      operationId: GetDictionariesV1
+      operationId: getDictionariesV1
       parameters:
         - $ref: '#/components/parameters/ParamDictionariesSubcategoryOptional'
         - $ref: '#/components/parameters/ParamDictionariesLevelOptional'
@@ -151,7 +151,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     post:
-      operationId: PostDictionariesV1
+      operationId: postDictionariesV1
       requestBody:
         required: true
         content:
@@ -173,8 +173,37 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    patch: 
+      operationId: patchStatisticDictionariesV1
+      parameters:
+        - $ref: '#/components/parameters/ParamDictionariesNameRequired'
+        - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
+        - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatchStatisticDictionariesV1'
+      responses:
+        "204":
+          description: "Dictionary successfully patched"
+        default:
+          description: "Got error message"
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
+        responses:
+          default:
+            statusCode: "204"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy" 
     delete:
-      operationId: DeleteDictionariesV1
+      operationId: deleteDictionariesV1
       parameters: 
         - $ref: '#/components/parameters/ParamDictionariesNameRequired'
         - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
@@ -224,7 +253,7 @@ paths:
 
   /v1/subcategories:
     get:
-      operationId: GetSubcategoriesV1
+      operationId: getSubcategoriesV1
       parameters:
         - $ref: '#/components/parameters/ParamSubcategoriesSide'
       responses:
@@ -249,7 +278,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     post:
-      operationId: PostSubcategoriesV1
+      operationId: postSubcategoriesV1
       requestBody:
         required: true
         content:
@@ -278,7 +307,7 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     delete:
-      operationId: "DeleteSubcategoriesV1"
+      operationId: deleteSubcategoriesV1
       parameters:
         - $ref: '#/components/parameters/ParamSubcategoriesSide' 
         - $ref: '#/components/parameters/ParamSubcategoriesCodeRequired'
@@ -327,7 +356,7 @@ paths:
   
   /v1/levels:
     get:
-      operationId: GetLevelsV1
+      operationId: getLevelsV1
       responses:
         "200":
           description: "Successfully retrieved levels"
@@ -500,7 +529,7 @@ components:
       maxLength: 5
       pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
       x-oapi-codegen-extra-tags:
-        validate: "required,bcp47_language_tag"
+        validate: "required"
 
     BaseLangTagOptional:
       type: string
@@ -508,7 +537,7 @@ components:
       maxLength: 5
       pattern: "^[a-zA-Z]{2}-[a-zA-Z]{2}$" 
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,bcp47_language_tag"
+        validate: "omitempty"
 
     BaseLangLevelRequired:
       type: string
@@ -599,7 +628,26 @@ components:
       format: uri
       x-oapi-codegen-extra-tags:
         validate: "omitempty,uri" 
-        
+    
+    BasePagination:
+      description: "A token for pagination, encoded in Base64 format"
+      type: string
+      format: base64
+      maxLength: 1048576
+      pattern: ^[A-Za-z0-9+/]*={0,2}$
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,base64"
+
+    BaseIncrementChoice:
+      description: "Op for increment/decrement or no change"
+      type: string
+      enum:
+        - increase
+        - decrease
+        - no_change
+      x-oapi-codegen-extra-tags:
+        validate: "required,oneof=increase decrease no_change"
+
     BaseSideEnum:
       type: string
       enum:
@@ -674,6 +722,7 @@ components:
         - description
         - created
         - rating
+        - downloads
         - public
         - level
         - topic
@@ -707,6 +756,10 @@ components:
           type: integer
           description: "Dictionary rating"
           format: int32
+        downloads:
+          type: integer
+          description: "Dictionary download counter"
+          format: int64
         public:
           type: boolean
           description: "Visibility of the dictionary"
@@ -753,10 +806,8 @@ components:
             $ref: '#/components/schemas/DictionaryItemV1'
         last_evaluated:
           type: string
-          description: "A token for pagination, encoded in Base64 format"
-          format: base64
-          maxLength: 1048576
-          pattern: ^[A-Za-z0-9+/]*={0,2}$
+          items:
+            $ref: '#/components/schemas/BasePagination'
 
     UrlsData:
       type: object
@@ -830,6 +881,17 @@ components:
         public:
           type: boolean
           description: "Visibility of the dictionary"
+
+    RequestPatchStatisticDictionariesV1:
+      type: object
+      required:
+        - downloads
+        - rating
+      properties:
+        downloads:
+          $ref: '#/components/schemas/BaseIncrementChoice'
+        rating:
+          $ref: '#/components/schemas/BaseIncrementChoice'
 
     RequestPostReportsV1:
       type: object
@@ -946,7 +1008,7 @@ components:
       schema:
         $ref: '#/components/schemas/BaseLangTagRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,bcp47_language_tag"
+        validate: "required"
 
     ParamDictionariesSubcategoryOptional:
       name: subcategory
@@ -955,7 +1017,7 @@ components:
       schema:
         $ref: '#/components/schemas/BaseLangTagOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,bcp47_language_tag"
+        validate: "omitempty"
     
     ParamDictionariesNameRequired:
       name: name 

@@ -34,7 +34,7 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/levels": handleGet,
+				"getLevelsV1": handleGet,
 			},
 		).Handle,
 	)

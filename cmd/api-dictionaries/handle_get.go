@@ -91,6 +91,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 			Id:          item.Id,
 			Category:    applingoapi.BaseCategoryEnum(item.Category),
 			Public:      applingodictionary.IntToBool(item.IsPublic),
+			Downloads:   int64(item.Downloads),
 			Created:     int64(item.Created),
 			Rating:      int32(item.Rating),
 			Words:       int32(item.Words),
