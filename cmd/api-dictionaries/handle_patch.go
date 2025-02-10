@@ -47,27 +47,27 @@ func handlePatchStatistic(ctx context.Context, _ zerolog.Logger, rawMessage json
 
 	id := utils.GenerateDictionaryID(params.Name, params.Author)
 	key := map[string]types.AttributeValue{
-		"id":          &types.AttributeValueMemberS{Value: id},
-		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},
+		applingodictionary.ColumnId:          &types.AttributeValueMemberS{Value: id},
+		applingodictionary.ColumnSubcategory: &types.AttributeValueMemberS{Value: params.Subcategory},
 	}
 
 	updateBuilder := expression.UpdateBuilder{}
 
 	switch req.Downloads {
 	case applingoapi.Increase:
-		updateBuilder = updateBuilder.Add(expression.Name("downloads"), expression.Value(1))
+		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnDownloads), expression.Value(1))
 	case applingoapi.Decrease:
-		updateBuilder = updateBuilder.Add(expression.Name("downloads"), expression.Value(-1))
+		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnDownloads), expression.Value(-1))
 	}
 
 	switch req.Rating {
 	case applingoapi.Increase:
-		updateBuilder = updateBuilder.Add(expression.Name("rating"), expression.Value(1))
+		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnRating), expression.Value(1))
 	case applingoapi.Decrease:
-		updateBuilder = updateBuilder.Add(expression.Name("rating"), expression.Value(-1))
+		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnRating), expression.Value(-1))
 	}
 
-	condition := expression.AttributeExists(expression.Name("id"))
+	condition := expression.AttributeExists(expression.Name(applingodictionary.ColumnId))
 	if err := dbDynamo.Update(ctx, applingodictionary.TableName, key, updateBuilder, condition); err != nil {
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {

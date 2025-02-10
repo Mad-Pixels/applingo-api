@@ -105,7 +105,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		})
 	}
 	if result.LastEvaluatedKey != nil {
-		var lastEvaluatedKeyMap map[string]interface{}
+		var lastEvaluatedKeyMap map[string]any
 		if err = attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap); err != nil {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
@@ -172,8 +172,8 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	qb.Limit(pageLimit)
 
-	additionalFilter := expression.Name("dictionary").AttributeExists().And(
-		expression.Name("dictionary").NotEqual(expression.Value("")),
+	additionalFilter := expression.Name(applingodictionary.ColumnDictionary).AttributeExists().And(
+		expression.Name(applingodictionary.ColumnDictionary).NotEqual(expression.Value("")),
 	)
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {

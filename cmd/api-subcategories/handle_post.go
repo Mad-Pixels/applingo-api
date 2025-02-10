@@ -46,7 +46,7 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 		ctx,
 		applingosubcategory.TableName,
 		dynamoItem,
-		expression.AttributeNotExists(expression.Name("id")),
+		expression.AttributeNotExists(expression.Name(applingosubcategory.ColumnId)),
 	); err != nil {
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {

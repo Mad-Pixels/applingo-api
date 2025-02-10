@@ -40,7 +40,7 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 
 	id := utils.GenerateSubcategoryID(string(params.Code), string(*params.Side))
 	result, err := dbDynamo.Get(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
-		"id": &types.AttributeValueMemberS{Value: id},
+		applingosubcategory.ColumnId: &types.AttributeValueMemberS{Value: id},
 	})
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to get item for deletion")}
@@ -50,7 +50,7 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 	}
 
 	if err := dbDynamo.Delete(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
-		"id": &types.AttributeValueMemberS{Value: id},
+		applingosubcategory.ColumnId: &types.AttributeValueMemberS{Value: id},
 	}); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to delete item")}
 	}
