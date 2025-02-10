@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingosubcategory"
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
@@ -17,30 +17,24 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionaryDelete(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if api.MustGetMetaData(ctx).IsDevice() || !api.MustGetMetaData(ctx).HasPermissions(auth.User) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
 
-	validSideValues := map[applingoapi.BaseSideEnum]struct{}{
-		applingoapi.Front: {},
-		applingoapi.Back:  {},
-	}
-	paramSide, err := openapi.ParseEnumParam(baseParams.GetStringPtr("side"), validSideValues)
-	if err != nil {
-		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.Wrap(err, "invalid value for 'side' param")}
-	}
-	params := applingoapi.DeleteSubcategoriesV1Params{
-		Code: baseParams.GetStringDefault("code", ""),
-		Side: paramSide,
+	params := applingoapi.DeleteDictionaryV1Params{
+		Name:        baseParams.GetStringDefault("name", ""),
+		Author:      baseParams.GetStringDefault("author", ""),
+		Subcategory: baseParams.GetStringDefault("subcategory", ""),
 	}
 	if err := validate.ValidateStruct(&params); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	id := utils.GenerateSubcategoryID(string(params.Code), string(*params.Side))
-	result, err := dbDynamo.Get(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
-		applingosubcategory.ColumnId: &types.AttributeValueMemberS{Value: id},
+	id := utils.GenerateDictionaryID(params.Name, params.Author)
+	result, err := dbDynamo.Get(ctx, applingodictionary.TableName, map[string]types.AttributeValue{
+		"id":          &types.AttributeValueMemberS{Value: id},
+		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},
 	})
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to get item for deletion")}
@@ -49,8 +43,9 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 		return nil, &api.HandleError{Status: http.StatusNotFound, Err: errors.New("item not found")}
 	}
 
-	if err := dbDynamo.Delete(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
-		applingosubcategory.ColumnId: &types.AttributeValueMemberS{Value: id},
+	if err := dbDynamo.Delete(ctx, applingodictionary.TableName, map[string]types.AttributeValue{
+		"id":          &types.AttributeValueMemberS{Value: id},
+		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},
 	}); err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to delete item")}
 	}

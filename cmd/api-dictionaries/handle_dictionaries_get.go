@@ -24,7 +24,7 @@ import (
 
 const pageLimit = 60
 
-func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
@@ -128,7 +128,7 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
-		sortBy = applingoapi.ParamDictionariesSortEnum(*params.SortBy)
+		sortBy = applingoapi.ParamDictionarySortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
 

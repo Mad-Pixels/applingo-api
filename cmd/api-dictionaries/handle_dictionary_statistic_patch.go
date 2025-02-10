@@ -19,12 +19,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handlePatchStatistic(ctx context.Context, _ zerolog.Logger, rawMessage json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionaryStatisticPatch(ctx context.Context, _ zerolog.Logger, rawMessage json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
 
-	params := applingoapi.PatchStatisticDictionariesV1Params{
+	params := applingoapi.PatchDictionaryStatisticV1Params{
 		Name:        baseParams.GetStringDefault("name", ""),
 		Author:      baseParams.GetStringDefault("author", ""),
 		Subcategory: baseParams.GetStringDefault("subcategory", ""),
@@ -33,7 +33,7 @@ func handlePatchStatistic(ctx context.Context, _ zerolog.Logger, rawMessage json
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	var req applingoapi.RequestPatchStatisticDictionariesV1
+	var req applingoapi.RequestPatchDictionaryStatisticV1
 	if err := serializer.UnmarshalJSON(rawMessage, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -75,5 +75,5 @@ func handlePatchStatistic(ctx context.Context, _ zerolog.Logger, rawMessage json
 		}
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: errors.Wrap(err, "failed to update item")}
 	}
-	return openapi.DataResponseSuccess, nil
+	return nil, nil
 }

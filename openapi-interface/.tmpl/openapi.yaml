@@ -8,15 +8,15 @@ security:
   - LambdaAuthorizer: []
 
 paths:
-  /v1/reports:
+  /v1/report:
     post:
-      operationId: postReportsV1
+      operationId: postReportV1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestPostReportsV1'
+              $ref: '#/components/schemas/RequestPostReportV1'
       responses:
         "200":
           description: "Report successfully logged"
@@ -124,9 +124,9 @@ paths:
     get:
       operationId: getDictionariesV1
       parameters:
-        - $ref: '#/components/parameters/ParamDictionariesSubcategoryOptional'
-        - $ref: '#/components/parameters/ParamDictionariesLevelOptional'
-        - $ref: '#/components/parameters/ParamDictionariesSortEnum'
+        - $ref: '#/components/parameters/ParamDictionarySubcategoryOptional'
+        - $ref: '#/components/parameters/ParamDictionaryLevelOptional'
+        - $ref: '#/components/parameters/ParamDictionarySortEnum'
         - $ref: '#/components/parameters/ParamLastEvaluated'
         - $ref: '#/components/parameters/ParamPublic'
       responses:
@@ -150,14 +150,41 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+
+  /v1/dictionary:
     post:
-      operationId: postDictionariesV1
+      operationId: postDictionaryV1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestPostDictionariesV1'
+              $ref: '#/components/schemas/RequestPostDictionaryV1'
       responses:
         "201":
           description: "Dictionary successfully created"
@@ -173,41 +200,12 @@ paths:
             statusCode: "201"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
-    patch: 
-      operationId: patchStatisticDictionariesV1
-      parameters:
-        - $ref: '#/components/parameters/ParamDictionariesNameRequired'
-        - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
-        - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestPatchStatisticDictionariesV1'
-      responses:
-        "204":
-          description: "Dictionary successfully patched"
-        default:
-          description: "Got error message"
-          content:
-            application/json:
-              schema: 
-                $ref: '#/components/schemas/ResponseMessage'
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
-        responses:
-          default:
-            statusCode: "204"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy" 
     delete:
-      operationId: deleteDictionariesV1
+      operationId: deleteDictionaryV1
       parameters: 
-        - $ref: '#/components/parameters/ParamDictionariesNameRequired'
-        - $ref: '#/components/parameters/ParamDictionariesAuthorRequired'
-        - $ref: '#/components/parameters/ParamDictionariesSubcategoryRequired'
+        - $ref: '#/components/parameters/ParamDictionaryNameRequired'
+        - $ref: '#/components/parameters/ParamDictionaryAuthorRequired'
+        - $ref: '#/components/parameters/ParamDictionarySubcategoryRequired'
       responses:
         "204":
           description: "Dictionary successfully deleted"
@@ -251,11 +249,67 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
 
+  /v1/dictionary/statistic:
+    patch: 
+      operationId: patchDictionaryStatisticV1
+      parameters:
+        - $ref: '#/components/parameters/ParamDictionaryNameRequired'
+        - $ref: '#/components/parameters/ParamDictionaryAuthorRequired'
+        - $ref: '#/components/parameters/ParamDictionarySubcategoryRequired'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatchDictionaryStatisticV1'
+      responses:
+        "204":
+          description: "Dictionary successfully patched"
+        default:
+          description: "Got error message"
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_dictionaries}/invocations"
+        responses:
+          default:
+            statusCode: "204"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+
   /v1/subcategories:
     get:
       operationId: getSubcategoriesV1
       parameters:
-        - $ref: '#/components/parameters/ParamSubcategoriesSide'
+        - $ref: '#/components/parameters/ParamSubcategorySide'
       responses:
         "200":
           description: "Successfully retrieved subcategories"
@@ -277,14 +331,41 @@ paths:
             statusCode: "200"
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+
+  /v1/subcategory:
     post:
-      operationId: postSubcategoriesV1
+      operationId: postSubcategoryV1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestPostSubcategoriesV1'
+              $ref: '#/components/schemas/RequestPostSubcategoryV1'
       responses:
         "201":
           description: "Subcategory successfully created"
@@ -307,10 +388,10 @@ paths:
         passthroughBehavior: "when_no_match"
         type: "aws_proxy"
     delete:
-      operationId: deleteSubcategoriesV1
+      operationId: deleteSubcategoryV1
       parameters:
-        - $ref: '#/components/parameters/ParamSubcategoriesSide' 
-        - $ref: '#/components/parameters/ParamSubcategoriesCodeRequired'
+        - $ref: '#/components/parameters/ParamSubcategorySide' 
+        - $ref: '#/components/parameters/ParamSubcategoryCodeRequired'
       responses:
         "204":
           description: "Dictionary successfully deleted"
@@ -353,7 +434,7 @@ paths:
               method.response.header.Access-Control-Allow-Origin: "'*'"
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-  
+
   /v1/levels:
     get:
       operationId: getLevelsV1
@@ -835,7 +916,7 @@ components:
     # ------------------------------------------------------------------------------------------------------------------- #
     # =================================================================================================================== #
 
-    RequestPostSubcategoriesV1:
+    RequestPostSubcategoryV1:
       type: object
       required:
         - side
@@ -849,7 +930,7 @@ components:
         description:
           $ref: '#/components/schemas/BaseExtendedRequired'
 
-    RequestPostDictionariesV1:
+    RequestPostDictionaryV1:
       type: object
       required:
         - description
@@ -882,7 +963,7 @@ components:
           type: boolean
           description: "Visibility of the dictionary"
 
-    RequestPatchStatisticDictionariesV1:
+    RequestPatchDictionaryStatisticV1:
       type: object
       required:
         - downloads
@@ -893,7 +974,7 @@ components:
         rating:
           $ref: '#/components/schemas/BaseIncrementChoice'
 
-    RequestPostReportsV1:
+    RequestPostReportV1:
       type: object
       required:
         - app_identifier
@@ -989,19 +1070,19 @@ components:
     # =================================================================================================================== #
 
   parameters:
-    ParamDictionariesSortEnum:
+    ParamDictionarySortEnum:
       name: sort_by
       in: query
       schema:
         $ref: '#/components/schemas/BaseDictSortEnum'
 
-    ParamSubcategoriesSide:
+    ParamSubcategorySide:
       name: side 
       in: query 
       schema: 
         $ref: '#/components/schemas/BaseSideEnum'
 
-    ParamDictionariesSubcategoryRequired:
+    ParamDictionarySubcategoryRequired:
       name: subcategory
       in: query
       required: true
@@ -1010,7 +1091,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "required"
 
-    ParamDictionariesSubcategoryOptional:
+    ParamDictionarySubcategoryOptional:
       name: subcategory
       in: query
       required: false
@@ -1019,7 +1100,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty"
     
-    ParamDictionariesNameRequired:
+    ParamDictionaryNameRequired:
       name: name 
       in: query 
       required: true
@@ -1028,7 +1109,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "required,ext_str,min=2,max=36"
 
-    ParamDictionariesNameOptional:
+    ParamDictionaryNameOptional:
       name: name 
       in: query 
       required: false
@@ -1037,7 +1118,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty,ext_str,min=2,max=36"
     
-    ParamDictionariesAuthorRequired:
+    ParamDictionaryAuthorRequired:
       name: author 
       in: query 
       required: true
@@ -1046,7 +1127,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "required,alphanum,min=2,max=24"
 
-    ParamDictionariesAuthorOptional:
+    ParamDictionaryAuthorOptional:
       name: author 
       in: query 
       required: false
@@ -1055,7 +1136,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty,base_str,min=2,max=24"
 
-    ParamDictionariesLevelRequired:
+    ParamDictionaryLevelRequired:
       name: level
       in: query 
       required: true
@@ -1064,7 +1145,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "required,lang_code"
 
-    ParamDictionariesLevelOptional:
+    ParamDictionaryLevelOptional:
       name: level
       in: query 
       required: false
@@ -1073,7 +1154,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty,lang_code"
 
-    ParamSubcategoriesCodeRequired:
+    ParamSubcategoryCodeRequired:
       name: code 
       in: query
       required: true
@@ -1082,7 +1163,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "required,iso3166_1_alpha2"
 
-    ParamSubcategoriesCodeOptional:
+    ParamSubcategoryCodeOptional:
       name: code 
       in: query
       required: false
