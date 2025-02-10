@@ -39,7 +39,7 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"postReportsV1": handlePost,
+				"POST:/v1/reports": handlePost,
 			},
 		).Handle,
 	)
