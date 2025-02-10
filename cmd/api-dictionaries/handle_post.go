@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +14,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -39,7 +38,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	levelIsPublic := fmt.Sprintf("%s#%d", req.Level, applingodictionary.BoolToInt(req.Public))
 
 	item := applingodictionary.SchemaItem{
-		Id:          generateDictionaryID(req.Name, req.Author),
+		Id:          utils.GenerateDictionaryID(req.Name, req.Author),
 		Name:        req.Name,
 		Author:      req.Author,
 		Filename:    req.Filename,
@@ -74,10 +73,4 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return openapi.DataResponseSuccess, nil
-}
-
-func generateDictionaryID(name, author string) string {
-	hash := md5.New()
-	hash.Write([]byte(name + "-" + author))
-	return hex.EncodeToString(hash.Sum(nil))
 }

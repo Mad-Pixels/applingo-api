@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -44,7 +45,7 @@ func handlePatchStatistic(ctx context.Context, _ zerolog.Logger, rawMessage json
 		return openapi.DataResponseSuccess, nil
 	}
 
-	id := generateDictionaryID(params.Name, params.Author)
+	id := utils.GenerateDictionaryID(params.Name, params.Author)
 	key := map[string]types.AttributeValue{
 		"id":          &types.AttributeValueMemberS{Value: id},
 		"subcategory": &types.AttributeValueMemberS{Value: params.Subcategory},

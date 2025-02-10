@@ -10,6 +10,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/openapi-interface/gen/applingoapi"
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
@@ -37,7 +38,7 @@ func handleDelete(ctx context.Context, logger zerolog.Logger, _ json.RawMessage,
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	id := generateSubcategoryID(string(params.Code), string(*params.Side))
+	id := utils.GenerateSubcategoryID(string(params.Code), string(*params.Side))
 	result, err := dbDynamo.Get(ctx, applingosubcategory.TableName, map[string]types.AttributeValue{
 		"id": &types.AttributeValueMemberS{Value: id},
 	})
