@@ -63,6 +63,12 @@ const (
     {{- end}}
 )
 
+const (
+    {{range .AllAttributes}}
+    Column{{SafeName .Name | ToCamelCase}} = "{{.Name}}"
+    {{- end}}
+)
+
 var (
     AttributeNames = []string{
         {{- range .AllAttributes}}

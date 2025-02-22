@@ -18,7 +18,7 @@ import (
 
 const pageLimit = 6
 
-func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handleLevelsGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}

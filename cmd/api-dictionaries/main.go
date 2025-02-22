@@ -37,9 +37,15 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/dictionaries":    handleGet,
-				"POST /v1/dictionaries":   handlePost,
-				"DELETE /v1/dictionaries": handleDelete,
+				// list
+				"GET:/v1/dictionaries": handleDictionariesGet,
+
+				// item
+				"POST:/v1/dictionary":   handleDictionaryPost,
+				"DELETE:/v1/dictionary": handleDictionaryDelete,
+
+				// specific
+				"PATCH:/v1/dictionary/statistic": handleDictionaryStatisticPatch,
 			},
 		).Handle,
 	)

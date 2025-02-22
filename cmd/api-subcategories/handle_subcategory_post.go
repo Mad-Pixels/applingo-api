@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,18 +12,19 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handleSubcategoryPost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	if api.MustGetMetaData(ctx).IsDevice() || !api.MustGetMetaData(ctx).HasPermissions(auth.User) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
 
-	var req applingoapi.RequestPostSubcategoriesV1
+	var req applingoapi.RequestPostSubcategoryV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -34,7 +33,7 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 	}
 
 	item := applingosubcategory.SchemaItem{
-		Id:          generateSubcategoryID(req.Code, string(req.Side)),
+		Id:          utils.GenerateSubcategoryID(req.Code, string(req.Side)),
 		Code:        req.Code,
 		Side:        string(req.Side),
 		Description: req.Description,
@@ -47,7 +46,7 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 		ctx,
 		applingosubcategory.TableName,
 		dynamoItem,
-		expression.AttributeNotExists(expression.Name("id")),
+		expression.AttributeNotExists(expression.Name(applingosubcategory.ColumnId)),
 	); err != nil {
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {
@@ -56,10 +55,4 @@ func handlePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ o
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return openapi.DataResponseSuccess, nil
-}
-
-func generateSubcategoryID(code, side string) string {
-	hash := md5.New()
-	hash.Write([]byte(code + "-" + side))
-	return hex.EncodeToString(hash.Sum(nil))
 }
