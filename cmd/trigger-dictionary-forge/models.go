@@ -8,8 +8,8 @@ type ForgeRequest struct {
 	DictionaryTopic       string `json:"dictionary_topic" validate:"required"`
 	DictionaryDescription string `json:"dictionary_description" validate:"required"`
 	LanguageLevel         string `json:"language_level" validate:"required"`
-	LanguageFrom          string `json:"language_from" validate:"required,iso3166_1_alpha2"`
-	LanguageTo            string `json:"language_to" validate:"required,iso3166_1_alpha2"`
+	LanguageFrom          string `json:"language_from" validate:"required"`
+	LanguageTo            string `json:"language_to" validate:"required"`
 }
 
 // Message from GPTRequest body.

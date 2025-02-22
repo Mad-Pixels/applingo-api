@@ -68,7 +68,7 @@ func sendGPTResponse(ctx context.Context, model string, content string) (string,
 		Model: model,
 		Messages: []Message{
 			{
-				Role:    "forge",
+				Role:    "assistant",
 				Content: content,
 			},
 		},
