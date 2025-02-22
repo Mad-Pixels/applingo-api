@@ -1,8 +1,7 @@
-package main
+package utils
 
 import (
 	"bytes"
-	"context"
 	"encoding/csv"
 	"strings"
 	"text/template"
@@ -10,7 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func processTemplate(ctx context.Context, body string, data any) (string, error) {
+// Template takes a template string and data to fill the template
+// and returns the generated string or an error.
+func Template(body string, data any) (string, error) {
 	tmpl, err := template.New("promt").Parse(body)
 	if err != nil {
 		return "", errors.Wrap(err, "parse teplate failed")
@@ -22,7 +23,14 @@ func processTemplate(ctx context.Context, body string, data any) (string, error)
 	return content.String(), nil
 }
 
-func processCSV(body string) ([]byte, error) {
+// CSV takes a string containing a table and returns CSV data as a byte slice or an error.
+// The table should be represented as lines separated by newline characters, and each line should
+// contain fields separated by the '|' character.
+func CSV(body string) ([]byte, error) {
+	if strings.TrimSpace(body) == "" {
+		return nil, errors.New("empty input")
+	}
+
 	lines := strings.Split(strings.TrimSpace(body), "\n")
 	if len(lines) < 3 {
 		return nil, errors.New("invalid table format")
@@ -39,15 +47,25 @@ func processCSV(body string) ([]byte, error) {
 
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
-	for _, line := range cleanLines {
+	var columnCount int
+
+	for i, line := range cleanLines {
 		fields := strings.Split(line, "|")
 		for i, field := range fields {
 			fields[i] = strings.TrimSpace(field)
 		}
+
+		if i == 0 {
+			columnCount = len(fields)
+		} else if len(fields) != columnCount {
+			return nil, errors.New("inconsistent number of columns")
+		}
+
 		if err := writer.Write(fields); err != nil {
 			return nil, errors.Wrap(err, "failed to write CSV line")
 		}
 	}
+
 	writer.Flush()
 	if err := writer.Error(); err != nil {
 		return nil, errors.Wrap(err, "failed to flush CSV writer")

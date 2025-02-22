@@ -12,7 +12,9 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/httpclient"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 	"github.com/Mad-Pixels/applingo-api/pkg/validator"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/pkg/errors"
@@ -54,7 +56,7 @@ func promptPrepare(ctx context.Context, req ForgeRequest) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed get prompt")
 	}
-	content, err := processTemplate(ctx, string(tpl), req)
+	content, err := utils.Template(string(tpl), req)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot prepare promt content")
 	}
@@ -112,7 +114,7 @@ func handler(ctx context.Context, log zerolog.Logger, body json.RawMessage) erro
 	if err != nil {
 		return errors.Wrap(err, "failed process openapi request")
 	}
-	table, err := processCSV(content)
+	table, err := utils.CSV(content)
 	if err != nil {
 		return errors.Wrap(err, "failed process CSV from response body")
 	}
