@@ -319,6 +319,7 @@ tasks:
       # service specific envs
       TF_VAR_device_api_token: '{{.DEVICE_API_TOKEN}}'
       TF_VAR_jwt_secret:       '{{.JWT_SECRET}}'
+      TF_VAR_openai_key:       '{{.OPENAI_KEY}}'
     silent: true
     internal: true
 
@@ -445,6 +446,7 @@ tasks:
           ACCESS_KEY:       test
           DEVICE_API_TOKEN: "000XXX000"
           JWT_SECRET:       'yHc8vF9xJzZP@!kU1&3aD#LmQw$rT^GnB5Xs2Ev*Ny%pC7o'
+          OPENAI_KEY:       'sk-proj-000XXX000'
     silent: true
 
   env/localstack/stop:
