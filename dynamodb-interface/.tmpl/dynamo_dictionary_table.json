@@ -20,7 +20,9 @@
     { "name": "filename", "type": "S" },
     { "name": "dictionary", "type": "S" },
     { "name": "topic", "type": "S" },
-    { "name": "level", "type": "S" }
+    { "name": "level", "type": "S" },
+    { "name": "words", "type": "N" },
+    { "name": "downloads", "type": "N" }
   ],
   "secondary_indexes": [
     {
@@ -28,56 +30,56 @@
       "hash_key": "is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "level", "author", "rating", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "level", "author", "rating", "topic", "words", "downloads"]
     },
     {
       "name": "PublicByRatingIndex", 
       "hash_key": "is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "level", "author", "created", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "level", "author", "created", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelByDateIndex",
       "hash_key": "level#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "author", "rating", "is_public", "level", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "author", "rating", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelByRatingIndex",
-      "hash_key": "level#is_public", 
+      "hash_key": "level#is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "subcategory", "author", "created", "is_public", "level", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "author", "created", "topic", "words", "downloads"]
     },
     {
       "name": "PublicSubcategoryByDateIndex",
       "hash_key": "subcategory#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "rating", "is_public", "level", "subcategory", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "rating", "level", "topic", "words", "downloads"]
     },
-    {  
+    {
       "name": "PublicSubcategoryByRatingIndex",
       "hash_key": "subcategory#is_public",
-      "range_key": "rating", 
+      "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "created", "is_public", "level", "subcategory", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "created", "level", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelSubcategoryByDateIndex",
       "hash_key": "level#subcategory#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "rating", "is_public", "level", "subcategory", "topic"]
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "rating", "topic", "words", "downloads"]
     },
     {
-      "name": "PublicLevelSubcategoryByRatingIndex", 
+      "name": "PublicLevelSubcategoryByRatingIndex",
       "hash_key": "level#subcategory#is_public",
       "range_key": "rating",
-      "projection_type": "INCLUDE", 
-      "non_key_attributes": ["dictionary", "name", "description", "category", "author", "created", "is_public", "level", "subcategory", "topic"]
+      "projection_type": "INCLUDE",
+      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "created", "topic", "words", "downloads"]
     }
   ]
 }

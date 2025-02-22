@@ -24,7 +24,7 @@ import (
 
 const pageLimit = 60
 
-func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
@@ -88,9 +88,14 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 
 	for item := range itemsCh {
 		response.Items = append(response.Items, applingoapi.DictionaryItemV1{
+			Id:          item.Id,
 			Category:    applingoapi.BaseCategoryEnum(item.Category),
 			Public:      applingodictionary.IntToBool(item.IsPublic),
+			Downloads:   int64(item.Downloads),
 			Created:     int64(item.Created),
+			Rating:      int32(item.Rating),
+			Words:       int32(item.Words),
+			Subcategory: item.Subcategory,
 			Description: item.Description,
 			Dictionary:  item.Dictionary,
 			Author:      item.Author,
@@ -100,7 +105,7 @@ func handleGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, ba
 		})
 	}
 	if result.LastEvaluatedKey != nil {
-		var lastEvaluatedKeyMap map[string]interface{}
+		var lastEvaluatedKeyMap map[string]any
 		if err = attributevalue.UnmarshalMap(result.LastEvaluatedKey, &lastEvaluatedKeyMap); err != nil {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}
@@ -123,7 +128,7 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
-		sortBy = applingoapi.ParamDictionariesSortEnum(*params.SortBy)
+		sortBy = applingoapi.ParamDictionarySortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
 
@@ -167,8 +172,8 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	qb.Limit(pageLimit)
 
-	additionalFilter := expression.Name("dictionary").AttributeExists().And(
-		expression.Name("dictionary").NotEqual(expression.Value("")),
+	additionalFilter := expression.Name(applingodictionary.ColumnDictionary).AttributeExists().And(
+		expression.Name(applingodictionary.ColumnDictionary).NotEqual(expression.Value("")),
 	)
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {

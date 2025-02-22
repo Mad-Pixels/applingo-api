@@ -35,7 +35,7 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 }
 
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	opKey := fmt.Sprintf("%s %s", req.HTTPMethod, req.Path)
+	opKey := fmt.Sprintf("%s:%s", req.RequestContext.HTTPMethod, req.RequestContext.ResourcePath)
 
 	mCtx, err := ctxWithAuth(ctx, req)
 	if err != nil {

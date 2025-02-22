@@ -37,9 +37,12 @@ func main() {
 				EnableRequestLogging: true,
 			},
 			map[string]api.HandleFunc{
-				"GET /v1/subcategories":    handleGet,
-				"POST /v1/subcategories":   handlePost,
-				"DELETE /v1/subcategories": handleDelete,
+				// list
+				"GET:/v1/subcategories": handleSubcategoriesGet,
+
+				// item
+				"POST:/v1/subcategory":   handleSubcategoryPost,
+				"DELETE:/v1/subcategory": handleSubcategoryDelete,
 			},
 		).Handle,
 	)

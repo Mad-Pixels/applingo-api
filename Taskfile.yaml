@@ -30,6 +30,13 @@ tasks:
       - go run main.go
     silent: true
 
+  go/generate/openapispec:
+    desc: Run OpenAPI spec generation process
+    dir: "{{.git_root}}/openapi-interface/spec"
+    cmds:
+      - go run main.go
+    silent: true
+
   _go/version/check:
     desc: Check actual golang version.
     dir: "{{.git_root}}"

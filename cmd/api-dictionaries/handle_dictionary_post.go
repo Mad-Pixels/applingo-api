@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,18 +14,19 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/api"
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog"
 )
 
-func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionaryPost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	if api.MustGetMetaData(ctx).IsDevice() || !api.MustGetMetaData(ctx).HasPermissions(auth.User) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
 
-	var req applingoapi.RequestPostDictionariesV1
+	var req applingoapi.RequestPostDictionaryV1
 	if err := serializer.UnmarshalJSON(body, &req); err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
@@ -39,7 +38,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 	levelIsPublic := fmt.Sprintf("%s#%d", req.Level, applingodictionary.BoolToInt(req.Public))
 
 	item := applingodictionary.SchemaItem{
-		Id:          generateDictionaryID(req.Name, req.Author),
+		Id:          utils.GenerateDictionaryID(req.Name, req.Author),
 		Name:        req.Name,
 		Author:      req.Author,
 		Filename:    req.Filename,
@@ -65,7 +64,7 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		ctx,
 		applingodictionary.TableSchema.TableName,
 		dynamoItem,
-		expression.AttributeNotExists(expression.Name("id")),
+		expression.AttributeNotExists(expression.Name(applingodictionary.ColumnId)),
 	); err != nil {
 		var conditionErr *types.ConditionalCheckFailedException
 		if errors.As(err, &conditionErr) {
@@ -74,10 +73,4 @@ func handlePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 	return openapi.DataResponseSuccess, nil
-}
-
-func generateDictionaryID(name, author string) string {
-	hash := md5.New()
-	hash.Write([]byte(name + "-" + author))
-	return hex.EncodeToString(hash.Sum(nil))
 }

@@ -7,18 +7,23 @@ Lambda for manage dictionaries.
 
 ```bash
 token="000XXX000"
-api="vp0yxvxfow"
-url="http://localhost:4566/restapis/${api}/prod/_user_request_/v1/dictionaries"
+api="xa716jsuuh"
+url="http://localhost:4566/restapis/${api}/live/_user_request_/v1/dictionaries"
 ```
 
 ```bash
 timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
 
-curl -X GET "${url}" -H "Content-Type: application/json"  \
-    -H "x-api-auth: ${timestamp}:::${signature}" 
+curl -X PATCH "${url}?name=testdictionary&author=author&subcategory=ru-il" -H "Content-Type: application/json"  \
+    -H "x-api-auth: ${timestamp}:::${signature}" \
+    -H "x-operation-name: patchStatisticDictionariesV1" \
+    -d '{"downloads":"increase", "rating":"increase" }' 
 
-curl -X GET "${url}" 
+timestamp=$(date -u +%s)
+signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
+
+curl -X GET "${url}" -H "x-api-auth: ${timestamp}:::${signature}"
 
 timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
