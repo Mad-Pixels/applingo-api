@@ -815,8 +815,6 @@ components:
         - code
         - level
       properties:
-        code:
-          $ref: '#/components/schemas/BaseCountryCodeRequired'
         level:
           $ref: '#/components/schemas/BaseLangLevelRequired'
 

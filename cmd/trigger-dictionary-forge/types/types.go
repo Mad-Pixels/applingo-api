@@ -24,7 +24,6 @@ type Request struct {
 	Prompt string `json:"prompt"`
 	// Model specifies the OpenAI model to be used for generation.
 	Model string `json:"model"`
-
 	// DictionaryName is the name of the dictionary to be crafted.
 	DictionaryName string `json:"dictionary_name"`
 	// DictionaryTopic indicates the topic of the dictionary.
@@ -33,7 +32,6 @@ type Request struct {
 	DictionaryLenght int `json:"dictionary_lenght" validate:"min=1,max=500"`
 	// DictionaryDescription provides a description of the dictionary to be crafted.
 	DictionaryDescription string `json:"dictionay_description" validate:"min=20,max=1000"`
-
 	// LanguageLevel denotes the proficiency level of the words in the dictionary.
 	LanguageLevel string `json:"language_level"`
 	// LanguageFrom is the main language code of the words.
