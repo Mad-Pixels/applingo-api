@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/Mad-Pixels/applingo-api/lingo-interface/types"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 	"github.com/google/uuid"
@@ -40,10 +41,7 @@ type Request struct {
 	LanguageTo string `json:"language_to" validate:"alpha,len=2"`
 }
 
-func (r *Request) Update(
-	bucket cloud.Bucket,
-	dynamo cloud.Dynamo,
-) error {
+func (r *Request) Update(ctx context.Context, bucket *cloud.Bucket) error {
 	if r.Model == "" {
 		r.Model = OPENAI_MODEL_DEFAULT
 	}
@@ -51,7 +49,7 @@ func (r *Request) Update(
 	if r.DictionaryLenght == 0 {
 		lenght, err := utils.RandomInt(DICTIONARY_MIN_LENGHT, DICTIONARY_MAX_LENGHT)
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to generate random length")
 		}
 		r.DictionaryLenght = lenght
 	}
@@ -61,51 +59,60 @@ func (r *Request) Update(
 	}
 
 	if r.Prompt == "" {
-		prompt, err := bucket.GetRandomKey(context.TODO(), "", "")
+		prompt, err := bucket.GetRandomKey(ctx, "", "")
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random prompt")
 		}
 		r.Prompt = prompt
 	}
 
 	if r.DictionaryTopic == "" {
-		topic, err := dynamo.GetRandomField(context.TODO(), "", "")
+		topic, err := types.GetRandomDictionaryTopic()
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random topic")
 		}
-		r.DictionaryTopic = topic
+		r.DictionaryTopic = topic.String()
 	}
 
 	if r.DictionaryDescription == "" {
-		description, err := dynamo.GetRandomField(context.TODO(), "", "")
+		desc, err := types.GetRandomDictionaryDescription()
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random description")
 		}
-		r.DictionaryDescription = description
+		r.DictionaryDescription = desc.String()
 	}
 
 	if r.LanguageLevel == "" {
-		level, err := dynamo.GetRandomField(context.TODO(), "", "")
+		level, err := types.GetRandomLanguageLevel()
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random language level")
 		}
-		r.LanguageLevel = level
+		r.LanguageLevel = level.String()
 	}
 
 	if r.LanguageFrom == "" {
-		from, err := dynamo.GetRandomField(context.TODO(), "", "")
+		from, err := types.GetRandomLanguageCode()
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random source language")
 		}
-		r.LanguageFrom = from
+		r.LanguageFrom = from.String()
 	}
 
 	if r.LanguageTo == "" {
-		to, err := dynamo.GetRandomField(context.TODO(), "", "")
+		to, err := types.GetRandomLanguageCode()
 		if err != nil {
-			return errors.Wrap(err, "failed to update request")
+			return errors.Wrap(err, "failed to get random target language")
 		}
-		r.LanguageTo = to
+		if to.String() == r.LanguageFrom {
+			codes := types.AllLanguageCodes()
+			for _, code := range codes {
+				if code.String() != r.LanguageFrom {
+					to = code
+					break
+				}
+			}
+		}
+		r.LanguageTo = to.String()
 	}
 
 	return nil
