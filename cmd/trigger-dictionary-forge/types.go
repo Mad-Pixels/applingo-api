@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/Mad-Pixels/applingo-api/lingo-interface/types"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
@@ -15,34 +16,26 @@ import (
 // Default OpenAI model.
 const (
 	OPENAI_MODEL_DEFAULT  = "gpt-3.5-turbo"
-	DICTIONARY_MAX_LENGHT = 111
-	DICTIONARY_MIN_LENGHT = 51
+	DICTIONARY_MAX_LENGTH = 111
+	DICTIONARY_MIN_LENGTH = 51
 )
 
-// Request is the payload for the DictionaryForge lambda function.
+// Request represents the payload for the DictionaryForge function.
 // It contains parameters for generating dictionaries, including the OpenAI prompt,
-// model, dictionary details, and language settings.
+// model, dictionary name, topic, word count, description, language level, and language codes.
 type Request struct {
-	// Prompt is the OpenAI prompt name retrieved from the bucket.
-	Prompt string `json:"prompt"`
-	// Model specifies the OpenAI model to be used for generation.
-	Model string `json:"model"`
-	// DictionaryName is the name of the dictionary to be crafted.
-	DictionaryName string `json:"dictionary_name"`
-	// DictionaryTopic indicates the topic of the dictionary.
-	DictionaryTopic string `json:"dictionary_topic" validate:"min=5,max=500"`
-	// DictionaryLenght represents the count of words in the dictionary.
-	DictionaryLenght int `json:"dictionary_lenght" validate:"min=1,max=500"`
-	// DictionaryDescription provides a description of the dictionary to be crafted.
-	DictionaryDescription string `json:"dictionay_description" validate:"min=20,max=1000"`
-	// LanguageLevel denotes the proficiency level of the words in the dictionary.
-	LanguageLevel string `json:"language_level"`
-	// LanguageFrom is the main language code of the words.
-	LanguageFrom string `json:"language_from" validate:"alpha,len=2"`
-	// LanguageTo is the language code for the definitions of the words.
-	LanguageTo string `json:"language_to" validate:"alpha,len=2"`
+	Prompt                string `json:"prompt"`
+	Model                 string `json:"model"`
+	DictionaryName        string `json:"dictionary_name"`
+	DictionaryTopic       string `json:"dictionary_topic" validate:"min=5,max=500"`
+	DictionaryLength      int    `json:"dictionary_length" validate:"min=1,max=500"`
+	DictionaryDescription string `json:"dictionary_description" validate:"min=20,max=1000"`
+	LanguageLevel         string `json:"language_level"`
+	LanguageFrom          string `json:"language_from" validate:"alpha,len=2"`
+	LanguageTo            string `json:"language_to" validate:"alpha,len=2"`
 }
 
+// Update fills in any missing fields in the Request by generating random values or using default values.
 func (r *Request) Update(ctx context.Context, s3cli *cloud.Bucket, bucketName string) error {
 	type result struct {
 		field string
@@ -50,63 +43,78 @@ func (r *Request) Update(ctx context.Context, s3cli *cloud.Bucket, bucketName st
 		err   error
 	}
 
+	var wg sync.WaitGroup
 	results := make(chan result, 8)
 
-	// Model
+	// Set default model if not provided.
 	if r.Model == "" {
 		r.Model = OPENAI_MODEL_DEFAULT
 	}
 
-	// DictionaryLenght
-	if r.DictionaryLenght == 0 {
+	// Generate a random dictionary length if not provided.
+	if r.DictionaryLength == 0 {
+		wg.Add(1)
 		go func() {
-			length, err := utils.RandomInt(DICTIONARY_MIN_LENGHT, DICTIONARY_MAX_LENGHT)
+			defer wg.Done()
+			length, err := utils.RandomInt(DICTIONARY_MIN_LENGTH, DICTIONARY_MAX_LENGTH)
 			results <- result{field: "length", value: fmt.Sprint(length), err: err}
 		}()
 	}
 
-	// DictionaryName
+	// Generate a UUID for the dictionary name if not provided.
 	if r.DictionaryName == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			results <- result{field: "name", value: uuid.NewString(), err: nil}
 		}()
 	}
 
-	// Prompt
+	// Retrieve a random prompt from S3 if not provided.
 	if r.Prompt == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			prompt, err := s3cli.GetRandomKey(ctx, bucketName, "")
 			results <- result{field: "prompt", value: prompt, err: err}
 		}()
 	}
 
-	// Topic
+	// Get a random dictionary topic if not provided.
 	if r.DictionaryTopic == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			topic, err := types.GetRandomDictionaryTopic()
 			results <- result{field: "topic", value: topic.String(), err: err}
 		}()
 	}
 
-	// Description
+	// Get a random dictionary description if not provided.
 	if r.DictionaryDescription == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			desc, err := types.GetRandomDictionaryDescription()
 			results <- result{field: "description", value: desc.String(), err: err}
 		}()
 	}
 
-	// Level
+	// Get a random language level if not provided.
 	if r.LanguageLevel == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			level, err := types.GetRandomLanguageLevel()
 			results <- result{field: "level", value: level.String(), err: err}
 		}()
 	}
 
-	// Languages
+	// Select two different random language codes if not provided.
 	if r.LanguageFrom == "" || r.LanguageTo == "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			codes := types.AllLanguageCodes()
 
 			idx1, err := utils.RandomInt(0, len(codes)-1)
@@ -124,21 +132,20 @@ func (r *Request) Update(ctx context.Context, s3cli *cloud.Bucket, bucketName st
 			}
 			to := remainingCodes[idx2]
 
-			results <- result{
-				field: "from",
-				value: from.String(),
-				err:   nil,
-			}
-			results <- result{
-				field: "to",
-				value: to.String(),
-				err:   nil,
-			}
+			results <- result{field: "from", value: from.String(), err: nil}
+			results <- result{field: "to", value: to.String(), err: nil}
 		}()
 	}
 
+	// Close the results channel after all goroutines complete.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Calculate the expected number of results.
 	expectedResults := 0
-	if r.DictionaryLenght == 0 {
+	if r.DictionaryLength == 0 {
 		expectedResults++
 	}
 	if r.DictionaryName == "" {
@@ -163,34 +170,44 @@ func (r *Request) Update(ctx context.Context, s3cli *cloud.Bucket, bucketName st
 		expectedResults++
 	}
 
-	for i := 0; i < expectedResults; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case res := <-results:
-			if res.err != nil {
-				return errors.Wrapf(res.err, "failed to get random %s", res.field)
-			}
-			switch res.field {
-			case "length":
-				length, _ := strconv.Atoi(res.value)
-				r.DictionaryLenght = length
-			case "name":
-				r.DictionaryName = res.value
-			case "prompt":
-				r.Prompt = res.value
-			case "topic":
-				r.DictionaryTopic = res.value
-			case "description":
-				r.DictionaryDescription = res.value
-			case "level":
-				r.LanguageLevel = res.value
-			case "from":
-				r.LanguageFrom = res.value
-			case "to":
-				r.LanguageTo = res.value
-			}
+	// Collect the results.
+	receivedResults := 0
+	for res := range results {
+		if res.err != nil {
+			return errors.Wrapf(res.err, "failed to get random %s", res.field)
+		}
+
+		switch res.field {
+		case "length":
+			length, _ := strconv.Atoi(res.value)
+			r.DictionaryLength = length
+		case "name":
+			r.DictionaryName = res.value
+		case "prompt":
+			r.Prompt = res.value
+		case "topic":
+			r.DictionaryTopic = res.value
+		case "description":
+			r.DictionaryDescription = res.value
+		case "level":
+			r.LanguageLevel = res.value
+		case "from":
+			r.LanguageFrom = res.value
+		case "to":
+			r.LanguageTo = res.value
+		}
+
+		receivedResults++
+		if receivedResults == expectedResults {
+			break
 		}
 	}
-	return nil
+
+	// Check if the context has been canceled.
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
 }
