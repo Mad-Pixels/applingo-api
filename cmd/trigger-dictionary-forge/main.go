@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -75,12 +76,47 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := request.Update(ctx, s3Bucket, serviceForgeBucket); err != nil {
 		return errors.Wrap(err, "failed to update request data")
 	}
+	log.Info().Any("data", request).Msg("dictionary craft parameters")
 
 	prompt, err := preparePrompt(ctx, s3Bucket, request)
 	if err != nil {
 		return err
 	}
-	log.Info().Any("data", prompt).Msg("result")
+
+	gptReq := &chatgpt.Request{
+		Model: request.Model,
+		Messages: []chatgpt.Message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+		Temperature: 0.7,
+	}
+	resp, err := gptClient.SendMessage(ctx, gptReq)
+	if err != nil {
+		return errors.Wrap(err, "failed to process ChatGPT request")
+	}
+	table, err := utils.CSV(resp.Choices[0].Message.Content)
+	if err != nil {
+		return errors.Wrap(err, "failed to process CSV from response")
+	}
+
+	err = s3Bucket.Put(
+		ctx,
+		request.DictionaryName,
+		os.Getenv("SERVICE_PROCESSING_BUCKET"),
+		bytes.NewReader(table),
+		cloud.ContentTypeCSV,
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload CSV to S3")
+	}
+
+	log.Info().
+		Str("filename", request.DictionaryName).
+		Msg("dictionary created successfully")
+
 	return nil
 }
 
