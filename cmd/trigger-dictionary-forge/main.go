@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"os"
 	"runtime/debug"
@@ -38,6 +39,16 @@ var (
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 )
+
+// GPTDictionaryResponse структура для парсинга ответа от GPT
+type GPTDictionaryResponse struct {
+	Words []struct {
+		Word        string `json:"word"`
+		Translation string `json:"translation"`
+		Hint        string `json:"hint"`
+		Description string `json:"description"`
+	} `json:"words"`
+}
 
 func init() {
 	debug.SetGCPercent(500)
@@ -93,20 +104,46 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		},
 		Temperature: 0.7,
 	}
+
 	resp, err := gptClient.SendMessage(ctx, gptReq)
 	if err != nil {
 		return errors.Wrap(err, "failed to process ChatGPT request")
 	}
-	table, err := utils.CSV(resp.Choices[0].Message.Content)
-	if err != nil {
-		return errors.Wrap(err, "failed to process CSV from response")
+
+	// Парсим JSON ответ от GPT
+	var dictResponse GPTDictionaryResponse
+	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &dictResponse); err != nil {
+		return errors.Wrap(err, "failed to parse dictionary response")
 	}
 
+	// Создаем CSV из полученных данных
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+
+	// Записываем данные в CSV
+	for _, word := range dictResponse.Words {
+		record := []string{
+			word.Word,
+			word.Translation,
+			word.Hint,
+			word.Description,
+		}
+		if err := writer.Write(record); err != nil {
+			return errors.Wrap(err, "failed to write CSV record")
+		}
+	}
+
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return errors.Wrap(err, "failed to flush CSV writer")
+	}
+
+	// Сохраняем CSV в S3
 	err = s3Bucket.Put(
 		ctx,
 		request.DictionaryName,
 		os.Getenv("SERVICE_PROCESSING_BUCKET"),
-		bytes.NewReader(table),
+		bytes.NewReader(buf.Bytes()),
 		cloud.ContentTypeCSV,
 	)
 	if err != nil {
