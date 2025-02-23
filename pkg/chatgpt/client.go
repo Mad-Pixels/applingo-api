@@ -2,15 +2,11 @@ package chatgpt
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 )
 
-const (
-	defaultTimeout = 30 * time.Second
-	defaultBaseURL = "https://api.openai.com/v1/chat/completions"
-)
+const defaultBaseURL = "https://api.openai.com/v1/chat/completions"
 
 // HTTPClient defines an interface for making HTTP POST requests.
 type HTTPClient interface {
@@ -20,10 +16,9 @@ type HTTPClient interface {
 
 // Client represents a ChatGPT API client.
 type Client struct {
-	httpClient HTTPClient    // HTTP client to perform requests
-	apiKey     string        // API key for authentication
-	baseURL    string        // Base URL for the ChatGPT API
-	timeout    time.Duration // Timeout for API requests
+	httpClient HTTPClient // HTTP client to perform requests
+	apiKey     string     // API key for authentication
+	baseURL    string     // Base URL for the ChatGPT API
 }
 
 // Option defines a functional option for configuring the Client.
@@ -40,19 +35,11 @@ func MustClient(httpClient HTTPClient, apiKey string, opts ...Option) *Client {
 		httpClient: httpClient,
 		apiKey:     apiKey,
 		baseURL:    defaultBaseURL,
-		timeout:    defaultTimeout,
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
 	return c
-}
-
-// WithTimeout returns an Option that sets a custom timeout for API requests.
-func WithTimeout(timeout time.Duration) Option {
-	return func(c *Client) {
-		c.timeout = timeout
-	}
 }
 
 // WithBaseURL returns an Option that sets a custom base URL for the API.
@@ -70,8 +57,6 @@ func (c *Client) SendMessage(ctx context.Context, req *Request) (*Response, erro
 	if err := req.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
 
 	headers := map[string]string{
 		"Content-Type":  "application/json",
