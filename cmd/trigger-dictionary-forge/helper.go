@@ -27,12 +27,12 @@ type Request struct {
 	Prompt                string `json:"prompt"`
 	Model                 string `json:"model"`
 	DictionaryName        string `json:"dictionary_name"`
-	DictionaryTopic       string `json:"dictionary_topic" validate:"min=5,max=500"`
-	DictionaryLength      int    `json:"dictionary_length" validate:"min=1,max=500"`
-	DictionaryDescription string `json:"dictionary_description" validate:"min=20,max=1000"`
+	DictionaryTopic       string `json:"dictionary_topic"`
+	DictionaryLength      int    `json:"dictionary_length"`
+	DictionaryDescription string `json:"dictionary_description"`
 	LanguageLevel         string `json:"language_level"`
-	LanguageFrom          string `json:"language_from" validate:"alpha,len=2"`
-	LanguageTo            string `json:"language_to" validate:"alpha,len=2"`
+	LanguageFrom          string `json:"language_from"`
+	LanguageTo            string `json:"language_to"`
 }
 
 // Update fills in any missing fields in the Request by generating random values or using default values.
