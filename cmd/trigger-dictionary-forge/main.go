@@ -57,7 +57,9 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := validate.ValidateStruct(&request); err != nil {
 		return errors.Wrap(err, "failed to validate request record")
 	}
-
+	if err := request.Update(ctx); err != nil {
+		return errors.Wrap(err, "failed to update request data")
+	}
 	return nil
 }
 

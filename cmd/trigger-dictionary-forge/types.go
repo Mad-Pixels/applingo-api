@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/Mad-Pixels/applingo-api/lingo-interface/types"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
@@ -41,79 +43,154 @@ type Request struct {
 	LanguageTo string `json:"language_to" validate:"alpha,len=2"`
 }
 
-func (r *Request) Update(ctx context.Context, bucket *cloud.Bucket) error {
+func (r *Request) Update(ctx context.Context, s3cli *cloud.Bucket, bucketName string) error {
+	type result struct {
+		field string
+		value string
+		err   error
+	}
+
+	results := make(chan result, 8)
+
+	// Model
 	if r.Model == "" {
 		r.Model = OPENAI_MODEL_DEFAULT
 	}
 
+	// DictionaryLenght
 	if r.DictionaryLenght == 0 {
-		lenght, err := utils.RandomInt(DICTIONARY_MIN_LENGHT, DICTIONARY_MAX_LENGHT)
-		if err != nil {
-			return errors.Wrap(err, "failed to generate random length")
-		}
-		r.DictionaryLenght = lenght
+		go func() {
+			length, err := utils.RandomInt(DICTIONARY_MIN_LENGHT, DICTIONARY_MAX_LENGHT)
+			results <- result{field: "length", value: fmt.Sprint(length), err: err}
+		}()
 	}
 
+	// DictionaryName
 	if r.DictionaryName == "" {
-		r.DictionaryName = uuid.NewString()
+		go func() {
+			results <- result{field: "name", value: uuid.NewString(), err: nil}
+		}()
 	}
 
+	// Prompt
 	if r.Prompt == "" {
-		prompt, err := bucket.GetRandomKey(ctx, "", "")
-		if err != nil {
-			return errors.Wrap(err, "failed to get random prompt")
-		}
-		r.Prompt = prompt
+		go func() {
+			prompt, err := s3cli.GetRandomKey(ctx, bucketName, "")
+			results <- result{field: "prompt", value: prompt, err: err}
+		}()
 	}
 
+	// Topic
 	if r.DictionaryTopic == "" {
-		topic, err := types.GetRandomDictionaryTopic()
-		if err != nil {
-			return errors.Wrap(err, "failed to get random topic")
-		}
-		r.DictionaryTopic = topic.String()
+		go func() {
+			topic, err := types.GetRandomDictionaryTopic()
+			results <- result{field: "topic", value: topic.String(), err: err}
+		}()
 	}
 
+	// Description
 	if r.DictionaryDescription == "" {
-		desc, err := types.GetRandomDictionaryDescription()
-		if err != nil {
-			return errors.Wrap(err, "failed to get random description")
-		}
-		r.DictionaryDescription = desc.String()
+		go func() {
+			desc, err := types.GetRandomDictionaryDescription()
+			results <- result{field: "description", value: desc.String(), err: err}
+		}()
 	}
 
+	// Level
 	if r.LanguageLevel == "" {
-		level, err := types.GetRandomLanguageLevel()
-		if err != nil {
-			return errors.Wrap(err, "failed to get random language level")
-		}
-		r.LanguageLevel = level.String()
+		go func() {
+			level, err := types.GetRandomLanguageLevel()
+			results <- result{field: "level", value: level.String(), err: err}
+		}()
 	}
 
-	if r.LanguageFrom == "" {
-		from, err := types.GetRandomLanguageCode()
-		if err != nil {
-			return errors.Wrap(err, "failed to get random source language")
-		}
-		r.LanguageFrom = from.String()
-	}
-
-	if r.LanguageTo == "" {
-		to, err := types.GetRandomLanguageCode()
-		if err != nil {
-			return errors.Wrap(err, "failed to get random target language")
-		}
-		if to.String() == r.LanguageFrom {
+	// Languages
+	if r.LanguageFrom == "" || r.LanguageTo == "" {
+		go func() {
 			codes := types.AllLanguageCodes()
-			for _, code := range codes {
-				if code.String() != r.LanguageFrom {
-					to = code
-					break
-				}
+
+			idx1, err := utils.RandomInt(0, len(codes)-1)
+			if err != nil {
+				results <- result{field: "languages", err: err}
+				return
+			}
+			from := codes[idx1]
+
+			remainingCodes := append(codes[:idx1], codes[idx1+1:]...)
+			idx2, err := utils.RandomInt(0, len(remainingCodes)-1)
+			if err != nil {
+				results <- result{field: "languages", err: err}
+				return
+			}
+			to := remainingCodes[idx2]
+
+			results <- result{
+				field: "from",
+				value: from.String(),
+				err:   nil,
+			}
+			results <- result{
+				field: "to",
+				value: to.String(),
+				err:   nil,
+			}
+		}()
+	}
+
+	expectedResults := 0
+	if r.DictionaryLenght == 0 {
+		expectedResults++
+	}
+	if r.DictionaryName == "" {
+		expectedResults++
+	}
+	if r.Prompt == "" {
+		expectedResults++
+	}
+	if r.DictionaryTopic == "" {
+		expectedResults++
+	}
+	if r.DictionaryDescription == "" {
+		expectedResults++
+	}
+	if r.LanguageLevel == "" {
+		expectedResults++
+	}
+	if r.LanguageFrom == "" {
+		expectedResults++
+	}
+	if r.LanguageTo == "" {
+		expectedResults++
+	}
+
+	for i := 0; i < expectedResults; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case res := <-results:
+			if res.err != nil {
+				return errors.Wrapf(res.err, "failed to get random %s", res.field)
+			}
+			switch res.field {
+			case "length":
+				length, _ := strconv.Atoi(res.value)
+				r.DictionaryLenght = length
+			case "name":
+				r.DictionaryName = res.value
+			case "prompt":
+				r.Prompt = res.value
+			case "topic":
+				r.DictionaryTopic = res.value
+			case "description":
+				r.DictionaryDescription = res.value
+			case "level":
+				r.LanguageLevel = res.value
+			case "from":
+				r.LanguageFrom = res.value
+			case "to":
+				r.LanguageTo = res.value
 			}
 		}
-		r.LanguageTo = to.String()
 	}
-
 	return nil
 }
