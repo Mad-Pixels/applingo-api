@@ -7,11 +7,14 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/Mad-Pixels/applingo-api/cmd/trigger-dictionary-forge/types"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/httpclient"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 	"github.com/Mad-Pixels/applingo-api/pkg/validator"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -28,9 +31,9 @@ var (
 	openaiToken = os.Getenv("OPENAI_KEY")
 
 	validate  *validator.Validator
+	gptClient *chatgpt.Client
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
-	gptClient *chatgpt.Client
 )
 
 func init() {
@@ -48,6 +51,14 @@ func init() {
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
+	var request types.Request
+	if err := serializer.UnmarshalJSON(record, &request); err != nil {
+		return errors.Wrap(err, "failed to unmarshal request record")
+	}
+	if err := validate.ValidateStruct(&request); err != nil {
+		return errors.Wrap(err, "failed to validate request record")
+	}
+
 	return nil
 }
 

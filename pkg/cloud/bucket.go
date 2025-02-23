@@ -228,3 +228,30 @@ func (b *Bucket) Read(ctx context.Context, key, bucket string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+// List returns a list of objects in the bucket.
+func (b *Bucket) List(ctx context.Context, bucket string) ([]string, error) {
+	if bucket == "" {
+		return nil, ErrBucketEmptyBucket
+	}
+
+	var keys []string
+	paginator := s3.NewListObjectsV2Paginator(b.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket),
+	})
+	for paginator.HasMorePages() {
+		output, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list objects")
+		}
+
+		for _, obj := range output.Contents {
+			keys = append(keys, aws.ToString(obj.Key))
+		}
+	}
+
+	if len(keys) == 0 {
+		return nil, ErrBucketObjectNotFound
+	}
+	return keys, nil
+}
