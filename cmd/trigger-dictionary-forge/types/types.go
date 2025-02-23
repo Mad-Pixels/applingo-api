@@ -1,6 +1,9 @@
 package types
 
 import (
+	"context"
+
+	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -40,7 +43,8 @@ type Request struct {
 }
 
 func (r *Request) Update(
-	getPromptList func() ([]string, error),
+	bucket cloud.Bucket,
+	dynamo cloud.Dynamo,
 ) error {
 	if r.Model == "" {
 		r.Model = OPENAI_MODEL_DEFAULT
@@ -59,11 +63,51 @@ func (r *Request) Update(
 	}
 
 	if r.Prompt == "" {
-		prompt, err := utils.RandomFromList(getPromptList)
+		prompt, err := bucket.GetRandomKey(context.TODO(), "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to update request")
 		}
 		r.Prompt = prompt
+	}
+
+	if r.DictionaryTopic == "" {
+		topic, err := dynamo.GetRandomField(context.TODO(), "", "")
+		if err != nil {
+			return errors.Wrap(err, "failed to update request")
+		}
+		r.DictionaryTopic = topic
+	}
+
+	if r.DictionaryDescription == "" {
+		description, err := dynamo.GetRandomField(context.TODO(), "", "")
+		if err != nil {
+			return errors.Wrap(err, "failed to update request")
+		}
+		r.DictionaryDescription = description
+	}
+
+	if r.LanguageLevel == "" {
+		level, err := dynamo.GetRandomField(context.TODO(), "", "")
+		if err != nil {
+			return errors.Wrap(err, "failed to update request")
+		}
+		r.LanguageLevel = level
+	}
+
+	if r.LanguageFrom == "" {
+		from, err := dynamo.GetRandomField(context.TODO(), "", "")
+		if err != nil {
+			return errors.Wrap(err, "failed to update request")
+		}
+		r.LanguageFrom = from
+	}
+
+	if r.LanguageTo == "" {
+		to, err := dynamo.GetRandomField(context.TODO(), "", "")
+		if err != nil {
+			return errors.Wrap(err, "failed to update request")
+		}
+		r.LanguageTo = to
 	}
 
 	return nil

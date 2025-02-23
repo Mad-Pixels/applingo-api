@@ -3,6 +3,7 @@ package cloud
 import (
 	"context"
 	"io"
+	"math/rand"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -229,29 +230,52 @@ func (b *Bucket) Read(ctx context.Context, key, bucket string) ([]byte, error) {
 	return data, nil
 }
 
-// List returns a list of objects in the bucket.
-func (b *Bucket) List(ctx context.Context, bucket string) ([]string, error) {
+// GetRandomKey returns a random key from the bucket.
+func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (string, error) {
 	if bucket == "" {
-		return nil, ErrBucketEmptyBucket
+		return "", ErrBucketEmptyBucket
 	}
 
-	var keys []string
-	paginator := s3.NewListObjectsV2Paginator(b.client, &s3.ListObjectsV2Input{
-		Bucket: aws.String(bucket),
-	})
-	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+	input := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucket),
+		MaxKeys: aws.Int32(1),
+	}
+	if prefix != "" {
+		input.Prefix = aws.String(prefix)
+	}
+
+	output, err := b.client.ListObjectsV2(ctx, input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get object count")
+	}
+	if aws.ToInt32(output.KeyCount) == 0 {
+		return "", ErrBucketObjectNotFound
+	}
+
+	keyCount := aws.ToInt32(output.KeyCount)
+	skip := rand.Int31n(keyCount)
+
+	input = &s3.ListObjectsV2Input{
+		Bucket:     aws.String(bucket),
+		MaxKeys:    aws.Int32(1),
+		StartAfter: aws.String(prefix),
+	}
+	var item *types.Object
+	for curr := int32(0); curr <= skip; curr++ {
+		output, err := b.client.ListObjectsV2(ctx, input)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to list objects")
+			return "", errors.Wrap(err, "failed to list objects")
+		}
+		if len(output.Contents) == 0 {
+			break
 		}
 
-		for _, obj := range output.Contents {
-			keys = append(keys, aws.ToString(obj.Key))
-		}
+		item = &output.Contents[0]
+		input.StartAfter = item.Key
 	}
 
-	if len(keys) == 0 {
-		return nil, ErrBucketObjectNotFound
+	if item == nil {
+		return "", ErrBucketObjectNotFound
 	}
-	return keys, nil
+	return aws.ToString(item.Key), nil
 }
