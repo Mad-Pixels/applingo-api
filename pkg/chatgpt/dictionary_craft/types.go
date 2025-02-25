@@ -23,22 +23,17 @@ const (
 	DefaultModel        = chatgpt.GPT4O
 )
 
-// Meta represents metadata about the dictionary.
-type Meta struct {
-	DictionaryName        string `json:"dictionary_name"`
-	DictionaryTopic       string `json:"dictionary_topic"`
-	DictionaryDescription string `json:"dictionary_description"`
-	LanguageLevel         string `json:"language_level"`
-	LanguageFrom          string `json:"language_from"`
-	LanguageTo            string `json:"language_to"`
-	Author                string `json:"author"`
-	WordsCount            int    `json:"words_count"`
-}
-
 type result struct {
 	field string
 	value string
 	err   error
+}
+
+// Info represents general information about the dictionary filled by openai model.
+type Info struct {
+	Author      string `json:"author"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // Word represents an individual entry in a dictionary.
@@ -51,8 +46,9 @@ type Word struct {
 
 // Dictionary represents a collection of words with their translations and descriptions.
 type Dictionary struct {
-	Meta  Meta   `json:"meta"`
-	Words []Word `json:"words"`
+	Meta  Request `json:"meta"`
+	Info  Info    `json:"info"`
+	Words []Word  `json:"words"`
 }
 
 // Unmarshal parses the JSON-encoded data and stores the result in the Dictionary struct.

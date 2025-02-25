@@ -30,15 +30,8 @@ func Craft(ctx context.Context, req *Request, promptBucket string, chatgptCli *c
 	if len(dictionary.Words) == 0 {
 		return nil, errors.New("dictionary has no words")
 	}
-	dictionary.Meta = Meta{
-		DictionaryName:        req.DictionaryName,
-		DictionaryTopic:       req.DictionaryTopic,
-		DictionaryDescription: req.DictionaryDescription,
-		LanguageLevel:         req.LanguageLevel,
-		LanguageFrom:          req.LanguageFrom,
-		LanguageTo:            req.LanguageTo,
-		Author:                req.Prompt,
-		WordsCount:            len(dictionary.Words),
-	}
+
+	dictionary.Meta = *req
+	dictionary.Meta.DictionaryLength = len(dictionary.Words)
 	return &dictionary, nil
 }
