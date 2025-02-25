@@ -56,8 +56,7 @@ func (c *ClientWrapper) WithTimeout(timeout time.Duration) *ClientWrapper {
 	return c
 }
 
-// WithMaxRetries sets the maximum number of retries for failed requests, as well as the delay
-// between retries.
+// WithMaxRetries sets the maximum number of retries for failed requests, as well as the delay between retries.
 func (c *ClientWrapper) WithMaxRetries(maxRetries int, retryDelay time.Duration) *ClientWrapper {
 	c.maxRetries = maxRetries
 	c.retryDelay = retryDelay
