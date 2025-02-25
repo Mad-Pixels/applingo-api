@@ -31,6 +31,29 @@ const (
 	GPT4O      OpenAIModel = "gpt-4o"
 )
 
+// AvailableModels returns a slice of all supported OpenAI models.
+func AvailableModels() []OpenAIModel {
+	return []OpenAIModel{
+		GPT35Turbo,
+		GPT40Mini,
+		GPT4O,
+	}
+}
+
+// ParseModel converts a string to an OpenAIModel, returning error if invalid.
+func ParseModel(name string) (OpenAIModel, error) {
+	switch name {
+	case string(GPT35Turbo):
+		return GPT35Turbo, nil
+	case string(GPT40Mini):
+		return GPT40Mini, nil
+	case string(GPT4O):
+		return GPT4O, nil
+	default:
+		return "", fmt.Errorf("unknown model: %s", name)
+	}
+}
+
 // APIErrorType represents the type of error returned by the OpenAI API.
 type APIErrorType string
 
