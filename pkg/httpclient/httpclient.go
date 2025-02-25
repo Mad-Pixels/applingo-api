@@ -24,6 +24,7 @@ func DefaultRetryCondition(statusCode int, _ string) bool {
 type HTTPError struct {
 	StatusCode int
 	Err        error
+	body       string
 }
 
 // Error implements the error interface for HTTPError.
@@ -31,10 +32,16 @@ func (e HTTPError) Error() string {
 	return fmt.Sprintf("failed: %d - %s", e.StatusCode, e.Err)
 }
 
+// Body returns the response body associated with this HTTP error.
+func (e HTTPError) Body() string {
+	return e.body
+}
+
 // ClientWrapper provides an interface for making HTTP requests with configurable
 // timeout, retry logic, and retry conditions.
 type ClientWrapper struct {
-	client         *http.Client
+	client *http.Client
+
 	maxRetries     int
 	retryDelay     time.Duration
 	retryCondition RetryConditionFunc
@@ -43,7 +50,8 @@ type ClientWrapper struct {
 // New creates and returns a new instance of ClientWrapper with default settings.
 func New() *ClientWrapper {
 	return &ClientWrapper{
-		client:         &http.Client{},
+		client: &http.Client{},
+
 		maxRetries:     0,
 		retryDelay:     time.Second,
 		retryCondition: DefaultRetryCondition,
@@ -117,15 +125,15 @@ func (c *ClientWrapper) request(ctx context.Context, method, url, data string, h
 		}
 
 		httpErr := HTTPError{
-			StatusCode: resp.StatusCode,
 			Err:        fmt.Errorf("request failed with status code %d", resp.StatusCode),
+			StatusCode: resp.StatusCode,
+			body:       body,
 		}
 		if !c.retryCondition(resp.StatusCode, body) || attempt == c.maxRetries {
 			return body, httpErr
 		}
 		err = httpErr
 	}
-
 	if err != nil {
 		return "", err
 	}
