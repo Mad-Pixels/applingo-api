@@ -5,6 +5,13 @@ module "ecr-repository-api" {
   repository_name = "images"
 }
 
+module "s3-forge-bucket" {
+  source = "../../modules/s3"
+
+  project     = local.project
+  bucket_name = "forge"
+}
+
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
@@ -47,27 +54,6 @@ module "dynamo-dictionary-table" {
   attributes           = local.dictionary_dynamo_schema.attributes
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
   stream_enabled       = true
-}
-
-module "dynamo-subcategory-table" {
-  source = "../../modules/dynamo"
-
-  project              = local.project
-  table_name           = local.subcategory_dynamo_schema.table_name
-  hash_key             = local.subcategory_dynamo_schema.hash_key
-  attributes           = local.subcategory_dynamo_schema.attributes
-  secondary_index_list = local.subcategory_dynamo_schema.secondary_indexes
-  stream_enabled       = false
-}
-
-module "dynamo-level-table" {
-  source = "../../modules/dynamo"
-
-  project        = local.project
-  table_name     = local.level_dynamo_schema.table_name
-  hash_key       = local.level_dynamo_schema.hash_key
-  attributes     = local.level_dynamo_schema.attributes
-  stream_enabled = false
 }
 
 module "dictionary_put_csv_queue" {

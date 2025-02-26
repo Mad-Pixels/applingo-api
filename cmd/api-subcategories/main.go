@@ -39,10 +39,6 @@ func main() {
 			map[string]api.HandleFunc{
 				// list
 				"GET:/v1/subcategories": handleSubcategoriesGet,
-
-				// item
-				"POST:/v1/subcategory":   handleSubcategoryPost,
-				"DELETE:/v1/subcategory": handleSubcategoryDelete,
 			},
 		).Handle,
 	)

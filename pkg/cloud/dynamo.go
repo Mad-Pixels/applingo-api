@@ -3,6 +3,7 @@ package cloud
 import (
 	"context"
 	"fmt"
+	"math/rand"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -228,4 +229,69 @@ func (d *Dynamo) Scan(ctx context.Context, table string, input *dynamodb.ScanInp
 		return nil, errors.Wrap(err, "failed to execute scan")
 	}
 	return result, nil
+}
+
+// GetRandomItem retrieves a random item from the DynamoDB table.
+func (d *Dynamo) GetRandomItem(ctx context.Context, table string) (map[string]types.AttributeValue, error) {
+	if err := validateTable(table); err != nil {
+		return nil, err
+	}
+
+	countInput := &dynamodb.ScanInput{
+		TableName: aws.String(table),
+		Select:    types.SelectCount,
+	}
+	countOutput, err := d.client.Scan(ctx, countInput)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get item count")
+	}
+	if countOutput.Count == 0 {
+		return nil, errors.New("table is empty")
+	}
+
+	skip := rand.Int31n(countOutput.Count)
+
+	input := &dynamodb.ScanInput{
+		TableName: aws.String(table),
+		Limit:     aws.Int32(1),
+	}
+	var lastEvaluatedKey map[string]types.AttributeValue
+	var currentItem map[string]types.AttributeValue
+
+	for i := int32(0); i <= skip; i++ {
+		if lastEvaluatedKey != nil {
+			input.ExclusiveStartKey = lastEvaluatedKey
+		}
+
+		output, err := d.client.Scan(ctx, input)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to scan items")
+		}
+		if len(output.Items) == 0 {
+			break
+		}
+		currentItem = output.Items[0]
+		lastEvaluatedKey = output.LastEvaluatedKey
+	}
+
+	if currentItem == nil {
+		return nil, errors.New("failed to get random item")
+	}
+	return currentItem, nil
+}
+
+// GetRandomField retrieves a random item from the table and returns specific field value.
+func (d *Dynamo) GetRandomField(ctx context.Context, table, fieldName string) (string, error) {
+	item, err := d.GetRandomItem(ctx, table)
+	if err != nil {
+		return "", err
+	}
+
+	if val, ok := item[fieldName]; ok {
+		if sv, ok := val.(*types.AttributeValueMemberS); ok {
+			return sv.Value, nil
+		}
+		return "", fmt.Errorf("field %s is not a string", fieldName)
+	}
+	return "", fmt.Errorf("field %s not found", fieldName)
 }
