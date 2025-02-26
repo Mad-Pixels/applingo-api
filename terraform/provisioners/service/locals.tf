@@ -23,8 +23,11 @@ locals {
   // template variables which use in ./infra/config.json of each lambda.
   template_vars = {
     var_jwt_secret              = var.jwt_secret
+    var_openai_key              = var.openai_key
     var_device_api_token        = var.device_api_token
     log_errors_bucket_name      = data.terraform_remote_state.infra.outputs.s3-errors-bucket_name
+    forge_bucket_name           = data.terraform_remote_state.infra.outputs.s3-forge-bucket_name
+    forge_bucket_arn            = data.terraform_remote_state.infra.outputs.s3-forge-bucket_arn
     dictionary_bucket_name      = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
     processing_bucket_name      = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
     log_errors_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-errors-bucket_arn
@@ -32,8 +35,6 @@ locals {
     processing_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-processing-bucket_arn
     dictionary_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
     dictionary_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-dictionary-stream_arn
-    subcategory_table_arn       = data.terraform_remote_state.infra.outputs.dynamo-subcategory-table_arn
-    level_table_arn             = data.terraform_remote_state.infra.outputs.dynamo-level-table_arn
     put_csv_sqs_queue_url       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_url
     put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
   }

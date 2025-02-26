@@ -397,84 +397,6 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
 
-  /v1/subcategory:
-    post:
-      operationId: postSubcategoryV1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestPostSubcategoryV1'
-      responses:
-        "201":
-          description: "Subcategory successfully created"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-        default:
-          description: "Got error response"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
-        responses:
-          default:
-            statusCode: "201"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-    delete:
-      operationId: deleteSubcategoryV1
-      parameters:
-        - $ref: '#/components/parameters/ParamSubcategorySide' 
-        - $ref: '#/components/parameters/ParamSubcategoryCodeRequired'
-      responses:
-        "204":
-          description: "Dictionary successfully deleted"
-        default:
-          description: "Got error response"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseMessage'
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_subcategories}/invocations"
-        responses:
-          default:
-            statusCode: "204"
-        passthroughBehavior: "when_no_match"
-        type: "aws_proxy"
-    options:
-      responses:
-        "200":
-          description: "CORS support"
-          headers:
-            Access-Control-Allow-Origin:
-              $ref: '#/components/headers/AccessControlAllowOrigin'
-            Access-Control-Allow-Methods:
-              $ref: '#/components/headers/AccessControlAllowMethods'
-            Access-Control-Allow-Headers:
-              $ref: '#/components/headers/AccessControlAllowHeaders'
-            Access-Control-Allow-Credentials:
-              $ref: '#/components/headers/AccessControlAllowCredentials'
-          content: {}
-      x-amazon-apigateway-integration:
-        type: "mock"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        responses:
-          default:
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST,DELETE'"
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
-
   /v1/levels:
     get:
       operationId: getLevelsV1
@@ -815,8 +737,6 @@ components:
         - code
         - level
       properties:
-        code:
-          $ref: '#/components/schemas/BaseCountryCodeRequired'
         level:
           $ref: '#/components/schemas/BaseLangLevelRequired'
 

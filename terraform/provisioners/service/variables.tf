@@ -25,6 +25,11 @@ variable "device_api_token" {
   type        = string
 }
 
+variable "openai_key" {
+  description = "OpenAI request key"
+  type        = string
+}
+
 variable "jwt_secret" {
   description = "Auth JWT secret which use for lambda request validate from external"
   type        = string

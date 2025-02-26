@@ -1,0 +1,35 @@
+{
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ],
+        "Resource": [
+          "${forge_bucket_arn}/*",
+          "${forge_bucket_arn}"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:PutObject"
+        ],
+        "Resource": [
+          "${processing_bucket_arn}/*",
+          "${processing_bucket_arn}"
+        ]
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 120,
+  "envs": {
+    "OPENAI_KEY": "${var_openai_key}",
+    "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",
+    "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
+  }
+}
