@@ -8,11 +8,15 @@
   ],
   "common_attributes": [
     { "name": "comment", "type": "S" },
+    { "name": "name", "type": "S" },
     { "name": "description", "type": "S" },
+    { "name": "overview", "type": "S" },
     { "name": "score", "type": "N" },
     { "name": "file", "type": "S" },
     { "name": "topic", "type": "S" },
-    { "name": "upload", "type": "N" }
+    { "name": "upload", "type": "N" },
+    { "name": "level", "type": "S" },
+    { "name": "languages", "type": "S" }
   ],
   "secondary_indexes": []
 }
