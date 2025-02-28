@@ -5,16 +5,6 @@
       {
         "Effect": "Allow",
         "Action": [
-          "dynamodb:DescribeStream",
-          "dynamodb:GetRecords",
-          "dynamodb:GetShardIterator",
-          "dynamodb:ListStreams"
-        ],
-        "Resource": "${dictionary_table_stream_arn}"
-      },
-      {
-        "Effect": "Allow",
-        "Action": [
           "sqs:SendMessage"
         ],
         "Resource": "${put_csv_sqs_queue_arn}"

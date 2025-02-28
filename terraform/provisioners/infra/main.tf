@@ -53,6 +53,18 @@ module "dynamo-dictionary-table" {
   range_key            = local.dictionary_dynamo_schema.range_key
   attributes           = local.dictionary_dynamo_schema.attributes
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
+  stream_enabled       = false
+}
+
+module "dynamo-processing-table" {
+  source = "../../modules/dynamo"
+
+  project              = local.project
+  table_name           = local.processing_dynamo_schema.table_name
+  hash_key             = local.processing_dynamo_schema.hash_key
+  range_key            = local.processing_dynamo_schema.range_key
+  attributes           = local.processing_dynamo_schema.attributes
+  secondary_index_list = local.processing_dynamo_schema.secondary_indexes
   stream_enabled       = true
 }
 

@@ -42,8 +42,16 @@ output "dynamo-dictionary-table_arn" {
   value = module.dynamo-dictionary-table.table_arn
 }
 
-output "dynamo-dictionary-stream_arn" {
-  value = module.dynamo-dictionary-table.stream_arn
+output "dynamo-processing-table_name" {
+  value = module.dynamo-processing-table.table_name
+}
+
+output "dynamo-processing-table_arn" {
+  value = module.dynamo-processing-table.table_arn
+}
+
+output "dynamo-processing-stream_arn" {
+  value = module.dynamo-processing-table.stream_arn
 }
 
 output "sqs-put-csv-dead-letter-queue_url" {

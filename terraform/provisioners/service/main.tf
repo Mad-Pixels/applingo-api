@@ -27,7 +27,7 @@ module "lambda_functions" {
 }
 
 resource "aws_lambda_event_source_mapping" "dynamo-queue" {
-  event_source_arn              = local.template_vars.dictionary_table_stream_arn
+  event_source_arn              = local.template_vars.processing_table_stream_arn
   function_name                 = module.lambda_functions["trigger-dynamo-to-sqs-put-csv"].function_arn
   starting_position             = "LATEST"
   maximum_retry_attempts        = 3

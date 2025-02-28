@@ -1,0 +1,18 @@
+{
+  "table_name": "applingo-processing",
+  "hash_key": "id",
+  "range_key": "prompt",
+  "attributes": [
+    { "name": "id", "type": "S" },
+    { "name": "prompt", "type": "S" }
+  ],
+  "common_attributes": [
+    { "name": "comment", "type": "S" },
+    { "name": "description", "type": "S" },
+    { "name": "score", "type": "N" },
+    { "name": "file", "type": "S" },
+    { "name": "topic", "type": "S" },
+    { "name": "upload", "type": "N" }
+  ],
+  "secondary_indexes": []
+}
