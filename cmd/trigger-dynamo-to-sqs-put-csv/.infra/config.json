@@ -1,29 +1,4 @@
 {
-  "policy": {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "dynamodb:DescribeStream",
-          "dynamodb:GetRecords",
-          "dynamodb:GetShardIterator",
-          "dynamodb:ListStreams"
-        ],
-        "Resource": "${dictionary_table_stream_arn}"
-      },
-      {
-        "Effect": "Allow",
-        "Action": [
-          "sqs:SendMessage"
-        ],
-        "Resource": "${put_csv_sqs_queue_arn}"
-      }
-    ]
-  },
   "memory_size": 128,
-  "timeout": 2,
-  "envs": {
-    "SERVICE_PUT_CSV_QUEUE_URL": "${put_csv_sqs_queue_url}"
-  }
+  "timeout": 2
 }

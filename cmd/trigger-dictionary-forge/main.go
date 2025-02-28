@@ -8,15 +8,18 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt/dictionary_craft"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/httpclient"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 	"github.com/rs/zerolog"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/pkg/errors"
 )
 
@@ -34,6 +37,7 @@ var (
 	openaiToken             = os.Getenv("OPENAI_KEY")
 
 	gptClient *chatgpt.Client
+	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 )
 
@@ -55,6 +59,7 @@ func init() {
 		panic("unable to load AWS SDK config: " + err.Error())
 	}
 	s3Bucket = cloud.NewBucket(cfg)
+	dbDynamo = cloud.NewDynamo(cfg)
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
@@ -66,7 +71,6 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err != nil {
 		return errors.Wrap(err, "failed to craft dictionary")
 	}
-	log.Info().Any("matadata", craft.Meta).Msg("dictionary was created successfully")
 
 	content, err := craft.Marshal()
 	if err != nil {
@@ -80,8 +84,33 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		cloud.ContentTypeJSON,
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload CSV to S3")
+		return errors.Wrap(err, "failed to upload dictionary to S3")
 	}
+
+	dynamoItem, err := applingoprocessing.PutItem(applingoprocessing.SchemaItem{
+		Id:          utils.GenerateDictionaryID(craft.Meta.DictionaryName, craft.Info.Author),
+		Languages:   craft.Meta.LanguageFrom + "-" + craft.Meta.LanguageTo,
+		Description: craft.Meta.DictionaryDescription,
+		Topic:       craft.Meta.DictionaryTopic,
+		File:        craft.Meta.DictionaryName,
+		Level:       craft.Meta.LanguageLevel,
+		Overview:    craft.Info.Description,
+		Prompt:      craft.Meta.Prompt,
+		Name:        craft.Info.Name,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed convert dictionary to DynamoDB item")
+	}
+	if err = dbDynamo.Put(
+		ctx,
+		applingoprocessing.TableSchema.TableName,
+		dynamoItem,
+		expression.AttributeNotExists(expression.Name(applingoprocessing.ColumnId)),
+	); err != nil {
+		return errors.Wrap(err, "failed to put DynamoDB item")
+	}
+
+	log.Info().Any("matadata", craft.Meta).Msg("dictionary was created successfully")
 	return nil
 }
 

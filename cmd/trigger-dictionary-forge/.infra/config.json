@@ -5,6 +5,17 @@
       {
         "Effect": "Allow",
         "Action": [
+          "dynamodb:PutItem",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${processing_table_arn}",
+          "${processing_table_arn}/index/*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
           "s3:GetObject",
           "s3:ListBucket"
         ],

@@ -27,18 +27,11 @@ module "lambda_functions" {
 }
 
 resource "aws_lambda_event_source_mapping" "dynamo-queue" {
-  event_source_arn              = local.template_vars.dictionary_table_stream_arn
+  event_source_arn              = local.template_vars.processing_table_stream_arn
   function_name                 = module.lambda_functions["trigger-dynamo-to-sqs-put-csv"].function_arn
   starting_position             = "LATEST"
   maximum_retry_attempts        = 3
   maximum_record_age_in_seconds = 120
-
-  depends_on = [module.lambda_functions]
-}
-
-resource "aws_lambda_event_source_mapping" "queue-put-csv" {
-  event_source_arn = local.template_vars.put_csv_sqs_queue_arn
-  function_name    = module.lambda_functions["trigger-sqs-to-job-put-csv"].function_arn
 
   depends_on = [module.lambda_functions]
 }
@@ -58,3 +51,11 @@ module "gateway" {
   }
   depends_on = [module.lambda_functions]
 }
+
+// TODO: SQS was removed from the project, use directly the table stream.
+# resource "aws_lambda_event_source_mapping" "queue-put-csv" {
+#   event_source_arn = local.template_vars.put_csv_sqs_queue_arn
+#   function_name    = module.lambda_functions["trigger-sqs-to-job-put-csv"].function_arn
+
+#   depends_on = [module.lambda_functions]
+# }
