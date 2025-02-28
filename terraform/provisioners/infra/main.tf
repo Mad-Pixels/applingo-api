@@ -68,9 +68,10 @@ module "dynamo-processing-table" {
   stream_enabled       = true
 }
 
-module "dictionary_put_csv_queue" {
-  source = "../../modules/sqs"
+// TODO: SQS was removed from the project, use directly the table stream.
+# module "dictionary_put_csv_queue" {
+#   source = "../../modules/sqs"
 
-  project    = local.project
-  queue_name = "put"
-}
+#   project    = local.project
+#   queue_name = "put"
+# }

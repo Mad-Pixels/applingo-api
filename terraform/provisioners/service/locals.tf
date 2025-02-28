@@ -36,7 +36,9 @@ locals {
     dictionary_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
     processing_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-processing-table_arn
     processing_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-processing-stream_arn
-    put_csv_sqs_queue_url       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_url
-    put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
+
+    // TODO: SQS was removed from the project, use directly the table stream.
+    // put_csv_sqs_queue_url       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_url
+    // put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
   }
 }
