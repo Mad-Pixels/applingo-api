@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	DictionaryMaxLength = 91
-	DictionaryMinLength = 51
-	DefaultModel        = chatgpt.GPT4O
+	dictionaryMaxLength = 91
+	dictionaryMinLength = 51
+	defaultModel        = chatgpt.GPT4O
+	defaultPromptPrefix = "craft"
 )
 
 type result struct {
@@ -147,7 +148,7 @@ func (r *Request) Prepare(ctx context.Context, s3cli *cloud.Bucket, bucketName s
 	// Operation for random dictionary length.
 	if r.DictionaryLength == 0 {
 		worker("length", func() {
-			length, err := utils.RandomInt(DictionaryMinLength, DictionaryMaxLength)
+			length, err := utils.RandomInt(dictionaryMinLength, dictionaryMaxLength)
 			results <- result{field: "length", value: strconv.Itoa(length), err: err}
 		})
 	}
@@ -162,7 +163,7 @@ func (r *Request) Prepare(ctx context.Context, s3cli *cloud.Bucket, bucketName s
 	// Operation for getting a random template from S3.
 	if r.Prompt == "" {
 		worker("prompt", func() {
-			prompt, err := s3cli.GetRandomKey(ctx, bucketName, "")
+			prompt, err := s3cli.GetRandomKey(ctx, bucketName, defaultPromptPrefix)
 			results <- result{field: "prompt", value: prompt, err: err}
 		})
 	}
@@ -261,8 +262,8 @@ func (r *Request) Prepare(ctx context.Context, s3cli *cloud.Bucket, bucketName s
 
 		// Check Model.
 		if r.Model == "" {
-			r.Model = string(DefaultModel)
-			r.aiModel = DefaultModel
+			r.Model = string(defaultModel)
+			r.aiModel = defaultModel
 		} else {
 			model, err := chatgpt.ParseModel(r.Model)
 			if err != nil {
