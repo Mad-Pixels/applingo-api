@@ -28,7 +28,7 @@ module "lambda_functions" {
 
 resource "aws_lambda_event_source_mapping" "dynamo-queue" {
   event_source_arn              = local.template_vars.processing_table_stream_arn
-  function_name                 = module.lambda_functions["trigger-dynamo-to-sqs-put-csv"].function_arn
+  function_name                 = module.lambda_functions["trigger-dictionary-check"].function_arn
   starting_position             = "LATEST"
   maximum_retry_attempts        = 3
   maximum_record_age_in_seconds = 120
