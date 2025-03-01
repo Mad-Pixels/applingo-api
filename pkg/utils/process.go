@@ -3,11 +3,23 @@ package utils
 import (
 	"bytes"
 	"encoding/csv"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 )
+
+// GetTimeout returns a timeout duration from a lambda timeout string or a default timeout.
+func GetTimeout(lambdaTimeout string, defaultTimeout time.Duration) time.Duration {
+	if lambdaTimeout != "" {
+		if timeout, err := strconv.Atoi(lambdaTimeout); err == nil {
+			defaultTimeout = time.Duration(timeout) * time.Second
+		}
+	}
+	return defaultTimeout
+}
 
 // Template takes a template string and data to fill the template
 // and returns the generated string or an error.

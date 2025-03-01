@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"os"
 	"runtime/debug"
-	"strconv"
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
@@ -41,7 +40,7 @@ var (
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 
-	timeout = getTimeout(lambdaTimeout, 240*time.Second)
+	timeout = utils.GetTimeout(lambdaTimeout, 240*time.Second)
 )
 
 func init() {
@@ -63,15 +62,6 @@ func init() {
 	}
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
-}
-
-func getTimeout(lambdaTimeout string, defaultTimeout time.Duration) time.Duration {
-	if lambdaTimeout != "" {
-		if timeout, err := strconv.Atoi(lambdaTimeout); err == nil {
-			defaultTimeout = time.Duration(timeout) * time.Second
-		}
-	}
-	return defaultTimeout
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
