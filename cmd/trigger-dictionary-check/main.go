@@ -9,6 +9,7 @@ import (
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
+	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt/dictionary_check"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/httpclient"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -18,6 +19,8 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -75,7 +78,35 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 	switch dynamoDBEvent.EventName {
 	case "INSERT":
-		log.Error().Any("item", item).Msg("INSERT")
+		check, err := dictionary_check.Check(ctx, &dictionary_check.Request{File: item.File}, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
+		if err != nil {
+			return errors.Wrap(err, "failed to check dictionary")
+		}
+		log.Info().Any("check", check).Msg("check")
+
+		key, err := attributevalue.MarshalMap(map[string]interface{}{
+			"id":     item.Id,
+			"prompt": item.Prompt,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal key")
+		}
+
+		update := expression.Set(
+			expression.Name(applingoprocessing.ColumnScore),
+			expression.Value(check.Score),
+		).Set(
+			expression.Name(applingoprocessing.ColumnComment),
+			expression.Value(check.Message),
+		)
+
+		condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))
+
+		if err = dbDynamo.Update(ctx, applingoprocessing.TableName, key, update, condition); err != nil {
+			return errors.Wrap(err, "failed to update dictionary")
+		}
+		return nil
+
 	case "MODIFY":
 		log.Error().Any("item", item).Msg("MODIFY")
 	}
