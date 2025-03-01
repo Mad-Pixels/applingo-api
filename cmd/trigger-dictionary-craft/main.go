@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
@@ -24,7 +25,6 @@ import (
 )
 
 const (
-	defaultTimeout    = 240 * time.Second
 	defaultBackoff    = 15 * time.Second
 	defaultRetries    = 2
 	defaultMaxWorkers = 5
@@ -33,12 +33,15 @@ const (
 var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
 	serviceForgeBucket      = os.Getenv("SERVICE_FORGE_BUCKET")
+	lambdaTimeout           = os.Getenv("LAMBDA_TIMEOUT_SECONDS")
 	awsRegion               = os.Getenv("AWS_REGION")
 	openaiToken             = os.Getenv("OPENAI_KEY")
 
 	gptClient *chatgpt.Client
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
+
+	timeout = getTimeout(lambdaTimeout, 240*time.Second)
 )
 
 func init() {
@@ -46,7 +49,7 @@ func init() {
 
 	gptClient = chatgpt.MustClient(
 		httpclient.New().
-			WithTimeout(defaultTimeout).
+			WithTimeout(timeout).
 			WithMaxRetries(defaultRetries, defaultBackoff).
 			WithRetryCondition(func(statusCode int, responseBody string) bool {
 				return statusCode >= 500 && statusCode < 600
@@ -60,6 +63,15 @@ func init() {
 	}
 	s3Bucket = cloud.NewBucket(cfg)
 	dbDynamo = cloud.NewDynamo(cfg)
+}
+
+func getTimeout(lambdaTimeout string, defaultTimeout time.Duration) time.Duration {
+	if lambdaTimeout != "" {
+		if timeout, err := strconv.Atoi(lambdaTimeout); err == nil {
+			defaultTimeout = time.Duration(timeout) * time.Second
+		}
+	}
+	return defaultTimeout
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
