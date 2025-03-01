@@ -48,12 +48,14 @@ import (
     "fmt"
     "context"
     "strings"
+    "strconv"
 
     "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/dynamodb"
     "github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
     "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
     "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+    "github.com/aws/aws-lambda-go/events"
 )
 
 const (
@@ -535,6 +537,131 @@ func BoolToInt(b bool) int {
 
 func IntToBool(i int) bool {
     return i != 0
+}
+
+// ExtractFromDynamoDBStreamEvent DynamoDB Stream to SchemaItem
+func ExtractFromDynamoDBStreamEvent(dbEvent events.DynamoDBEventRecord) (*SchemaItem, error) {
+    if dbEvent.Change.NewImage == nil {
+        return nil, fmt.Errorf("new image is nil in the event")
+    }
+    
+    item := &SchemaItem{}
+    
+    {{range .AllAttributes}}
+    {{if eq .Type "S"}}
+    if val, ok := dbEvent.Change.NewImage["{{.Name}}"]; ok {
+        item.{{SafeName .Name | ToCamelCase}} = val.String()
+    }
+    {{else if eq .Type "N"}}
+    if val, ok := dbEvent.Change.NewImage["{{.Name}}"]; ok {
+        strVal := val.String()
+        {{SafeName .Name | ToLowerCamelCase}}, err := strconv.Atoi(strVal)
+        if err == nil {
+            item.{{SafeName .Name | ToCamelCase}} = {{SafeName .Name | ToLowerCamelCase}}
+        }
+    }
+    {{else if eq .Type "B"}}
+    if val, ok := dbEvent.Change.NewImage["{{.Name}}"]; ok {
+        item.{{SafeName .Name | ToCamelCase}} = val.Boolean()
+    }
+    {{end}}
+    {{end}}
+    
+    return item, nil
+}
+
+// IsFieldModified DynamoDB Stream to check if field was modified
+func IsFieldModified(dbEvent events.DynamoDBEventRecord, fieldName string) bool {
+    if dbEvent.EventName != "MODIFY" {
+        return false
+    }
+    
+    if dbEvent.Change.OldImage == nil || dbEvent.Change.NewImage == nil {
+        return false
+    }
+    
+    oldVal, oldExists := dbEvent.Change.OldImage[fieldName]
+    newVal, newExists := dbEvent.Change.NewImage[fieldName]
+    
+    if !oldExists || !newExists {
+        return false
+    }
+    
+    return oldVal.String() != newVal.String()
+}
+
+func GetBoolFieldChanged(dbEvent events.DynamoDBEventRecord, fieldName string) bool {
+    if dbEvent.EventName != "MODIFY" {
+        return false
+    }
+    
+    if dbEvent.Change.OldImage == nil || dbEvent.Change.NewImage == nil {
+        return false
+    }
+    
+    oldValue := false
+    if oldVal, ok := dbEvent.Change.OldImage[fieldName]; ok {
+        oldValue = oldVal.Boolean()
+    }
+    
+    newValue := false
+    if newVal, ok := dbEvent.Change.NewImage[fieldName]; ok {
+        newValue = newVal.Boolean()
+    }
+    
+    return !oldValue && newValue
+}
+
+func CreateTriggerHandler(
+    onInsert func(context.Context, *SchemaItem) error,
+    onModify func(context.Context, *SchemaItem, *SchemaItem) error,
+    onDelete func(context.Context, map[string]events.DynamoDBAttributeValue) error,
+) func(ctx context.Context, event events.DynamoDBEvent) error {
+    return func(ctx context.Context, event events.DynamoDBEvent) error {
+        for _, record := range event.Records {
+            switch record.EventName {
+            case "INSERT":
+                if onInsert != nil {
+                    item, err := ExtractFromDynamoDBStreamEvent(record)
+                    if err != nil {
+                        return err
+                    }
+                    if err := onInsert(ctx, item); err != nil {
+                        return err
+                    }
+                }
+                
+            case "MODIFY":
+                if onModify != nil {
+                    oldItem, err := ExtractFromDynamoDBStreamEvent(events.DynamoDBEventRecord{
+                        Change: events.DynamoDBStreamRecord{
+                            NewImage: record.Change.OldImage,
+                        },
+                    })
+                    if err != nil {
+                        return err
+                    }
+                    
+                    newItem, err := ExtractFromDynamoDBStreamEvent(record)
+                    if err != nil {
+                        return err
+                    }
+                    
+                    if err := onModify(ctx, oldItem, newItem); err != nil {
+                        return err
+                    }
+                }
+                
+            case "REMOVE":
+                if onDelete != nil {
+                    if err := onDelete(ctx, record.Change.OldImage); err != nil {
+                        return err
+                    }
+                }
+            }
+        }
+        return nil
+    }
 }
 `
 

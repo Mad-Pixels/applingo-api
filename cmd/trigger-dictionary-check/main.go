@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 
@@ -34,8 +35,12 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := serializer.UnmarshalJSON(record, &dynamoDBEvent); err != nil {
 		return errors.Wrap(err, "failed to unmarshal DynamoDB event")
 	}
-	log.Error().Any("event", dynamoDBEvent).Msg("event")
+	item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
+	if err != nil {
+		return errors.Wrap(err, "failed to extract item from DynamoDB event")
+	}
 
+	log.Error().Any("item", item).Msg("item")
 	return nil
 }
 
