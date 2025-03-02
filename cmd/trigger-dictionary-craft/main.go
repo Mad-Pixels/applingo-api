@@ -71,17 +71,15 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := serializer.UnmarshalJSON(record, &request); err != nil {
 		return errors.Wrap(err, "failed to unmarshal request record")
 	}
-	result, err := forge.CraftMultiple(
+	result, errs := forge.CraftMultiple(
 		ctx,
 		&request,
-		4,
 		serviceForgeBucket,
 		gptClient,
 		s3Bucket,
-		2,
 	)
-	if err != nil {
-		return errors.Wrap(err[0], "failed to craft dictionary")
+	if len(errs) > 0 {
+		return errors.Wrap(errs[0], "failed to craft dictionary")
 	}
 	for _, item := range result {
 		if item == nil {
@@ -94,7 +92,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		err = s3Bucket.Put(
 			ctx,
-			*item.Request.DictionaryFile,
+			item.Request.GetDictionaryFile(),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -108,7 +106,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Languages:   aws.ToString(item.Request.LanguageFrom) + "-" + aws.ToString(item.Request.LanguageTo),
 			Description: aws.ToString(item.Request.DictionaryDescription),
 			Topic:       aws.ToString(item.Request.DictionaryTopic),
-			File:        aws.ToString(item.Request.DictionaryFile),
+			File:        item.Request.GetDictionaryFile(),
 			Level:       aws.ToString(item.Request.LanguageLevel),
 			Overview:    item.Meta.Description,
 			Prompt:      aws.ToString(item.Request.Prompt),
@@ -128,44 +126,6 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		log.Info().Any("matadata", item.Request).Msg("dictionary was created successfully")
 	}
-
-	// content, err := craft.Marshal()
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to marshal dictionary")
-	// }
-	// err = s3Bucket.Put(
-	// 	ctx,
-	// 	request.DictionaryName,
-	// 	serviceProcessingBucket,
-	// 	bytes.NewReader(content),
-	// 	cloud.ContentTypeJSON,
-	// )
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to upload dictionary to S3")
-	// }
-
-	// dynamoItem, err := applingoprocessing.PutItem(applingoprocessing.SchemaItem{
-	// 	Id:          utils.GenerateDictionaryID(craft.Meta.DictionaryName, craft.Info.Author),
-	// 	Languages:   craft.Meta.LanguageFrom + "-" + craft.Meta.LanguageTo,
-	// 	Description: craft.Meta.DictionaryDescription,
-	// 	Topic:       craft.Meta.DictionaryTopic,
-	// 	File:        craft.Meta.DictionaryName,
-	// 	Level:       craft.Meta.LanguageLevel,
-	// 	Overview:    craft.Info.Description,
-	// 	Prompt:      craft.Meta.Prompt,
-	// 	Name:        craft.Info.Name,
-	// })
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed convert dictionary to DynamoDB item")
-	// }
-	// if err = dbDynamo.Put(
-	// 	ctx,
-	// 	applingoprocessing.TableSchema.TableName,
-	// 	dynamoItem,
-	// 	expression.AttributeNotExists(expression.Name(applingoprocessing.ColumnId)),
-	// ); err != nil {
-	// 	return errors.Wrap(err, "failed to put DynamoDB item")
-	//}
 
 	return nil
 }

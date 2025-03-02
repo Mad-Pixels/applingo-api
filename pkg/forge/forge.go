@@ -18,6 +18,8 @@ const (
 	dictionaryMaxLength = 91
 	dictionaryMinLength = 51
 	defaultTemperature  = 0.7
+	defaultDictionaries = 4
+	defaultConcurrent   = 4
 
 	craftPromptPrefix = "craft"
 	checkPromptPrefix = "check"
@@ -83,37 +85,35 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 //
 // Parameters:
 //   - ctx: The context for cancellation and timeouts.
-//   - baseReq: A pointer to the base RequestDictionaryCraft used for cloning each individual request.
-//   - count: The total number of dictionary generation requests to run.
+//   - req: A pointer to the base RequestDictionaryCraft used for cloning each individual request.
 //   - promptBucket: The S3 bucket name for the prompt template.
 //   - chatgptCli: A client for interacting with the OpenAI API.
 //   - s3Cli: A client for interacting with the S3 bucket.
-//   - maxConcurrent: The maximum number of concurrent workers to run.
 //
 // Returns:
 //   - []*ResponseDictionaryCraft: A slice of successful dictionary generation responses.
 //   - []error: A slice of errors encountered during processing.
-func CraftMultiple(ctx context.Context, baseReq *RequestDictionaryCraft, count int, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket, maxConcurrent int) ([]*ResponseDictionaryCraft, []error) {
-	if maxConcurrent <= 0 || maxConcurrent > count {
-		maxConcurrent = count
+func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) ([]*ResponseDictionaryCraft, []error) {
+	if req == nil {
+		req = NewRequestDictionaryCraft()
 	}
-	if baseReq == nil {
-		baseReq = NewRequestDictionaryCraft()
+	if req.MaxConcurrent <= 0 {
+		req.MaxConcurrent = defaultConcurrent
 	}
-	if count < 1 {
-		return nil, nil
+	if req.DictionariesCount < 1 {
+		req.DictionariesCount = 1
 	}
 
 	var (
 		ctxWithCancel, cancel = context.WithCancel(ctx)
-		results               = make(chan *ResponseDictionaryCraft, count)
-		sem                   = make(chan struct{}, maxConcurrent)
-		errs                  = make(chan error, count)
+		results               = make(chan *ResponseDictionaryCraft, req.DictionariesCount)
+		sem                   = make(chan struct{}, req.MaxConcurrent)
+		errs                  = make(chan error, req.DictionariesCount)
 		wg                    sync.WaitGroup
 	)
 	defer cancel()
 
-	for i := 0; i < count; i++ {
+	for i := 0; i < req.DictionariesCount; i++ {
 		requestIndex := i
 		wg.Add(1)
 
@@ -132,7 +132,7 @@ func CraftMultiple(ctx context.Context, baseReq *RequestDictionaryCraft, count i
 				return
 			}
 
-			resp, err := Craft(ctxWithCancel, baseReq.Clone(), promptBucket, chatgptCli, s3Cli)
+			resp, err := Craft(ctxWithCancel, req.Clone(), promptBucket, chatgptCli, s3Cli)
 			if err != nil {
 				errs <- errors.Join(
 					ErrorForgeDictionaryCraft,
@@ -151,7 +151,7 @@ func CraftMultiple(ctx context.Context, baseReq *RequestDictionaryCraft, count i
 	}()
 
 	var (
-		dictionaries = make([]*ResponseDictionaryCraft, 0, count)
+		dictionaries = make([]*ResponseDictionaryCraft, 0, req.DictionariesCount)
 		errorList    = make([]error, 0)
 	)
 	for resp := range results {

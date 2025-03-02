@@ -51,8 +51,6 @@ type RequestDictionaryCraft struct {
 	Prompt *string `json:"prompt"`
 	// Model is the user-provided OpenAI model name, which may be invalid.
 	Model *string `json:"model"`
-	// DictionaryFile is the S3 key for the dictionary file; the file will be created using this name.
-	DictionaryFile *string `json:"file"`
 	// DictionaryTopic specifies the topic used by OpenAI to generate the dictionary.
 	DictionaryTopic *string `json:"topic"`
 	// DictionaryDescription provides additional description to guide OpenAI in generating the dictionary.
@@ -67,16 +65,23 @@ type RequestDictionaryCraft struct {
 	// Temperature controls the randomness of the generated content.
 	Temperature float64 `json:"temperature"`
 	// WordsCount specifies the number of words to include in the generated dictionary.
-	WordsCount int `json:"count"`
+	WordsCount int `json:"words_count"`
+	// DictionariesCount specifies the number of dictionaries to generate.
+	DictionariesCount int `json:"dictionaries_count"`
+	// MaxConcurrent specifies the maximum number of concurrent workers to run.
+	MaxConcurrent int `json:"max_concurrent"`
 
+	dictionaryFile *string
 	// promptBuf is an internal buffer to hold the fetched prompt template data.
 	promptBuf *bytes.Buffer
 }
 
-// NewRequestDictionaryCraft creates a new RequestDictionaryCraft with initialized buffers.
+// NewRequestDictionaryCraft creates a new RequestDictionaryCraft with initialized buffers and system default values.
 func NewRequestDictionaryCraft() *RequestDictionaryCraft {
 	return &RequestDictionaryCraft{
-		promptBuf: &bytes.Buffer{},
+		promptBuf:         &bytes.Buffer{},
+		MaxConcurrent:     defaultConcurrent,
+		DictionariesCount: defaultDictionaries,
 	}
 }
 
@@ -88,6 +93,11 @@ func (r *RequestDictionaryCraft) GetModel() chatgpt.OpenAIModel {
 // GetPromptBody returns an io.Reader with prompt content.
 func (r *RequestDictionaryCraft) GetPromptBody() io.Reader {
 	return r.promptBuf
+}
+
+// GetDictionaryFile returns the dictionary file name.
+func (r *RequestDictionaryCraft) GetDictionaryFile() string {
+	return *r.dictionaryFile
 }
 
 // Setup prepares the request and create a prompt for OpenAI or return error.
@@ -141,9 +151,9 @@ func (r *RequestDictionaryCraft) Setup(ctx context.Context, s3cli *cloud.Bucket,
 		}
 
 		// checking dictionary file name.
-		if r.DictionaryFile == nil {
+		if r.dictionaryFile == nil {
 			name := uuid.NewString()
-			r.DictionaryFile = &name
+			r.dictionaryFile = &name
 		}
 
 		// checking dictionary topic.
@@ -307,10 +317,6 @@ func (r *RequestDictionaryCraft) Clone() *RequestDictionaryCraft {
 	if r.Model != nil {
 		model := *r.Model
 		clone.Model = &model
-	}
-	if r.DictionaryFile != nil {
-		file := *r.DictionaryFile
-		clone.DictionaryFile = &file
 	}
 	if r.DictionaryTopic != nil {
 		topic := *r.DictionaryTopic
