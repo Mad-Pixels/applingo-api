@@ -62,7 +62,7 @@ func handleDictionaryStatisticPatch(ctx context.Context, _ zerolog.Logger, rawMe
 
 	switch req.Rating {
 	case applingoapi.Increase:
-		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnRating), expression.Value(1))
+		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnRating), expression.Value(2))
 	case applingoapi.Decrease:
 		updateBuilder = updateBuilder.Add(expression.Name(applingodictionary.ColumnRating), expression.Value(-1))
 	}
