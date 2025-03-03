@@ -25,6 +25,57 @@ const (
 	checkPromptPrefix = "check"
 )
 
+// Check sends a request to verify a dictionary using OpenAI and returns a ResponseDictionaryCheck.
+// The function performs the following steps:
+//  1. Calls Setup on the request to prepare necessary data (e.g., fetching prompt from S3, validating configuration, etc.).
+//  2. Reads the prompt content from the request's internal buffer.
+//  3. Constructs an OpenAI API request using the prompt and sends it using the chatgpt client.
+//  4. Unmarshals the API response into a ResponseDictionaryCheck structure.
+//  5. Associates the original request with the response and returns it.
+//
+// Parameters:
+//   - ctx: The context for cancellation and timeouts.
+//   - req: A pointer to a RequestDictionaryCheck containing the check parameters.
+//   - promptBucket: The name of the S3 bucket where the prompt template is stored.
+//   - processingBucket: The name of the S3 bucket for processing data.
+//   - chatgptCli: A client for interacting with the OpenAI API.
+//   - s3Cli: A client for interacting with the S3 bucket.
+//
+// Returns:
+//   - *ResponseDictionaryCheck: The response containing the check result.
+//   - error: An error if any step of the process fails.
+func Check(ctx context.Context, req *RequestDictionaryCheck, promptBucket, processingBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) (*ResponseDictionaryCheck, error) {
+	if err := req.Setup(ctx, s3Cli, promptBucket, processingBucket); err != nil {
+		return nil, errors.Join(ErrorForgeDictionaryCheck, err)
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		promptStr, err := io.ReadAll(req.GetPromptBody())
+		if err != nil {
+			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorReadFromBuffer, err)
+		}
+
+		gptReq := chatgpt.NewRequest(
+			req.GetModel(),
+			[]chatgpt.Message{chatgpt.NewUserMessage(string(promptStr))},
+		)
+		resp, err := chatgptCli.SendMessage(ctx, gptReq)
+		if err != nil {
+			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorOpenAIProcess, err)
+		}
+
+		var check ResponseDictionaryCheck
+		if err := serializer.UnmarshalJSON([]byte(resp.GetResponseText()), &check); err != nil {
+			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorResponseObject, err)
+		}
+		check.Request = req
+		return &check, nil
+	}
+}
+
 // Craft sends a request to generate a dictionary using OpenAI and returns a ResponseDictionaryCraft.
 // The function performs the following steps:
 //  1. Calls Setup on the request to prepare data (fetch prompt from S3, validate model, etc.).
