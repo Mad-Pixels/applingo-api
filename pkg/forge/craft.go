@@ -71,6 +71,7 @@ type RequestDictionaryCraft struct {
 	// MaxConcurrent specifies the maximum number of concurrent workers to run.
 	MaxConcurrent int `json:"max_concurrent"`
 
+	// dictionaryFile will be generate as uuid.
 	dictionaryFile *string
 	// promptBuf is an internal buffer to hold the fetched prompt template data.
 	promptBuf *bytes.Buffer

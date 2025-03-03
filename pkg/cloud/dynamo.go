@@ -130,6 +130,45 @@ func (d *Dynamo) Put(ctx context.Context, table string, item map[string]types.At
 	return nil
 }
 
+// BatchWrite writes multiple items to DynamoDB in a single batch operation.
+func (d *Dynamo) BatchWrite(ctx context.Context, table string, items []map[string]types.AttributeValue) error {
+	if err := validateTable(table); err != nil {
+		return err
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	var (
+		batchSize     = 25
+		writeRequests = make([]types.WriteRequest, 0, batchSize)
+	)
+	for i := 0; i < len(items); i++ {
+		writeRequests = append(writeRequests, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: items[i],
+			},
+		})
+
+		if len(writeRequests) == batchSize || i == len(items)-1 {
+			input := &dynamodb.BatchWriteItemInput{
+				RequestItems: map[string][]types.WriteRequest{
+					table: writeRequests,
+				},
+			}
+
+			resp, err := d.client.BatchWriteItem(ctx, input)
+			if err != nil {
+				return errors.Wrap(err, "failed to batch write items")
+			}
+			if len(resp.UnprocessedItems) > 0 {
+				return errors.New("some items were not processed in batch write")
+			}
+			writeRequests = make([]types.WriteRequest, 0, batchSize)
+		}
+	}
+	return nil
+}
+
 // Get retrieves an item from DynamoDB table by its key.
 func (d *Dynamo) Get(ctx context.Context, table string, key map[string]types.AttributeValue) (*dynamodb.GetItemOutput, error) {
 	if err := validateTable(table); err != nil {

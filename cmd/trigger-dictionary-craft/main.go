@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"runtime/debug"
 	"time"
@@ -21,8 +22,6 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -69,64 +68,64 @@ func init() {
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
 	var request forge.RequestDictionaryCraft
 	if err := serializer.UnmarshalJSON(record, &request); err != nil {
-		return errors.Wrap(err, "failed to unmarshal request record")
+		return fmt.Errorf("failed to unmarshal request record: %w", err)
 	}
-	result, errs := forge.CraftMultiple(
-		ctx,
-		&request,
-		serviceForgeBucket,
-		gptClient,
-		s3Bucket,
+	var (
+		schemaItems []applingoprocessing.SchemaItem
 	)
-	if len(errs) > 0 {
-		return errors.Wrap(errs[0], "failed to craft dictionary")
+	result, craftErrs := forge.CraftMultiple(ctx, &request, serviceForgeBucket, gptClient, s3Bucket)
+	if len(craftErrs) > 0 {
+		for _, err := range craftErrs {
+			log.Error().Err(err).Msg("craft task was failed")
+		}
 	}
-	for _, item := range result {
-		if item == nil {
+
+	for _, dictionary := range result {
+		if dictionary == nil {
+			log.Error().Msg("dictionary is nil")
 			continue
 		}
 
-		content, err := serializer.MarshalJSON(item)
+		content, err := serializer.MarshalJSON(dictionary)
 		if err != nil {
-			continue
+			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
 		}
-		err = s3Bucket.Put(
+		if err = s3Bucket.Put(
 			ctx,
-			item.Request.GetDictionaryFile(),
+			dictionary.Request.GetDictionaryFile(),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
-		)
-		if err != nil {
+		); err != nil {
+			log.Error().Any("dictionary", *dictionary).Err(err).Msg("upload dictionary to bucker failed")
 			continue
 		}
 
-		dynamoItem, err := applingoprocessing.PutItem(applingoprocessing.SchemaItem{
-			Id:          utils.GenerateDictionaryID(item.Meta.Name, item.Meta.Author),
-			Languages:   aws.ToString(item.Request.LanguageFrom) + "-" + aws.ToString(item.Request.LanguageTo),
-			Description: aws.ToString(item.Request.DictionaryDescription),
-			Topic:       aws.ToString(item.Request.DictionaryTopic),
-			File:        item.Request.GetDictionaryFile(),
-			Level:       aws.ToString(item.Request.LanguageLevel),
-			Overview:    item.Meta.Description,
-			Prompt:      aws.ToString(item.Request.Prompt),
-			Name:        item.Meta.Name,
-		})
-		if err != nil {
-			continue
-			//return errors.Wrap(err, "failed convert dictionary to DynamoDB item")
+		schemaItem := applingoprocessing.SchemaItem{
+			Id:          utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
+			Languages:   aws.ToString(dictionary.Request.LanguageFrom) + "-" + aws.ToString(dictionary.Request.LanguageTo),
+			Description: aws.ToString(dictionary.Request.DictionaryDescription),
+			Topic:       aws.ToString(dictionary.Request.DictionaryTopic),
+			Level:       aws.ToString(dictionary.Request.LanguageLevel),
+			Prompt:      aws.ToString(dictionary.Request.Prompt),
+			File:        dictionary.Request.GetDictionaryFile(),
+			Overview:    dictionary.Meta.Description,
+			Name:        dictionary.Meta.Name,
 		}
-		if err = dbDynamo.Put(
-			ctx,
-			applingoprocessing.TableSchema.TableName,
-			dynamoItem,
-			expression.AttributeNotExists(expression.Name(applingoprocessing.ColumnId)),
-		); err != nil {
-			return errors.Wrap(err, "failed to put DynamoDB item")
-		}
-		log.Info().Any("matadata", item.Request).Msg("dictionary was created successfully")
+		schemaItems = append(schemaItems, schemaItem)
 	}
 
+	if len(schemaItems) > 0 {
+		dynamoItems, err := applingoprocessing.BatchPutItems(schemaItems)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to prepare batch items")
+			return fmt.Errorf("failed to prepare batch items: %w", err)
+		}
+		if err = dbDynamo.BatchWrite(ctx, applingoprocessing.TableSchema.TableName, dynamoItems); err != nil {
+			log.Error().Err(err).Msg("failed to batch write items to DynamoDB")
+			return fmt.Errorf("failed to batch write items: %w", err)
+		}
+	}
 	return nil
 }
 
