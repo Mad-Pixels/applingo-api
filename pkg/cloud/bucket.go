@@ -296,3 +296,36 @@ func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (strin
 	}
 	return aws.ToString(item.Key), nil
 }
+
+// Move an object from the source bucket to the destination bucket (or key).
+func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
+	if err := validateInput(sourceKey, sourceBucket); err != nil {
+		return err
+	}
+	if err := validateInput(destKey, destBucket); err != nil {
+		return err
+	}
+	copySource := aws.String(sourceBucket + "/" + sourceKey)
+
+	_, err := b.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:            aws.String(destBucket),
+		Key:               aws.String(destKey),
+		CopySource:        copySource,
+		MetadataDirective: types.MetadataDirectiveCopy,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to copy object")
+	}
+
+	waiter := s3.NewObjectExistsWaiter(b.client)
+	if err = waiter.Wait(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(destBucket),
+		Key:    aws.String(destKey),
+	}, 30*time.Second); err != nil {
+		return errors.Wrap(err, "failed to confirm copied object exists")
+	}
+	if err = b.Delete(ctx, sourceKey, sourceBucket); err != nil {
+		return errors.Wrap(err, "failed to delete source object after copy")
+	}
+	return nil
+}

@@ -213,3 +213,25 @@ func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucke
 	}
 	return dictionaries, errorList
 }
+
+// LoadResponseDictionaryCraft loads and unmarshals a ResponseDictionaryCraft from S3.
+// It retrieves the object using the provided key and bucket, reads the JSON content,
+// and deserializes it into a ResponseDictionaryCraft structure.
+func LoadResponseDictionaryCraft(ctx context.Context, s3cli *cloud.Bucket, key, bucket string) (*ResponseDictionaryCraft, error) {
+	rc, err := s3cli.GetObjectBody(ctx, key, bucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dictionary file %q from bucket %q: %w", key, bucket, err)
+	}
+	defer rc.Close()
+
+	content, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dictionary file %q: %w", key, err)
+	}
+
+	var dictionary ResponseDictionaryCraft
+	if err := serializer.UnmarshalJSON(content, &dictionary); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal dictionary file %q: %w", key, err)
+	}
+	return &dictionary, nil
+}

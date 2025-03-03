@@ -101,6 +101,32 @@ func (r *RequestDictionaryCraft) GetDictionaryFile() string {
 	return *r.dictionaryFile
 }
 
+// Subcategory returns a subcategory string in the format "from-to",
+// where "from" and "to" are the ISO 639-1 codes for LanguageFrom and LanguageTo respectively.
+// If either code cannot be determined, it returns "ufo".
+func (r *RequestDictionaryCraft) Subcategory() string {
+	var fromCode, toCode string
+
+	if r.LanguageFrom != nil {
+		if code, err := types.ParseLanguageCode(*r.LanguageFrom); err == nil {
+			fromCode = code.String()
+		}
+	}
+	if r.LanguageTo != nil {
+		if code, err := types.ParseLanguageCode(*r.LanguageTo); err == nil {
+			toCode = code.String()
+		}
+	}
+
+	if fromCode == "" {
+		fromCode = "ufo"
+	}
+	if toCode == "" {
+		toCode = "ufo"
+	}
+	return fromCode + "-" + toCode
+}
+
 // Setup prepares the request and create a prompt for OpenAI or return error.
 func (r *RequestDictionaryCraft) Setup(ctx context.Context, s3cli *cloud.Bucket, promptBucketName string) error {
 	var (

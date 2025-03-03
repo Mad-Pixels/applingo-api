@@ -119,13 +119,17 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Description: aws.ToString(dictionary.Request.DictionaryDescription),
 			Topic:       aws.ToString(dictionary.Request.DictionaryTopic),
 			Level:       aws.ToString(dictionary.Request.LanguageLevel),
-			Prompt:      aws.ToString(dictionary.Request.Prompt),
+			PromptCraft: aws.ToString(dictionary.Request.Prompt),
 			File:        dictionary.Request.GetDictionaryFile(),
 			Upload:      applingoprocessing.BoolToInt(false),
+			Subcategory: dictionary.Request.Subcategory(),
+			Words:       dictionary.Request.WordsCount,
 			Overview:    dictionary.Meta.Description,
+			Author:      dictionary.Meta.Author,
 			Name:        dictionary.Meta.Name,
 			Created:     int(time.Now().Unix()),
 			Reason:      "wait for check",
+			PromptCheck: "",
 			Score:       0,
 		}
 		schemaItems = append(schemaItems, schemaItem)

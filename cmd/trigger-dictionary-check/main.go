@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
@@ -25,13 +26,15 @@ import (
 )
 
 const (
-	defaultBackoff    = 15 * time.Second
-	defaultRetries    = 2
-	defaultMaxWorkers = 5
+	defaultBackoff           = 15 * time.Second
+	autoUploadScoreThreshold = 90
+	defaultRetries           = 2
+	defaultMaxWorkers        = 5
 )
 
 var (
 	serviceProcessingBucket = os.Getenv("SERVICE_PROCESSING_BUCKET")
+	serviceDictionaryBucket = os.Getenv("SERVICE_DICTIONARY_BUCKET")
 	serviceForgeBucket      = os.Getenv("SERVICE_FORGE_BUCKET")
 	lambdaTimeout           = os.Getenv("LAMBDA_TIMEOUT_SECONDS")
 	awsRegion               = os.Getenv("AWS_REGION")
@@ -109,10 +112,60 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 
 	case "MODIFY":
+		if item.Score >= autoUploadScoreThreshold || applingoprocessing.IntToBool(item.Upload) == true {
+			shemaItem := applingodictionary.SchemaItem{
+				Id:          item.Id,
+				Subcategory: item.Subcategory,
+
+				IsPublic:  applingodictionary.BoolToInt(true),
+				Created:   int(time.Now().Unix()),
+				Category:  "Languages",
+				Downloads: 0,
+				Rating:    0,
+
+				Description: item.Overview,
+				Author:      item.Author,
+				Name:        item.Name,
+				Topic:       item.Topic,
+				Level:       item.Level,
+				Words:       item.Words,
+				Filename:    item.File,
+				Dictionary:  item.File,
+
+				LevelSubcategoryIsPublic: fmt.Sprintf("%s#%s#%d", item.Level, item.Subcategory, applingodictionary.BoolToInt(true)),
+				SubcategoryIsPublic:      fmt.Sprintf("%s#%d", item.Subcategory, applingodictionary.BoolToInt(true)),
+				LevelIsPublic:            fmt.Sprintf("%s#%d", item.Level, applingodictionary.BoolToInt(true)),
+			}
+			dynamoItem, err := applingodictionary.PutItem(shemaItem)
+			if err != nil {
+				return fmt.Errorf("failed prepare dynamo item: %w", err)
+			}
+
+			if err := s3Bucket.Move(ctx, item.File, serviceProcessingBucket, item.File, serviceDictionaryBucket); err != nil {
+				return fmt.Errorf("failed to move dictionary from processing to service: %w", err)
+			}
+
+			if err := dbDynamo.Put(
+				ctx,
+				applingodictionary.TableSchema.TableName,
+				dynamoItem,
+				expression.AttributeNotExists(expression.Name(applingodictionary.ColumnId)),
+			); err != nil {
+				s3Err := s3Bucket.Delete(ctx, item.File, serviceProcessingBucket)
+				if s3Err != nil {
+					return fmt.Errorf("failed add new dictionary in dynamoDB: %w, also cannot delete dictionary from bucket: %w", err, s3Err)
+				}
+				return fmt.Errorf("failed add new dictionary in dyynamoDB: %w, dictionary was removed from bucket", err)
+			}
+		}
 		log.Info().Str("id", item.Id).Msg("item modified, no action required")
 
 	case "REMOVE":
-		log.Info().Str("id", item.Id).Msg("item removed, no action required")
+		if err := s3Bucket.Delete(ctx, item.File, serviceProcessingBucket); err != nil {
+			log.Error().Err(err).Str("file", item.File).Msg("failed to delete file from bucket")
+			return fmt.Errorf("failed to delete file from bucket: %w", err)
+		}
+		log.Info().Str("file", item.File).Msg("item removed, no action required")
 
 	default:
 		log.Warn().Str("eventName", dynamoDBEvent.EventName).Msg("unhandled event type")
