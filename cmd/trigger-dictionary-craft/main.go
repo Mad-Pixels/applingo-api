@@ -25,9 +25,11 @@ import (
 )
 
 const (
-	defaultBackoff    = 15 * time.Second
-	defaultRetries    = 2
-	defaultMaxWorkers = 5
+	defaultBackoff       = 15 * time.Second
+	defaultRetries       = 2
+	defaultMaxWorkers    = 5
+	maxCraftConurrent    = 4
+	maxCraftDictionaries = 4
 )
 
 var (
@@ -70,6 +72,16 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := serializer.UnmarshalJSON(record, &request); err != nil {
 		return fmt.Errorf("failed to unmarshal request record: %w", err)
 	}
+	if request.MaxConcurrent == 0 || request.MaxConcurrent > maxCraftConurrent {
+		request.MaxConcurrent = maxCraftConurrent
+	}
+	if request.DictionariesCount < 0 {
+		request.DictionariesCount = 1
+	}
+	if request.DictionariesCount > maxCraftDictionaries {
+		request.DictionariesCount = maxCraftDictionaries
+	}
+
 	var (
 		schemaItems []applingoprocessing.SchemaItem
 	)
