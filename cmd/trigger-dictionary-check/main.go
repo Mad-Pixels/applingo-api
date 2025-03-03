@@ -3,18 +3,24 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"runtime/debug"
 	"time"
 
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
+	"github.com/Mad-Pixels/applingo-api/pkg/forge"
 	"github.com/Mad-Pixels/applingo-api/pkg/httpclient"
+	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/rs/zerolog"
 )
 
@@ -60,49 +66,57 @@ func init() {
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
-	// var dynamoDBEvent events.DynamoDBEventRecord
-	// if err := serializer.UnmarshalJSON(record, &dynamoDBEvent); err != nil {
-	// 	return errors.Wrap(err, "failed to unmarshal DynamoDB event")
-	// }
-	// item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to extract item from DynamoDB event")
-	// }
+	var dynamoDBEvent events.DynamoDBEventRecord
+	if err := serializer.UnmarshalJSON(record, &dynamoDBEvent); err != nil {
+		return fmt.Errorf("failed to unmarshal request record: %w", err)
+	}
+	item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
+	if err != nil {
+		return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
+	}
 
-	// switch dynamoDBEvent.EventName {
-	// case "INSERT":
-	// 	check, err := dictionary_check.Check(ctx, &dictionary_check.Request{File: item.File}, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
-	// 	if err != nil {
-	// 		return errors.Wrap(err, "failed to check dictionary")
-	// 	}
-	// 	log.Info().Any("check", check).Msg("check")
+	switch dynamoDBEvent.EventName {
+	case "INSERT":
+		checkReq := forge.NewRequestDictionaryCheck()
+		checkReq.DictionaryFile = item.File
 
-	// 	key, err := attributevalue.MarshalMap(map[string]interface{}{
-	// 		"id":     item.Id,
-	// 		"prompt": item.Prompt,
-	// 	})
-	// 	if err != nil {
-	// 		return errors.Wrap(err, "failed to marshal key")
-	// 	}
+		result, err := forge.Check(ctx, checkReq, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
+		if err != nil {
+			log.Error().Err(err).Str("file", item.File).Msg("failed to check dictionary")
+			return fmt.Errorf("failed to check dictionary: %w", err)
+		}
 
-	// 	update := expression.Set(
-	// 		expression.Name(applingoprocessing.ColumnScore),
-	// 		expression.Value(check.Score),
-	// 	).Set(
-	// 		expression.Name(applingoprocessing.ColumnComment),
-	// 		expression.Value(check.Message),
-	// 	)
+		key, err := applingoprocessing.CreateKeyFromItem(*item)
+		if err != nil {
+			log.Error().Err(err).Str("id", item.Id).Msg("failed to create key for item")
+			return fmt.Errorf("failed to create key for item: %w", err)
+		}
 
-	// 	condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))
+		update := expression.
+			Set(
+				expression.Name(applingoprocessing.ColumnScore),
+				expression.Value(result.Meta.Score),
+			).
+			Set(
+				expression.Name(applingoprocessing.ColumnReason),
+				expression.Value(result.Meta.Reason),
+			)
 
-	// 	if err = dbDynamo.Update(ctx, applingoprocessing.TableName, key, update, condition); err != nil {
-	// 		return errors.Wrap(err, "failed to update dictionary")
-	// 	}
-	// 	return nil
+		condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))
+		if err = dbDynamo.Update(ctx, applingoprocessing.TableSchema.TableName, key, update, condition); err != nil {
+			log.Error().Err(err).Str("id", item.Id).Msg("failed to update item in DynamoDB")
+			return fmt.Errorf("failed to update item in DynamoDB: %w", err)
+		}
 
-	// case "MODIFY":
-	// 	log.Error().Any("item", item).Msg("MODIFY")
-	// }
+	case "MODIFY":
+		log.Info().Str("id", item.Id).Msg("item modified, no action required")
+
+	case "REMOVE":
+		log.Info().Str("id", item.Id).Msg("item removed, no action required")
+
+	default:
+		log.Warn().Str("eventName", dynamoDBEvent.EventName).Msg("unhandled event type")
+	}
 	return nil
 }
 
