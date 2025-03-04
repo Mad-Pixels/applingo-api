@@ -73,17 +73,17 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 	if err := serializer.UnmarshalJSON(record, &dynamoDBEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal request record: %w", err)
 	}
-	item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
-	if err != nil {
-		return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
-	}
 
 	switch dynamoDBEvent.EventName {
 	case "INSERT":
-		checkReq := forge.NewRequestDictionaryCheck()
-		checkReq.DictionaryFile = item.File
+		item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
+		if err != nil {
+			return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
+		}
+		req := forge.NewRequestDictionaryCheck()
+		req.DictionaryFile = item.File
 
-		result, err := forge.Check(ctx, checkReq, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
+		result, err := forge.Check(ctx, req, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
 		if err != nil {
 			log.Error().Err(err).Str("file", item.File).Msg("failed to check dictionary")
 			return fmt.Errorf("failed to check dictionary: %w", err)
@@ -103,6 +103,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Set(
 				expression.Name(applingoprocessing.ColumnReason),
 				expression.Value(result.Meta.Reason),
+			).
+			Set(
+				expression.Name(applingoprocessing.ColumnPromptCheck),
+				expression.Value(fmt.Sprintf("%s::%s", result.Data.GetPrompt(), result.Data.GetModel())),
 			)
 
 		condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))
@@ -112,7 +116,11 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 
 	case "MODIFY":
-		if item.Score >= autoUploadScoreThreshold || applingoprocessing.IntToBool(item.Upload) == true {
+		item, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(dynamoDBEvent)
+		if err != nil {
+			return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
+		}
+		if item.Score >= autoUploadScoreThreshold || applingoprocessing.IntToBool(item.Upload) {
 			shemaItem := applingodictionary.SchemaItem{
 				Id:          item.Id,
 				Subcategory: item.Subcategory,
@@ -144,7 +152,6 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			if err := s3Bucket.Move(ctx, item.File, serviceProcessingBucket, item.File, serviceDictionaryBucket); err != nil {
 				return fmt.Errorf("failed to move dictionary from processing to service: %w", err)
 			}
-
 			if err := dbDynamo.Put(
 				ctx,
 				applingodictionary.TableSchema.TableName,
@@ -161,11 +168,21 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		log.Info().Str("id", item.Id).Msg("item modified, no action required")
 
 	case "REMOVE":
-		if err := s3Bucket.Delete(ctx, item.File, serviceProcessingBucket); err != nil {
-			log.Error().Err(err).Str("file", item.File).Msg("failed to delete file from bucket")
+		var fileId string
+		if fileKey, ok := dynamoDBEvent.Change.Keys["file"]; ok {
+			fileId = fileKey.String()
+		}
+		if fileId == "" {
+			log.Warn().Msg("file key is empty in REMOVE event, cannot delete file")
+			return nil
+		}
+
+		if err := s3Bucket.Delete(ctx, fileId, serviceProcessingBucket); err != nil {
+			log.Error().Err(err).Str("file", fileId).Msg("failed to delete file from bucket")
 			return fmt.Errorf("failed to delete file from bucket: %w", err)
 		}
-		log.Info().Str("file", item.File).Msg("item removed, no action required")
+		log.Info().Str("file", fileId).Msg("file deleted successfully")
+		return nil
 
 	default:
 		log.Warn().Str("eventName", dynamoDBEvent.EventName).Msg("unhandled event type")

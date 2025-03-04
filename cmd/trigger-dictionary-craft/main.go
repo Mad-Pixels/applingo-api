@@ -20,7 +20,6 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
@@ -46,6 +45,17 @@ var (
 	timeout = utils.GetTimeout(lambdaTimeout, 240*time.Second)
 )
 
+func prepareWithDefaults(i *int, defaultValue int) *int {
+	val := defaultValue
+	if i == nil {
+		return &val
+	}
+	if *i <= 0 || *i > defaultValue {
+		return &val
+	}
+	return i
+}
+
 func init() {
 	debug.SetGCPercent(500)
 
@@ -68,31 +78,23 @@ func init() {
 }
 
 func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
-	var request forge.RequestDictionaryCraft
+	var (
+		request     forge.RequestDictionaryCraft
+		dynamoItems []applingoprocessing.SchemaItem
+	)
 	if err := serializer.UnmarshalJSON(record, &request); err != nil {
 		return fmt.Errorf("failed to unmarshal request record: %w", err)
 	}
-	if request.MaxConcurrent == 0 || request.MaxConcurrent > maxCraftConurrent {
-		request.MaxConcurrent = maxCraftConurrent
-	}
-	if request.DictionariesCount < 0 {
-		request.DictionariesCount = 1
-	}
-	if request.DictionariesCount > maxCraftDictionaries {
-		request.DictionariesCount = maxCraftDictionaries
-	}
+	request.DictionariesCount = prepareWithDefaults(request.DictionariesCount, maxCraftDictionaries)
+	request.MaxConcurrent = prepareWithDefaults(request.MaxConcurrent, maxCraftConurrent)
 
-	var (
-		schemaItems []applingoprocessing.SchemaItem
-	)
-	result, craftErrs := forge.CraftMultiple(ctx, &request, serviceForgeBucket, gptClient, s3Bucket)
+	craftResult, craftErrs := forge.CraftMultiple(ctx, &request, serviceForgeBucket, gptClient, s3Bucket)
 	if len(craftErrs) > 0 {
 		for _, err := range craftErrs {
 			log.Error().Err(err).Msg("craft task was failed")
 		}
 	}
-
-	for _, dictionary := range result {
+	for _, dictionary := range craftResult {
 		if dictionary == nil {
 			log.Error().Msg("dictionary is nil")
 			continue
@@ -101,42 +103,51 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		content, err := serializer.MarshalJSON(dictionary)
 		if err != nil {
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
+			continue
 		}
+
 		if err = s3Bucket.Put(
 			ctx,
-			dictionary.Request.GetDictionaryFile(),
+			dictionary.Data.GetFilename(),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
 		); err != nil {
-			log.Error().Any("dictionary", *dictionary).Err(err).Msg("upload dictionary to bucker failed")
+			log.Error().Any("dictionary", *dictionary).Err(err).Msg("upload dictionary to bucket failed")
 			continue
 		}
 
-		schemaItem := applingoprocessing.SchemaItem{
-			Id:          utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
-			Languages:   aws.ToString(dictionary.Request.LanguageFrom) + "-" + aws.ToString(dictionary.Request.LanguageTo),
-			Description: aws.ToString(dictionary.Request.DictionaryDescription),
-			Topic:       aws.ToString(dictionary.Request.DictionaryTopic),
-			Level:       aws.ToString(dictionary.Request.LanguageLevel),
-			PromptCraft: aws.ToString(dictionary.Request.Prompt),
-			File:        dictionary.Request.GetDictionaryFile(),
+		dynamoItem := applingoprocessing.SchemaItem{
+			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
+
+			// language info.
+			Languages:   dictionary.Data.GetLanguageFrom().Name + "-" + dictionary.Data.GetLanguageTo().Name,
+			Level:       dictionary.Data.GetLanguageLevel().String(),
+			Subcategory: dictionary.Data.GetSubcategory(),
+
+			// dictionary info.
+			Words:    dictionary.Data.GetWordsCount(),
+			Overview: dictionary.Meta.Description,
+			Author:   dictionary.Meta.Author,
+			Name:     dictionary.Meta.Name,
+
+			// craft info.
+			PromptCraft: fmt.Sprintf("%s::%s", dictionary.Data.GetPrompt(), dictionary.Data.GetModel()),
+			Description: dictionary.Data.GetDictionaryDescription(),
+			Topic:       dictionary.Data.GetDictionaryTopic(),
+			File:        dictionary.Data.GetFilename(),
+
+			// internal info.
 			Upload:      applingoprocessing.BoolToInt(false),
-			Subcategory: dictionary.Request.Subcategory(),
-			Words:       dictionary.Request.WordsCount,
-			Overview:    dictionary.Meta.Description,
-			Author:      dictionary.Meta.Author,
-			Name:        dictionary.Meta.Name,
 			Created:     int(time.Now().Unix()),
 			Reason:      "wait for check",
 			PromptCheck: "",
 			Score:       0,
 		}
-		schemaItems = append(schemaItems, schemaItem)
+		dynamoItems = append(dynamoItems, dynamoItem)
 	}
-
-	if len(schemaItems) > 0 {
-		dynamoItems, err := applingoprocessing.BatchPutItems(schemaItems)
+	if len(dynamoItems) > 0 {
+		dynamoItems, err := applingoprocessing.BatchPutItems(dynamoItems)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to prepare batch items")
 			return fmt.Errorf("failed to prepare batch items: %w", err)

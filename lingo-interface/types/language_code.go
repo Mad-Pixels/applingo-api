@@ -5,6 +5,92 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Language represents a language with a code and a name.
+type Language struct {
+	// Code is the ISO 639-1 language code.
+	Code string
+	// Name is the English name of the language.
+	Name string
+}
+
+// NewLanguage creates a new Language instance.
+func NewLanguage(code, name string) Language {
+	return Language{
+		Code: code,
+		Name: name,
+	}
+}
+
+// NewLanguageFromCode creates a new Language instance from a language code.
+func NewLanguageFromCode(code string) (Language, error) {
+	langCode, err := ParseLanguageCode(code)
+	if err != nil {
+		return Language{}, errors.Wrap(err, "invalid language code")
+	}
+	return Language{
+		Code: langCode.String(),
+		Name: langCode.Name(),
+	}, nil
+}
+
+// NewLanguageFromName creates a new Language instance from a language name.
+func NewLanguageFromName(name string) (Language, error) {
+	for _, code := range AllLanguageCodes() {
+		if code.Name() == name {
+			return Language{
+				Code: code.String(),
+				Name: name,
+			}, nil
+		}
+	}
+	return Language{}, errors.New("unknown language name")
+}
+
+// ParseLanguageString parses a language string and returns a Language instance.
+func ParseLanguageString(s string) (Language, error) {
+	if len(s) == 2 {
+		return NewLanguageFromCode(s)
+	}
+	return NewLanguageFromName(s)
+}
+
+// GetRandomLanguage returns a random language.
+func GetRandomLanguage() (Language, error) {
+	langCode, err := GetRandomLanguageCode()
+	if err != nil {
+		return Language{}, err
+	}
+	return Language{
+		Code: langCode.String(),
+		Name: langCode.Name(),
+	}, nil
+}
+
+// GetRandomLanguageExcept returns a random language except the given language.
+func GetRandomLanguageExcept(except Language) (Language, error) {
+	allLangs := AllLanguageCodes()
+	validLangs := make([]LanguageCode, 0, len(allLangs)-1)
+
+	for _, code := range allLangs {
+		if code.String() != except.Code {
+			validLangs = append(validLangs, code)
+		}
+	}
+	if len(validLangs) == 0 {
+		return Language{}, errors.New("no valid languages available")
+	}
+
+	idx, err := utils.RandomInt(0, len(validLangs)-1)
+	if err != nil {
+		return Language{}, err
+	}
+	randomLang := validLangs[idx]
+	return Language{
+		Code: randomLang.String(),
+		Name: randomLang.Name(),
+	}, nil
+}
+
 // LanguageCode represents ISO 639-1 language code
 type LanguageCode int
 

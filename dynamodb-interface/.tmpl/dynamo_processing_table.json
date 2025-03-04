@@ -1,10 +1,10 @@
 {
   "table_name": "applingo-processing",
   "hash_key": "id",
-  "range_key": "prompt_craft",
+  "range_key": "file",
   "attributes": [
     { "name": "id", "type": "S" },
-    { "name": "prompt_craft", "type": "S" }
+    { "name": "file", "type": "S" }
   ],
   "common_attributes": [
     { "name": "reason", "type": "S" },
@@ -12,7 +12,6 @@
     { "name": "description", "type": "S" },
     { "name": "overview", "type": "S" },
     { "name": "score", "type": "N" },
-    { "name": "file", "type": "S" },
     { "name": "topic", "type": "S" },
     { "name": "upload", "type": "N" },
     { "name": "level", "type": "S" },
@@ -21,7 +20,8 @@
     { "name": "words", "type": "N" },
     { "name": "author", "type": "S" },
     { "name": "subcategory", "type": "S" },
-    { "name": "prompt_check", "type": "S"}
+    { "name": "prompt_craft", "type": "S" },
+    { "name": "prompt_check", "type": "S" }
   ],
   "secondary_indexes": []
 }
