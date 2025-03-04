@@ -26,12 +26,11 @@ module "lambda_functions" {
   policy       = try(jsonencode(each.value.policy), "")
 }
 
-resource "aws_lambda_event_source_mapping" "dynamo-queue" {
+resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
   event_source_arn              = local.template_vars.processing_table_stream_arn
   function_name                 = module.lambda_functions["trigger-dictionary-check"].function_arn
   starting_position             = "LATEST"
-  maximum_retry_attempts        = 3
-  maximum_record_age_in_seconds = 120
+  maximum_retry_attempts        = 0
 
   depends_on = [module.lambda_functions]
 }
