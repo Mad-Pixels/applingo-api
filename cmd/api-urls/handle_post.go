@@ -42,7 +42,7 @@ func handleUpload(ctx context.Context, req applingoapi.RequestPostUrlsV1) (any, 
 	if req.Identifier == "" {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: errors.New("missing required fields")}
 	}
-	url, err := s3Bucket.UploadURL(ctx, req.Identifier, serviceProcessingBucket, "text/csv")
+	url, err := s3Bucket.UploadURL(ctx, req.Identifier, serviceProcessingBucket, "application/json")
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
