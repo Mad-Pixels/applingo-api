@@ -1,74 +1,54 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/csv"
-	"strings"
+	"io"
+	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
-// Template takes a template string and data to fill the template
-// and returns the generated string or an error.
-func Template(body string, data any) (string, error) {
-	tmpl, err := template.New("promt").Parse(body)
-	if err != nil {
-		return "", errors.Wrap(err, "parse teplate failed")
+// GetTimeout returns a timeout duration based on the provided lambda timeout string.
+// If lambdaTimeout is non-empty and can be converted to an integer, the value is interpreted
+// as a number of seconds and converted to a time.Duration. If the conversion fails or the string
+// is empty, the defaultTimeout is returned.
+//
+// Parameters:
+//   - lambdaTimeout: A string representing the timeout in seconds.
+//   - defaultTimeout: The default time.Duration to return if lambdaTimeout is empty or invalid.
+//
+// Returns:
+//   - time.Duration: The resulting timeout duration.
+func GetTimeout(lambdaTimeout string, defaultTimeout time.Duration) time.Duration {
+	if lambdaTimeout != "" {
+		if timeout, err := strconv.Atoi(lambdaTimeout); err == nil {
+			defaultTimeout = time.Duration(timeout) * time.Second
+		}
 	}
-	var content bytes.Buffer
-	if err = tmpl.Execute(&content, data); err != nil {
-		return "", errors.Wrap(err, "failed to execute template")
-	}
-	return content.String(), nil
+	return defaultTimeout
 }
 
-// CSV takes a string containing a table and returns CSV data as a byte slice or an error.
-// The table should be represented as lines separated by newline characters, and each line should
-// contain fields separated by the '|' character.
-func CSV(body string) ([]byte, error) {
-	if strings.TrimSpace(body) == "" {
-		return nil, errors.New("empty input")
+// TemplateFromReaderToWriter reads a template from an io.Reader, parses it, and executes the template
+// with the provided data, writing the output to the specified io.Writer.
+//
+// Parameters:
+//   - w: The io.Writer where the executed template output will be written.
+//   - r: The io.Reader from which the template is read.
+//   - data: The data to be applied to the template during execution.
+//
+// Returns:
+//   - error: An error if reading, parsing, or executing the template fails; otherwise, nil.
+func TemplateFromReaderToWriter(w io.Writer, r io.Reader, data any) error {
+	templateBytes, err := io.ReadAll(r)
+	if err != nil {
+		return errors.Wrap(err, "read template failed")
 	}
 
-	lines := strings.Split(strings.TrimSpace(body), "\n")
-	if len(lines) < 3 {
-		return nil, errors.New("invalid table format")
+	tmpl, err := template.New("prompt").Parse(string(templateBytes))
+	if err != nil {
+		return errors.Wrap(err, "parse template failed")
 	}
 
-	var cleanLines []string
-	for i, line := range lines {
-		if i == 1 && strings.Contains(line, "-") {
-			continue
-		}
-		line = strings.Trim(line, "|")
-		cleanLines = append(cleanLines, line)
-	}
-
-	var buf bytes.Buffer
-	writer := csv.NewWriter(&buf)
-	var columnCount int
-
-	for i, line := range cleanLines {
-		fields := strings.Split(line, "|")
-		for i, field := range fields {
-			fields[i] = strings.TrimSpace(field)
-		}
-
-		if i == 0 {
-			columnCount = len(fields)
-		} else if len(fields) != columnCount {
-			return nil, errors.New("inconsistent number of columns")
-		}
-
-		if err := writer.Write(fields); err != nil {
-			return nil, errors.Wrap(err, "failed to write CSV line")
-		}
-	}
-
-	writer.Flush()
-	if err := writer.Error(); err != nil {
-		return nil, errors.Wrap(err, "failed to flush CSV writer")
-	}
-	return buf.Bytes(), nil
+	return tmpl.Execute(w, data)
 }

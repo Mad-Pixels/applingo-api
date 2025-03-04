@@ -208,8 +208,30 @@ func (b *Bucket) Exists(ctx context.Context, key, bucket string) (bool, error) {
 	return true, nil
 }
 
-// Read file from bucket and return content as []byte.
-func (b *Bucket) Read(ctx context.Context, key, bucket string) ([]byte, error) {
+// Read reads file from bucket and writes content directly to the provided writer.
+func (b *Bucket) Read(ctx context.Context, w io.Writer, key, bucket string) error {
+	if err := validateInput(key, bucket); err != nil {
+		return err
+	}
+
+	result, err := b.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get object")
+	}
+	defer result.Body.Close()
+
+	_, err = io.Copy(w, result.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy content to writer")
+	}
+	return nil
+}
+
+// GetObjectBody returns the response body as io.ReadCloser from S3
+func (b *Bucket) GetObjectBody(ctx context.Context, key, bucket string) (io.ReadCloser, error) {
 	if err := validateInput(key, bucket); err != nil {
 		return nil, err
 	}
@@ -221,13 +243,8 @@ func (b *Bucket) Read(ctx context.Context, key, bucket string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
-	defer result.Body.Close()
 
-	data, err := io.ReadAll(result.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read content from file")
-	}
-	return data, nil
+	return result.Body, nil
 }
 
 // GetRandomKey returns a random key from the bucket.
@@ -278,4 +295,37 @@ func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (strin
 		return "", ErrBucketObjectNotFound
 	}
 	return aws.ToString(item.Key), nil
+}
+
+// Move an object from the source bucket to the destination bucket (or key).
+func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
+	if err := validateInput(sourceKey, sourceBucket); err != nil {
+		return err
+	}
+	if err := validateInput(destKey, destBucket); err != nil {
+		return err
+	}
+	copySource := aws.String(sourceBucket + "/" + sourceKey)
+
+	_, err := b.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:            aws.String(destBucket),
+		Key:               aws.String(destKey),
+		CopySource:        copySource,
+		MetadataDirective: types.MetadataDirectiveCopy,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to copy object")
+	}
+
+	waiter := s3.NewObjectExistsWaiter(b.client)
+	if err = waiter.Wait(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(destBucket),
+		Key:    aws.String(destKey),
+	}, 30*time.Second); err != nil {
+		return errors.Wrap(err, "failed to confirm copied object exists")
+	}
+	if err = b.Delete(ctx, sourceKey, sourceBucket); err != nil {
+		return errors.Wrap(err, "failed to delete source object after copy")
+	}
+	return nil
 }
