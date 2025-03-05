@@ -44,7 +44,7 @@ locals {
 }
 
 locals {
-  _scheduler_dir = "${path.module}/templates/scheduler"
+  _scheduler_dir   = "${path.module}/templates/scheduler"
   _scheduler_files = fileset(local._scheduler_dir, "*.json")
 
   _scheduler_configs = {
