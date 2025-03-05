@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 data "terraform_remote_state" "infra" {
   backend = var.use_localstack ? "local" : "s3"
 
@@ -27,10 +29,10 @@ module "lambda_functions" {
 }
 
 resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
-  event_source_arn              = local.template_vars.processing_table_stream_arn
-  function_name                 = module.lambda_functions["trigger-dictionary-check"].function_arn
-  starting_position             = "LATEST"
-  maximum_retry_attempts        = 0
+  event_source_arn       = local.template_vars.processing_table_stream_arn
+  function_name          = module.lambda_functions["trigger-dictionary-check"].function_arn
+  starting_position      = "LATEST"
+  maximum_retry_attempts = 0
 
   depends_on = [module.lambda_functions]
 }
@@ -38,8 +40,8 @@ resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
 module "gateway" {
   source = "../../modules/gateway"
 
-  project        = local.project
   api_name       = "api"
+  project        = local.project
   use_localstack = var.use_localstack
 
   invoke_lambdas_arns = {
@@ -48,6 +50,27 @@ module "gateway" {
       name = lambda.function_name
     }
   }
+  depends_on = [module.lambda_functions]
+}
+
+module "scheduler_events" {
+  source = "../../modules/scheduler"
+
+  for_each       = local.schedulers
+  project        = local.project
+  scheduler_name = each.key
+
+  schedule_expression          = try(each.value.Config.schedule_expression, "rate(1 day)")
+  flexible_time_window_mode    = try(each.value.Config.flexible_time_window_mode, "OFF")
+  maximum_window_in_minutes    = try(each.value.Config.maximum_window_in_minutes, 5)
+  maximum_retry_attempts       = try(each.value.Config.maximum_retry_attempts, null)
+  maximum_event_age_in_seconds = try(each.value.Config.maximum_event_age_in_seconds, 3600)
+
+  target_arn  = format(local.lambda_arn_template, each.value.Config.target_lambda_name)
+  target_type = try(each.value.Config.target_type, "lambda")
+  policy      = try(each.value.Config.policy != null ? jsonencode(each.value.Config.policy) : "", "")
+
+  input_json = jsonencode({ Records = each.value.Records })
   depends_on = [module.lambda_functions]
 }
 
