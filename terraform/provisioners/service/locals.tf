@@ -42,3 +42,17 @@ locals {
     // put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
   }
 }
+
+locals {
+  _scheduler_dir = "${path.module}/templates/scheduler"
+  _scheduler_files = fileset(local._scheduler_dir, "*.json")
+
+  _scheduler_configs = {
+    for file in local._scheduler_files :
+    trimsuffix(basename(file), ".json") => jsondecode(
+      templatefile("${local._scheduler_dir}/${file}", local.template_vars)
+    )
+  }
+
+  schedulers = local._scheduler_configs
+}

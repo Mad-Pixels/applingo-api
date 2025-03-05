@@ -1,0 +1,16 @@
+{
+    "Records": [
+      {
+        "temperature": 0.5,
+        "words_count": 5,
+        "dictionaries_count": 10
+      }
+    ],
+    "Config": {
+      "schedule_expression": "cron(0 0 ? * SAT *)",
+      "flexible_time_window_mode": "FLEXIBLE",
+      "maximum_window_in_minutes": 15,
+      "maximum_retry_attempts": 3,
+      "maximum_event_age_in_seconds": 7200
+    }
+  }

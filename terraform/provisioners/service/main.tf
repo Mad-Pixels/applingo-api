@@ -58,3 +58,35 @@ module "gateway" {
 
 #   depends_on = [module.lambda_functions]
 # }
+
+
+module "schedulers" {
+  source = "../../modules/scheduler"
+  
+  for_each = local.schedulers
+  
+  project         = local.project
+  scheduler_name  = each.key
+  schedule_expression = lookup(each.value.Config, "schedule_expression", "rate(1 day)")
+  
+  flexible_time_window_mode = lookup(each.value.Config, "flexible_time_window_mode", "OFF")
+  maximum_window_in_minutes = lookup(each.value.Config, "maximum_window_in_minutes", 5)
+  
+  maximum_retry_attempts = lookup(each.value.Config, "maximum_retry_attempts", null)
+  maximum_event_age_in_seconds = lookup(each.value.Config, "maximum_event_age_in_seconds", 3600)
+  
+  target_type = lookup(each.value.Config, "target_type", "lambda")
+  target_arn  = lookup(each.value.Config, "target_arn", module.lambda_functions["forge-dictionary"].function_arn)
+  input_json  = jsonencode({ Records = each.value.Records })
+  
+  // Опциональные параметры для различных типов целей
+  dead_letter_arn = lookup(each.value.Config, "dead_letter_arn", null)
+  sqs_message_group_id = lookup(each.value.Config, "sqs_message_group_id", null)
+  
+  ecs_task_definition_arn = lookup(each.value.Config, "ecs_task_definition_arn", null)
+  ecs_launch_type = lookup(each.value.Config, "ecs_launch_type", "FARGATE")
+  ecs_network_config = lookup(each.value.Config, "ecs_network_config", null)
+  
+  policy = lookup(each.value.Config, "policy", "")
+  
+}
