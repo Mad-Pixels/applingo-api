@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 data "terraform_remote_state" "infra" {
   backend = var.use_localstack ? "local" : "s3"
 
@@ -38,8 +40,8 @@ resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
 module "gateway" {
   source = "../../modules/gateway"
 
-  project        = local.project
   api_name       = "api"
+  project        = local.project
   use_localstack = var.use_localstack
 
   invoke_lambdas_arns = {
@@ -55,8 +57,8 @@ module "scheduler_events" {
   source = "../../modules/scheduler"
 
   for_each       = local.schedulers
-  scheduler_name = each.key
   project        = local.project
+  scheduler_name = each.key
 
   schedule_expression          = try(each.value.Config.schedule_expression, "rate(1 day)")
   flexible_time_window_mode    = try(each.value.Config.flexible_time_window_mode, "OFF")
@@ -64,12 +66,12 @@ module "scheduler_events" {
   maximum_retry_attempts       = try(each.value.Config.maximum_retry_attempts, null)
   maximum_event_age_in_seconds = try(each.value.Config.maximum_event_age_in_seconds, 3600)
 
+  target_arn  = format(local.lambda_arn_template, each.value.Config.target_lambda_name)
   target_type = try(each.value.Config.target_type, "lambda")
-  target_arn  = try(each.value.Config.target_arn, "")
-  policy      = try(each.value.Config.policy, "")
+  policy      = try(each.value.Config.policy != null ? jsonencode(each.value.Config.policy) : "", "")
 
   input_json = jsonencode({ Records = each.value.Records })
-  depends_on = [module.lambda_functions, module.gateway]
+  depends_on = [module.lambda_functions]
 }
 
 // TODO: SQS was removed from the project, use directly the table stream.

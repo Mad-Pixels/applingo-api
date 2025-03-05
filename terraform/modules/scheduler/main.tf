@@ -7,19 +7,15 @@ resource "aws_scheduler_schedule" "this" {
     maximum_window_in_minutes = var.flexible_time_window_mode == "FLEXIBLE" ? var.maximum_window_in_minutes : null
   }
 
-  dynamic "retry_policy" {
-    for_each = var.maximum_retry_attempts != null ? [1] : []
-    content {
-      maximum_retry_attempts       = var.maximum_retry_attempts
-      maximum_event_age_in_seconds = var.maximum_event_age_in_seconds
-    }
-  }
-
   target {
     arn      = var.target_arn
-    role_arn = aws_iam_role.this.arn
+    role_arn = aws_iam_role.scheduler.arn
+    input    = var.input_json
 
-    input = var.input_json != null ? var.input_json : null
+    retry_policy {
+      maximum_event_age_in_seconds = var.maximum_event_age_in_seconds
+      maximum_retry_attempts       = var.maximum_retry_attempts
+    }
 
     dynamic "dead_letter_config" {
       for_each = var.dead_letter_arn != null ? [1] : []
@@ -54,7 +50,7 @@ resource "aws_scheduler_schedule" "this" {
   }
 }
 
-resource "aws_iam_role" "this" {
+resource "aws_iam_role" "scheduler" {
   name = "${var.project}-${replace(var.scheduler_name, "_", "-")}-scheduler-role"
 
   assume_role_policy = jsonencode({
@@ -78,48 +74,4 @@ resource "aws_iam_role" "this" {
       "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
-}
-
-resource "aws_iam_role_policy" "target_policy" {
-  name = "${var.project}-${replace(var.scheduler_name, "_", "-")}-target-policy"
-  role = aws_iam_role.this.id
-
-  policy = var.policy != "" ? var.policy : jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = var.target_type == "lambda" ? [
-          "lambda:InvokeFunction"
-          ] : var.target_type == "sqs" ? [
-          "sqs:SendMessage"
-          ] : var.target_type == "ecs" ? [
-          "ecs:RunTask"
-          ] : [
-          "events:PutEvents"
-        ]
-        Resource = var.target_arn
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "dead_letter_policy" {
-  count = var.dead_letter_arn != null ? 1 : 0
-
-  name = "${var.project}-${replace(var.scheduler_name, "_", "-")}-dlq-policy"
-  role = aws_iam_role.this.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage"
-        ]
-        Resource = var.dead_letter_arn
-      }
-    ]
-  })
 }

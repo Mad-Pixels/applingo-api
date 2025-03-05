@@ -1,3 +1,36 @@
+# Base constants.
+locals {
+  project      = "applingo"
+  state_bucket = "tfstates-madpixels"
+  tfstate_file = "lingocards-api/infra.tfstate"
+}
+
+# Base variables.
+locals {
+  template_vars = {
+    var_jwt_secret              = var.jwt_secret
+    var_openai_key              = var.openai_key
+    var_device_api_token        = var.device_api_token
+    log_errors_bucket_name      = data.terraform_remote_state.infra.outputs.s3-errors-bucket_name
+    forge_bucket_name           = data.terraform_remote_state.infra.outputs.s3-forge-bucket_name
+    forge_bucket_arn            = data.terraform_remote_state.infra.outputs.s3-forge-bucket_arn
+    dictionary_bucket_name      = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
+    processing_bucket_name      = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
+    log_errors_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-errors-bucket_arn
+    dictionary_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_arn
+    processing_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-processing-bucket_arn
+    dictionary_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
+    processing_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-processing-table_arn
+    processing_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-processing-stream_arn
+  }
+}
+
+# Custom variables.
+locals {
+  lambda_arn_template = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.project}-%s"
+}
+
+# Lambdas configs.
 locals {
   _root_dir = "${path.module}/../../../cmd"
   _entries  = fileset(local._root_dir, "**")
@@ -15,44 +48,31 @@ locals {
     ) : null
   }
 
-  lambdas      = { for func in local._lambda_functions : func => local._lambda_configs[func] }
-  project      = "applingo"
-  state_bucket = "tfstates-madpixels"
-  tfstate_file = "lingocards-api/infra.tfstate"
+  lambdas          = { for func in local._lambda_functions : func => local._lambda_configs[func] }
+  lambda_functions = keys(local.lambdas)
 
-  // template variables which use in ./infra/config.json of each lambda.
-  template_vars = {
-    var_jwt_secret              = var.jwt_secret
-    var_openai_key              = var.openai_key
-    var_device_api_token        = var.device_api_token
-    log_errors_bucket_name      = data.terraform_remote_state.infra.outputs.s3-errors-bucket_name
-    forge_bucket_name           = data.terraform_remote_state.infra.outputs.s3-forge-bucket_name
-    forge_bucket_arn            = data.terraform_remote_state.infra.outputs.s3-forge-bucket_arn
-    dictionary_bucket_name      = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_name
-    processing_bucket_name      = data.terraform_remote_state.infra.outputs.s3-processing-bucket_name
-    log_errors_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-errors-bucket_arn
-    dictionary_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-dictionary-bucket_arn
-    processing_bucket_arn       = data.terraform_remote_state.infra.outputs.s3-processing-bucket_arn
-    dictionary_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-dictionary-table_arn
-    processing_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-processing-table_arn
-    processing_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-processing-stream_arn
-
-    // TODO: SQS was removed from the project, use directly the table stream.
-    // put_csv_sqs_queue_url       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_url
-    // put_csv_sqs_queue_arn       = data.terraform_remote_state.infra.outputs.sqs-put-csv-queue_arn
-  }
+  api_lambdas      = [for name in local.lambda_functions : name if startswith(name, "api")]
+  trigger_lambdas  = [for name in local.lambda_functions : name if startswith(name, "trigger")]
+  schedule_lambdas = [for name in local.lambda_functions : name if startswith(name, "scheduler")]
 }
 
+# Schedulers configs.
 locals {
-  _scheduler_dir   = "${path.module}/templates/scheduler"
-  _scheduler_files = fileset(local._scheduler_dir, "*.json")
-
   _scheduler_configs = {
-    for file in local._scheduler_files :
-    trimsuffix(basename(file), ".json") => jsondecode(
-      templatefile("${local._scheduler_dir}/${file}", local.template_vars)
-    )
+    for fn in local.schedule_lambdas :
+    fn => [
+      for file in fileset("${local._root_dir}/${fn}/.infra", "scheduler*.json") :
+      jsondecode(
+        templatefile("${local._root_dir}/${fn}/.infra/${file}",
+          merge(local.template_vars, { target_lambda_name = "${fn}" })
+        )
+      )
+    ]
   }
 
-  schedulers = local._scheduler_configs
+  schedulers = {
+    for fn, configs in local._scheduler_configs : fn => (
+      length(configs) > 0 ? configs[0] : { Records = [], Config = {} }
+    )
+  }
 }
