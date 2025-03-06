@@ -33,6 +33,18 @@
           "${processing_bucket_arn}/*",
           "${processing_bucket_arn}"
         ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:GetShardIterator",
+          "dynamodb:DescribeStream",
+          "dynamodb:ListStreams",
+          "dynamodb:GetRecords"
+        ],
+        "Resource": [
+          "${processing_table_stream_arn}"
+        ]
       }
     ]
   },

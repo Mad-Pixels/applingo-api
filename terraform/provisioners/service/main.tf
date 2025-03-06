@@ -28,15 +28,6 @@ module "lambda_functions" {
   policy       = try(jsonencode(each.value.policy), "")
 }
 
-resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
-  event_source_arn       = local.template_vars.processing_table_stream_arn
-  function_name          = module.lambda_functions["trigger-dictionary-check"].function_arn
-  starting_position      = "LATEST"
-  maximum_retry_attempts = 0
-
-  depends_on = [module.lambda_functions]
-}
-
 module "gateway" {
   source = "../../modules/gateway"
 
@@ -74,10 +65,11 @@ module "scheduler_events" {
   depends_on = [module.lambda_functions]
 }
 
-// TODO: SQS was removed from the project, use directly the table stream.
-# resource "aws_lambda_event_source_mapping" "queue-put-csv" {
-#   event_source_arn = local.template_vars.put_csv_sqs_queue_arn
-#   function_name    = module.lambda_functions["trigger-sqs-to-job-put-csv"].function_arn
+resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
+  event_source_arn       = local.template_vars.processing_table_stream_arn
+  function_name          = module.lambda_functions["scheduler-dictionary-craft"].function_arn
+  starting_position      = "LATEST"
+  maximum_retry_attempts = 0
 
-#   depends_on = [module.lambda_functions]
-# }
+  depends_on = [module.lambda_functions]
+}
