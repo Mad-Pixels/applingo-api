@@ -1,0 +1,72 @@
+{
+  "policy": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${processing_table_arn}",
+          "${processing_table_arn}/index/*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:PutItem",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${dictionary_table_arn}",
+          "${dictionary_table_arn}/index/*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ],
+        "Resource": [
+          "${forge_bucket_arn}/*",
+          "${forge_bucket_arn}"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ],
+        "Resource": [
+          "${processing_bucket_arn}/*",
+          "${processing_bucket_arn}"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:PutObject"
+        ],
+        "Resource": [
+          "${dictionary_bucket_arn}/*",
+          "${dictionary_bucket_arn}"
+        ]
+      }
+    ]
+  },
+  "memory_size": 128,
+  "timeout": 240,
+  "envs": {
+    "OPENAI_KEY": "${var_openai_key}",
+    "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",
+    "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}",
+    "SERVICE_PROCESSING_BUCKET": "${processing_bucket_name}"
+  }
+}

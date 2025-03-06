@@ -480,6 +480,10 @@ tasks:
           echo "Error: DEVICE_API_TOKEN is not set."
           exit 1
         fi
+        if [ -z "$OPENAI_KEY" ]; then
+          echo "Error: OPENAI_KEY is not set."
+          exit 1
+        fi
         if [ -z "$JWT_SECRET" ]; then
           echo "Error: JWT_SECRET is not set."
           exit 1

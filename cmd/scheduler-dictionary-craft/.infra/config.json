@@ -5,6 +5,17 @@
       {
         "Effect": "Allow",
         "Action": [
+          "dynamodb:PutItem",
+          "dynamodb:ListTables"
+        ],
+        "Resource": [
+          "${processing_table_arn}",
+          "${processing_table_arn}/index/*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
           "s3:GetObject",
           "s3:ListBucket"
         ],
@@ -22,11 +33,23 @@
           "${processing_bucket_arn}/*",
           "${processing_bucket_arn}"
         ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:GetShardIterator",
+          "dynamodb:DescribeStream",
+          "dynamodb:ListStreams",
+          "dynamodb:GetRecords"
+        ],
+        "Resource": [
+          "${processing_table_stream_arn}"
+        ]
       }
     ]
   },
   "memory_size": 128,
-  "timeout": 120,
+  "timeout": 240,
   "envs": {
     "OPENAI_KEY": "${var_openai_key}",
     "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",

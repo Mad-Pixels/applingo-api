@@ -18,6 +18,7 @@ provider "aws" {
       sts        = var.localstack_endpoint
       sqs        = var.localstack_endpoint
       logs       = var.localstack_endpoint
+      scheduler  = var.localstack_endpoint
       cloudwatch = var.localstack_endpoint
       apigateway = var.localstack_endpoint
     }
