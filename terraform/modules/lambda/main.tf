@@ -71,3 +71,9 @@ resource "aws_iam_role" "this" {
     }
   )
 }
+
+resource "aws_lambda_function_event_invoke_config" "this" {
+  function_name                = aws_lambda_function.this.function_name
+  maximum_event_age_in_seconds = var.maximum_event_age_in_seconds
+  maximum_retry_attempts       = var.maximum_retry_attempts
+}
