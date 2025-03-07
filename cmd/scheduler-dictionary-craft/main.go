@@ -108,7 +108,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			dictionary.Data.GetFilename(),
+			dictionary.GetFilename(),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -121,21 +121,21 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
 
 			// language info.
-			Languages:   dictionary.Data.GetLanguageFrom().Name + "-" + dictionary.Data.GetLanguageTo().Name,
-			Level:       dictionary.Data.GetLanguageLevel().String(),
-			Subcategory: dictionary.Data.GetSubcategory(),
+			Languages:   dictionary.GetLanguageFrom().Name + "-" + dictionary.GetLanguageTo().Name,
+			Level:       dictionary.GetLanguageLevel().String(),
+			Subcategory: dictionary.GetSubcategory(),
 
 			// dictionary info.
-			Words:    dictionary.Data.GetWordsCount(),
+			Words:    dictionary.GetWordsCount(),
 			Overview: dictionary.Meta.Description,
 			Author:   dictionary.Meta.Author,
 			Name:     dictionary.Meta.Name,
 
 			// craft info.
-			PromptCraft: fmt.Sprintf("%s::%s", dictionary.Data.GetPrompt(), dictionary.Data.GetModel()),
-			Description: dictionary.Data.GetDictionaryDescription(),
-			Topic:       dictionary.Data.GetDictionaryTopic(),
-			File:        dictionary.Data.GetFilename(),
+			PromptCraft: fmt.Sprintf("%s::%s", dictionary.GetPrompt(), dictionary.GetModel()),
+			Description: dictionary.GetDictionaryDescription(),
+			Topic:       dictionary.GetDictionaryTopic(),
+			File:        dictionary.GetFilename(),
 
 			// internal info.
 			Upload:      applingoprocessing.BoolToInt(false),

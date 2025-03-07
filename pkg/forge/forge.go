@@ -73,7 +73,7 @@ func Check(ctx context.Context, req *RequestDictionaryCheck, promptBucket, proce
 		if err := serializer.UnmarshalJSON([]byte(resp.GetResponseText()), &check.Meta); err != nil {
 			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorResponseObject, err)
 		}
-		check.Data = &data
+		check.DictionaryCheckData = &data
 		return &check, nil
 	}
 }
@@ -128,8 +128,10 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 			return nil, errors.Join(ErrorForgeDictionaryCraft, errors.New("dictionary has no words"))
 		}
 
-		data.setWordsCount(len(dictionary.Words))
-		dictionary.Data = &data
+		dictionary.DictionaryCraftData = &data
+
+		dictionary.Meta.LanguageLevel = data.GetLanguageLevel().String()
+		dictionary.Meta.WordsCount = len(dictionary.Words)
 		return &dictionary, nil
 	}
 }

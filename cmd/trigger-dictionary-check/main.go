@@ -106,7 +106,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			).
 			Set(
 				expression.Name(applingoprocessing.ColumnPromptCheck),
-				expression.Value(fmt.Sprintf("%s::%s", result.Data.GetPrompt(), result.Data.GetModel())),
+				expression.Value(fmt.Sprintf("%s::%s", result.GetPrompt(), result.GetModel())),
 			)
 
 		condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))

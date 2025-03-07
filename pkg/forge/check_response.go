@@ -10,6 +10,6 @@ type CheckMetaFromAI struct {
 // ResponseDictionaryCheck represents the complete response payload for a dictionary check request.
 // It includes the generated metadata and the original request parameters.
 type ResponseDictionaryCheck struct {
-	Meta CheckMetaFromAI      `json:"meta"`
-	Data *DictionaryCheckData `json:"data"`
+	*DictionaryCheckData
+	Meta CheckMetaFromAI `json:"meta"`
 }
