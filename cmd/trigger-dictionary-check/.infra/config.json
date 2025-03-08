@@ -42,7 +42,8 @@
         "Action": [
           "s3:GetObject",
           "s3:ListBucket",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:PutObject"
         ],
         "Resource": [
           "${processing_bucket_arn}/*",
@@ -52,6 +53,7 @@
       {
         "Effect": "Allow",
         "Action": [
+          "s3:GetObject",
           "s3:PutObject"
         ],
         "Resource": [

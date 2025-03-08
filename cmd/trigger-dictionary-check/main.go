@@ -137,7 +137,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				Topic:       item.Topic,
 				Level:       item.Level,
 				Words:       item.Words,
-				Filename:    item.File,
+				Filename:    fmt.Sprintf("%s.json", item.File),
 				Dictionary:  item.File,
 
 				LevelSubcategoryIsPublic: fmt.Sprintf("%s#%s#%d", item.Level, item.Subcategory, applingodictionary.BoolToInt(true)),
@@ -149,7 +149,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				return fmt.Errorf("failed prepare dynamo item: %w", err)
 			}
 
-			if err := s3Bucket.Move(ctx, item.File, serviceProcessingBucket, item.File, serviceDictionaryBucket); err != nil {
+			if err := s3Bucket.Move(ctx, item.File, serviceProcessingBucket, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket); err != nil {
 				return fmt.Errorf("failed to move dictionary from processing to service: %w", err)
 			}
 			if err := dbDynamo.Put(
