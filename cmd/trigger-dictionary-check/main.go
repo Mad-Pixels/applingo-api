@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	lambdaWatchdog           = 180 * time.Second
 	defaultBackoff           = 15 * time.Second
 	autoUploadScoreThreshold = 90
 	defaultRetries           = 2
@@ -44,7 +45,7 @@ var (
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 
-	timeout = utils.GetTimeout(lambdaTimeout, 240*time.Second)
+	timeout = utils.GetTimeout(lambdaTimeout, lambdaWatchdog)
 )
 
 func init() {
@@ -94,7 +95,6 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			log.Error().Err(err).Str("id", item.Id).Msg("failed to create key for item")
 			return fmt.Errorf("failed to create key for item: %w", err)
 		}
-
 		update := expression.
 			Set(
 				expression.Name(applingoprocessing.ColumnScore),
@@ -106,7 +106,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			).
 			Set(
 				expression.Name(applingoprocessing.ColumnPromptCheck),
-				expression.Value(fmt.Sprintf("%s::%s", result.GetPrompt(), result.GetModel())),
+				expression.Value(utils.JoinValues(result.GetPrompt(), string(result.GetModel()))),
 			)
 
 		condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))

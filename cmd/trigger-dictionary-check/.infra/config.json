@@ -76,7 +76,7 @@
     ]
   },
   "memory_size": 128,
-  "timeout": 240,
+  "timeout": 180,
   "envs": {
     "OPENAI_KEY": "${var_openai_key}",
     "SERVICE_FORGE_BUCKET": "${forge_bucket_name}",

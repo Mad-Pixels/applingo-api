@@ -3,11 +3,22 @@ package utils
 import (
 	"io"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
 	"github.com/pkg/errors"
 )
+
+// JoinValues join string values with default separator between values.
+func JoinValues(values ...string) string {
+	return strings.Join(values, "::")
+}
+
+// SplitValues split string values by default sepearator between values.
+func SplitValues(value string) []string {
+	return strings.Split(value, "::")
+}
 
 // GetTimeout returns a timeout duration based on the provided lambda timeout string.
 // If lambdaTimeout is non-empty and can be converted to an integer, the value is interpreted

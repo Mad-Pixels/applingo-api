@@ -134,7 +134,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
 
 			// language info.
-			Languages:   dictionary.GetLanguageFrom().Name + "-" + dictionary.GetLanguageTo().Name,
+			Languages:   utils.JoinValues(dictionary.GetLanguageFrom().Name, dictionary.GetLanguageTo().Name),
 			Level:       dictionary.GetLanguageLevel().String(),
 			Subcategory: dictionary.GetSubcategory(),
 
@@ -145,7 +145,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Name:     dictionary.Meta.Name,
 
 			// craft info.
-			PromptCraft: dictionary.GetPrompt() + "::" + string(dictionary.GetModel()),
+			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),
 			Description: dictionary.GetDictionaryDescription(),
 			Topic:       dictionary.GetDictionaryTopic(),
 			File:        dictionary.GetFilename(),
