@@ -9,10 +9,6 @@ type DictionaryMetaFromAI struct {
 	Author string `json:"author"`
 	// Name specifies the title or name of the generated dictionary.
 	Name string `json:"name"`
-	// LanguageLevel is the level of the language of the dictionary.
-	LanguageLevel string `json:"level"`
-	// WordsCount is the number of words in the dictionary.
-	WordsCount int `json:"words"`
 }
 
 // DictionaryWordFromAI represents a single word entry within the generated dictionary.

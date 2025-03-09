@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/google/uuid"
 )
@@ -117,11 +118,6 @@ func (r *DictionaryCraftData) GetSubcategory() string {
 // getPromptBody returns an io.Reader with prompt content.
 func (r *DictionaryCraftData) getPromptBody() io.Reader {
 	return r.promptBuf
-}
-
-// SetWordsCount sets the number of words (use after dictionary is generated).
-func (r *DictionaryCraftData) setWordsCount(words int) {
-	r.words = words
 }
 
 // ToPromptTemplate converts the DictionaryCraftData into a promptTemplate.

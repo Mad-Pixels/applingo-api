@@ -128,10 +128,9 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 			return nil, errors.Join(ErrorForgeDictionaryCraft, errors.New("dictionary has no words"))
 		}
 
+		// re-check words count: openai sometimes return incorrect value of items count
+		data.words = len(dictionary.Words)
 		dictionary.DictionaryCraftData = &data
-
-		dictionary.Meta.LanguageLevel = data.GetLanguageLevel().String()
-		dictionary.Meta.WordsCount = len(dictionary.Words)
 		return &dictionary, nil
 	}
 }
