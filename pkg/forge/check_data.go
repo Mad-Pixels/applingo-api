@@ -43,8 +43,7 @@ type DictionaryCheckData struct {
 	dictionaryBuf *bytes.Buffer                  // Internal buffer to store the fetched dictionary content.
 	promptBuf     *bytes.Buffer                  // Internal buffer to store the fetched prompt template.
 
-	prompt string // Prompt string used for initiating dictionary generation.
-
+	prompt      string              // Prompt string used for initiating dictionary generation.
 	model       chatgpt.OpenAIModel // OpenAI model to be used for generating the dictionary.
 	temperature float64             // Controls the randomness or creativity of the generation process.
 }
