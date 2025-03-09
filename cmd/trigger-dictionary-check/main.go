@@ -148,8 +148,11 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				return fmt.Errorf("failed prepare dynamo item: %w", err)
 			}
 
-			if err := s3Bucket.Move(ctx, item.File, serviceProcessingBucket, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket); err != nil {
-				return fmt.Errorf("failed to move dictionary from processing to service: %w", err)
+			if err := s3Bucket.Copy(ctx, item.File, serviceProcessingBucket, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket); err != nil {
+				return fmt.Errorf("failed to copy dictionary from processing to service: %w", err)
+			}
+			if err := s3Bucket.WaitOrError(ctx, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket, 3, 200*time.Millisecond); err != nil {
+				return fmt.Errorf("failed to check object in bucket")
 			}
 			if err := dbDynamo.Put(
 				ctx,

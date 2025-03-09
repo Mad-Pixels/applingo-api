@@ -329,7 +329,8 @@ func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (strin
 	return randomKey, nil
 }
 
-func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
+// Copy file from one bucket to another.
+func (b *Bucket) Copy(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
 	if err := validateInput(sourceKey, sourceBucket); err != nil {
 		return err
 	}
@@ -338,7 +339,6 @@ func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, des
 	}
 	copySource := aws.String(sourceBucket + "/" + sourceKey)
 
-	// Копируем объект
 	_, err := b.client.CopyObject(ctx, &s3.CopyObjectInput{
 		Bucket:            aws.String(destBucket),
 		Key:               aws.String(destKey),
@@ -347,34 +347,6 @@ func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, des
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to copy object")
-	}
-
-	// Проверяем наличие объекта с повторными попытками
-	retries := 3
-	retryDelay := 2 * time.Second
-
-	for i := 0; i < retries; i++ {
-		exists, checkErr := b.Exists(ctx, destKey, destBucket)
-		if checkErr == nil && exists {
-			// Объект существует, можно продолжать
-			break
-		}
-
-		if i == retries-1 && (checkErr != nil || !exists) {
-			// Последняя попытка не удалась
-			if checkErr != nil {
-				return errors.Wrap(checkErr, "failed to confirm object exists after copy")
-			}
-			return errors.New("object not found in destination bucket after copy")
-		}
-
-		// Ждем перед следующей попыткой
-		time.Sleep(retryDelay)
-	}
-
-	// Удаляем исходный объект
-	if err = b.Delete(ctx, sourceKey, sourceBucket); err != nil {
-		return errors.Wrap(err, "failed to delete source object after copy")
 	}
 	return nil
 }
