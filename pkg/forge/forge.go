@@ -7,6 +7,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
@@ -37,17 +38,26 @@ const (
 // Parameters:
 //   - ctx: The context for cancellation and timeouts.
 //   - req: A pointer to a RequestDictionaryCheck containing the check parameters.
+//   - item: A pointer to a DynamoDb processing table item object with all metadata about the dictionary.
 //   - promptBucket: The name of the S3 bucket where the prompt template is stored.
 //   - processingBucket: The name of the S3 bucket for processing data.
 //   - chatgptCli: A client for interacting with the OpenAI API.
 //   - s3Cli: A client for interacting with the S3 bucket.
 //
 // Returns:
-//   - *ResponseDictionaryCheck: The response containing the check result.
+//   - *DictionaryCheckData: Full check object.
 //   - error: An error if any step of the process fails.
-func Check(ctx context.Context, req *RequestDictionaryCheck, promptBucket, processingBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) (*ResponseDictionaryCheck, error) {
+func Check(
+	ctx context.Context,
+	req *RequestDictionaryCheck,
+	item *applingoprocessing.SchemaItem,
+	promptBucket string,
+	processingBucket string,
+	chatgptCli *chatgpt.Client,
+	s3Cli *cloud.Bucket,
+) (*DictionaryCheckData, error) {
 	data := NewDictionaryCheckData()
-	if err := data.Setup(ctx, *req, s3Cli, promptBucket, processingBucket); err != nil {
+	if err := data.Setup(ctx, req, item, s3Cli, promptBucket, processingBucket); err != nil {
 		return nil, errors.Join(ErrorForgeDictionaryCheck, err)
 	}
 
@@ -68,13 +78,13 @@ func Check(ctx context.Context, req *RequestDictionaryCheck, promptBucket, proce
 		if err != nil {
 			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorOpenAIProcess, err)
 		}
-
 		var check ResponseDictionaryCheck
-		if err := serializer.UnmarshalJSON([]byte(resp.GetResponseText()), &check.Meta); err != nil {
+		if err := serializer.UnmarshalJSON([]byte(resp.GetResponseText()), &check); err != nil {
 			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorResponseObject, err)
 		}
-		check.Data = &data
-		return &check, nil
+
+		data.response = &check
+		return &data, nil
 	}
 }
 
@@ -94,11 +104,11 @@ func Check(ctx context.Context, req *RequestDictionaryCheck, promptBucket, proce
 //   - s3Cli: A client for interacting with the S3 bucket.
 //
 // Returns:
-//   - *ResponseDictionaryCraft: The generated dictionary response.
+//   - *DictionaryCraftData: Full dictionary object.
 //   - error: An error if any step of the process fails.
-func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) (*ResponseDictionaryCraft, error) {
+func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) (*DictionaryCraftData, error) {
 	data := NewDictionaryCraftData()
-	if err := data.Setup(ctx, *req, s3Cli, promptBucket); err != nil {
+	if err := data.Setup(ctx, req, s3Cli, promptBucket); err != nil {
 		return nil, errors.Join(ErrorForgeDictionaryCraft, err)
 	}
 
@@ -128,9 +138,9 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 			return nil, errors.Join(ErrorForgeDictionaryCraft, errors.New("dictionary has no words"))
 		}
 
-		data.setWordsCount(len(dictionary.Words))
-		dictionary.Data = &data
-		return &dictionary, nil
+		data.words = len(dictionary.Words)
+		data.response = &dictionary
+		return &data, nil
 	}
 }
 
@@ -145,9 +155,9 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 //   - s3Cli: A client for interacting with the S3 bucket.
 //
 // Returns:
-//   - []*ResponseDictionaryCraft: A slice of successful dictionary generation responses.
+//   - []*DictionaryCraftData: A slice of successful dictionary generation objects.
 //   - []error: A slice of errors encountered during processing.
-func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) ([]*ResponseDictionaryCraft, []error) {
+func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucket string, chatgptCli *chatgpt.Client, s3Cli *cloud.Bucket) ([]*DictionaryCraftData, []error) {
 	var dictionariesCount, maxConcurrent int
 	if req == nil {
 		req = NewDictionaryCraftRequest()
@@ -174,7 +184,7 @@ func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucke
 
 	var (
 		ctxWithCancel, cancel = context.WithCancel(ctx)
-		results               = make(chan *ResponseDictionaryCraft, dictionariesCount)
+		results               = make(chan *DictionaryCraftData, dictionariesCount)
 		sem                   = make(chan struct{}, maxConcurrent)
 		errs                  = make(chan error, dictionariesCount)
 		wg                    sync.WaitGroup
@@ -233,7 +243,7 @@ func CraftMultiple(ctx context.Context, req *RequestDictionaryCraft, promptBucke
 	}()
 
 	var (
-		dictionaries = make([]*ResponseDictionaryCraft, 0, dictionariesCount)
+		dictionaries = make([]*DictionaryCraftData, 0, dictionariesCount)
 		errorList    = make([]error, 0)
 	)
 	for resp := range results {

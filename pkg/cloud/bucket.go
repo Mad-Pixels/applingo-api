@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"math/rand"
 	"time"
@@ -208,6 +209,30 @@ func (b *Bucket) Exists(ctx context.Context, key, bucket string) (bool, error) {
 	return true, nil
 }
 
+// WaitOrError trying to check file in bucket muliple times, if not exist it return error.
+func (b *Bucket) WaitOrError(ctx context.Context, key, bucket string, maxAttempts int, delay time.Duration) error {
+	if err := validateInput(key, bucket); err != nil {
+		return err
+	}
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		exists, err := b.Exists(ctx, key, bucket)
+		if err != nil {
+			return errors.Wrap(err, "failed to check object existence during wait")
+		}
+
+		if exists {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return fmt.Errorf("object %s was not found in bucket %s after %d attempts", key, bucket, maxAttempts)
+}
+
 // Read reads file from bucket and writes content directly to the provided writer.
 func (b *Bucket) Read(ctx context.Context, w io.Writer, key, bucket string) error {
 	if err := validateInput(key, bucket); err != nil {
@@ -253,52 +278,59 @@ func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (strin
 		return "", ErrBucketEmptyBucket
 	}
 
-	input := &s3.ListObjectsV2Input{
-		Bucket:  aws.String(bucket),
-		MaxKeys: aws.Int32(1),
+	countInput := &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket),
 	}
 	if prefix != "" {
-		input.Prefix = aws.String(prefix)
+		countInput.Prefix = aws.String(prefix)
 	}
-
-	output, err := b.client.ListObjectsV2(ctx, input)
+	countOutput, err := b.client.ListObjectsV2(ctx, countInput)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get object count")
 	}
-	if aws.ToInt32(output.KeyCount) == 0 {
+	totalCount := aws.ToInt32(countOutput.KeyCount)
+	if totalCount == 0 {
 		return "", ErrBucketObjectNotFound
 	}
 
-	keyCount := aws.ToInt32(output.KeyCount)
-	skip := rand.Int31n(keyCount)
-
-	input = &s3.ListObjectsV2Input{
-		Bucket:     aws.String(bucket),
-		MaxKeys:    aws.Int32(1),
-		StartAfter: aws.String(prefix),
+	randIndex := rand.Int63n(int64(totalCount))
+	listInput := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucket),
+		MaxKeys: aws.Int32(1000),
 	}
-	var item *types.Object
-	for curr := int32(0); curr <= skip; curr++ {
-		output, err := b.client.ListObjectsV2(ctx, input)
+	if prefix != "" {
+		listInput.Prefix = aws.String(prefix)
+	}
+
+	var currentIndex int64 = 0
+	var randomKey string
+	for {
+		output, err := b.client.ListObjectsV2(ctx, listInput)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to list objects")
 		}
-		if len(output.Contents) == 0 {
+		if currentIndex+int64(len(output.Contents)) > randIndex {
+			indexInPage := randIndex - currentIndex
+			randomKey = aws.ToString(output.Contents[indexInPage].Key)
 			break
 		}
+		currentIndex += int64(len(output.Contents))
 
-		item = &output.Contents[0]
-		input.StartAfter = item.Key
+		if output.IsTruncated == nil || !aws.ToBool(output.IsTruncated) {
+			if len(output.Contents) > 0 {
+				randomKey = aws.ToString(output.Contents[len(output.Contents)-1].Key)
+			} else {
+				return "", ErrBucketObjectNotFound
+			}
+			break
+		}
+		listInput.ContinuationToken = output.NextContinuationToken
 	}
-
-	if item == nil {
-		return "", ErrBucketObjectNotFound
-	}
-	return aws.ToString(item.Key), nil
+	return randomKey, nil
 }
 
-// Move an object from the source bucket to the destination bucket (or key).
-func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
+// Copy file from one bucket to another.
+func (b *Bucket) Copy(ctx context.Context, sourceKey, sourceBucket, destKey, destBucket string) error {
 	if err := validateInput(sourceKey, sourceBucket); err != nil {
 		return err
 	}
@@ -315,17 +347,6 @@ func (b *Bucket) Move(ctx context.Context, sourceKey, sourceBucket, destKey, des
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to copy object")
-	}
-
-	waiter := s3.NewObjectExistsWaiter(b.client)
-	if err = waiter.Wait(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(destBucket),
-		Key:    aws.String(destKey),
-	}, 30*time.Second); err != nil {
-		return errors.Wrap(err, "failed to confirm copied object exists")
-	}
-	if err = b.Delete(ctx, sourceKey, sourceBucket); err != nil {
-		return errors.Wrap(err, "failed to delete source object after copy")
 	}
 	return nil
 }

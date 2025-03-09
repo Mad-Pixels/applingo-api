@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/google/uuid"
 )
@@ -35,8 +36,9 @@ type craftDictionaryPromptTemplate struct {
 // DictionaryCraftData holds all data related to a dictionary generation request.
 // It encapsulates both the input parameters and internal data used during the crafting process.
 type DictionaryCraftData struct {
-	request   *RequestDictionaryCraft // Original dictionary craft request parameters.
-	promptBuf *bytes.Buffer           // Internal buffer to store the fetched prompt template data.
+	request   *RequestDictionaryCraft  // Original dictionary craft request parameters.
+	response  *ResponseDictionaryCraft // Original openai craft response.
+	promptBuf *bytes.Buffer            // Internal buffer to store the fetched prompt template data.
 
 	prompt                string // Prompt string used for initiating dictionary generation.
 	filename              string // Generated unique identifier (UUID) for the dictionary file.
@@ -62,6 +64,38 @@ func NewDictionaryCraftData() DictionaryCraftData {
 		maxConcurrent:     defaultConcurrent,
 		dictionariesCount: defaultDictionaries,
 	}
+}
+
+// GetDicionaryName return the name crafted by openAI.
+func (r *DictionaryCraftData) GetDictionaryName() string {
+	if r.response != nil {
+		return r.response.Meta.Name
+	}
+	return ""
+}
+
+// GetDictionaryOverview return the dictionary description crafted by openAI.
+func (r *DictionaryCraftData) GetDictionaryOverview() string {
+	if r.response != nil {
+		return r.response.Meta.Description
+	}
+	return ""
+}
+
+// GetDictionaryAuthor return the dictionary author crafted by openAI.
+func (r *DictionaryCraftData) GetDictionaryAuthor() string {
+	if r.response != nil {
+		return r.response.Meta.Author
+	}
+	return ""
+}
+
+// GetWords return the dictionary words crafted by openAI.
+func (r *DictionaryCraftData) GetWordsContainer() WordsContainer {
+	if r.response == nil {
+		return WordsContainer{Words: []DictionaryWordFromAI{}}
+	}
+	return WordsContainer{Words: r.response.Words}
 }
 
 // GetPrompt returns the prompt name.
@@ -119,11 +153,6 @@ func (r *DictionaryCraftData) getPromptBody() io.Reader {
 	return r.promptBuf
 }
 
-// SetWordsCount sets the number of words (use after dictionary is generated).
-func (r *DictionaryCraftData) setWordsCount(words int) {
-	r.words = words
-}
-
 // ToPromptTemplate converts the DictionaryCraftData into a promptTemplate.
 func (d *DictionaryCraftData) toPromptTemplate() craftDictionaryPromptTemplate {
 	return craftDictionaryPromptTemplate{
@@ -137,7 +166,7 @@ func (d *DictionaryCraftData) toPromptTemplate() craftDictionaryPromptTemplate {
 }
 
 // Setup initializes the DictionaryCraftData with the provided request parameters.
-func (r *DictionaryCraftData) Setup(ctx context.Context, req RequestDictionaryCraft, s3cli *cloud.Bucket, promptBucketName string) error {
+func (r *DictionaryCraftData) Setup(ctx context.Context, req *RequestDictionaryCraft, s3cli *cloud.Bucket, promptBucketName string) error {
 	var (
 		results  = make(chan workerResult, 3)
 		setupErr error

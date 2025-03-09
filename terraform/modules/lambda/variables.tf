@@ -66,3 +66,15 @@ variable "log_retention" {
   description = "Cloudwatch retention in days"
   default     = 3
 }
+
+variable "maximum_event_age_in_seconds" {
+  description = "Maximum event age in seconds"
+  type        = number
+  default     = 600
+}
+
+variable "maximum_retry_attempts" {
+  description = "Maximum retry attempts"
+  type        = number
+  default     = 0
+}

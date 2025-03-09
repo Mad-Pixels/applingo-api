@@ -4,9 +4,6 @@ package forge
 // It contains information about the S3 file for the dictionary and the prompt template,
 // as well as the user-provided model which may need further validation.
 type RequestDictionaryCheck struct {
-	// DictionaryFile is the S3 key for the dictionary file.
-	// This key uniquely identifies the dictionary file stored in the S3 bucket.
-	DictionaryFile string `json:"file"`
 	// PromptName is the name or title of the dictionary check prompt.
 	// It serves as an identifier for the particular dictionary check process.
 	PromptName *string `json:"prompt_name"`

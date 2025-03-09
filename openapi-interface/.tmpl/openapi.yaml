@@ -1085,7 +1085,7 @@ components:
       schema:
         $ref: '#/components/schemas/BaseStringRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,alphanum,min=2,max=24"
+        validate: "required,ext_str,min=2,max=24"
 
     ParamDictionaryAuthorOptional:
       name: author 
@@ -1094,7 +1094,7 @@ components:
       schema:
         $ref: '#/components/schemas/BaseStringOptional'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,base_str,min=2,max=24"
+        validate: "omitempty,ext_str,min=2,max=24"
 
     ParamDictionaryLevelRequired:
       name: level

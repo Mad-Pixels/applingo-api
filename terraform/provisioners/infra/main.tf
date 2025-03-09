@@ -53,7 +53,7 @@ module "dynamo-dictionary-table" {
   range_key            = local.dictionary_dynamo_schema.range_key
   attributes           = local.dictionary_dynamo_schema.attributes
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
-  stream_enabled       = false
+  stream_enabled       = true
 }
 
 module "dynamo-processing-table" {
@@ -67,11 +67,3 @@ module "dynamo-processing-table" {
   secondary_index_list = local.processing_dynamo_schema.secondary_indexes
   stream_enabled       = true
 }
-
-// TODO: SQS was removed from the project, use directly the table stream.
-# module "dictionary_put_csv_queue" {
-#   source = "../../modules/sqs"
-
-#   project    = local.project
-#   queue_name = "put"
-# }

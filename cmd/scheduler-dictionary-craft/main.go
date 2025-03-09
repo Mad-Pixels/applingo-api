@@ -17,15 +17,18 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
-	"github.com/rs/zerolog"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/rs/zerolog"
 )
 
 const (
-	defaultBackoff       = 15 * time.Second
-	defaultRetries       = 2
+	lambdaWatchdog       = 240 * time.Second
+	backoffOpenAIRequest = 15 * time.Second
+	retriesOpenAIRequest = 1
+	backoffBucketCheck   = 300 * time.Millisecond
+	retriesBucketCheck   = 4
 	defaultMaxWorkers    = 5
 	maxCraftConurrent    = 4
 	maxCraftDictionaries = 4
@@ -42,7 +45,7 @@ var (
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 
-	timeout = utils.GetTimeout(lambdaTimeout, 240*time.Second)
+	timeout = utils.GetTimeout(lambdaTimeout, lambdaWatchdog)
 )
 
 func prepareWithDefaults(i *int, defaultValue int) *int {
@@ -62,7 +65,7 @@ func init() {
 	gptClient = chatgpt.MustClient(
 		httpclient.New().
 			WithTimeout(timeout).
-			WithMaxRetries(defaultRetries, defaultBackoff).
+			WithMaxRetries(retriesOpenAIRequest, backoffOpenAIRequest).
 			WithRetryCondition(func(statusCode int, responseBody string) bool {
 				return statusCode >= 500 && statusCode < 600
 			}),
@@ -100,7 +103,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			continue
 		}
 
-		content, err := serializer.MarshalJSON(dictionary)
+		content, err := serializer.MarshalJSON(dictionary.GetWordsContainer())
 		if err != nil {
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
 			continue
@@ -108,7 +111,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			dictionary.Data.GetFilename(),
+			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -116,31 +119,41 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("upload dictionary to bucket failed")
 			continue
 		}
+		if err = s3Bucket.WaitOrError(
+			ctx,
+			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			serviceProcessingBucket,
+			retriesBucketCheck,
+			backoffBucketCheck,
+		); err != nil {
+			log.Error().Any("dictionary", *dictionary).Err(err).Msg("failed check data in processing bucket")
+			continue
+		}
 
 		dynamoItem := applingoprocessing.SchemaItem{
-			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
+			Id: utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 
 			// language info.
-			Languages:   dictionary.Data.GetLanguageFrom().Name + "-" + dictionary.Data.GetLanguageTo().Name,
-			Level:       dictionary.Data.GetLanguageLevel().String(),
-			Subcategory: dictionary.Data.GetSubcategory(),
+			Languages:   utils.JoinValues(dictionary.GetLanguageFrom().Name, dictionary.GetLanguageTo().Name),
+			Level:       dictionary.GetLanguageLevel().String(),
+			Subcategory: dictionary.GetSubcategory(),
 
 			// dictionary info.
-			Words:    dictionary.Data.GetWordsCount(),
-			Overview: dictionary.Meta.Description,
-			Author:   dictionary.Meta.Author,
-			Name:     dictionary.Meta.Name,
+			Words:    dictionary.GetWordsCount(),
+			Overview: dictionary.GetDictionaryOverview(),
+			Author:   dictionary.GetDictionaryAuthor(),
+			Name:     dictionary.GetDictionaryName(),
 
 			// craft info.
-			PromptCraft: fmt.Sprintf("%s::%s", dictionary.Data.GetPrompt(), dictionary.Data.GetModel()),
-			Description: dictionary.Data.GetDictionaryDescription(),
-			Topic:       dictionary.Data.GetDictionaryTopic(),
-			File:        dictionary.Data.GetFilename(),
+			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),
+			Description: dictionary.GetDictionaryDescription(),
+			Topic:       dictionary.GetDictionaryTopic(),
+			Filename:    dictionary.GetFilename(),
 
 			// internal info.
 			Upload:      applingoprocessing.BoolToInt(false),
 			Created:     int(time.Now().Unix()),
-			Reason:      "wait for check",
+			Reason:      "waiting for check",
 			PromptCheck: "",
 			Score:       0,
 		}
