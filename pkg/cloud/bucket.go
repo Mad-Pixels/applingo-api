@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"math/rand"
 	"time"
@@ -206,6 +207,30 @@ func (b *Bucket) Exists(ctx context.Context, key, bucket string) (bool, error) {
 		return false, errors.Wrap(err, "failed to check object existence")
 	}
 	return true, nil
+}
+
+// WaitOrError trying to check file in bucket muliple times, if not exist it return error.
+func (b *Bucket) WaitOrError(ctx context.Context, key, bucket string, maxAttempts int, delay time.Duration) error {
+	if err := validateInput(key, bucket); err != nil {
+		return err
+	}
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		exists, err := b.Exists(ctx, key, bucket)
+		if err != nil {
+			return errors.Wrap(err, "failed to check object existence during wait")
+		}
+
+		if exists {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return fmt.Errorf("object %s was not found in bucket %s after %d attempts", key, bucket, maxAttempts)
 }
 
 // Read reads file from bucket and writes content directly to the provided writer.

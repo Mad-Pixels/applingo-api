@@ -10,6 +10,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
@@ -27,9 +28,8 @@ type DictionaryCheckData struct {
 	prompt   string // Prompt string used for initiating dictionary generation.
 	filename string // Dictionary filename.
 
-	model chatgpt.OpenAIModel // OpenAI model to be used for generating the dictionary.
-
-	temperature float64 // Controls the randomness or creativity of the generation process.
+	model       chatgpt.OpenAIModel // OpenAI model to be used for generating the dictionary.
+	temperature float64             // Controls the randomness or creativity of the generation process.
 }
 
 // NewDictionaryCheckData creates a new DictionaryCheckData instance.

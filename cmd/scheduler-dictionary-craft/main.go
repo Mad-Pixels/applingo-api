@@ -17,15 +17,18 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
 	"github.com/Mad-Pixels/applingo-api/pkg/trigger"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
-	"github.com/rs/zerolog"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/rs/zerolog"
 )
 
 const (
-	defaultBackoff       = 15 * time.Second
-	defaultRetries       = 2
+	lambdaWatchdog       = 240 * time.Second
+	backoffOpenAIRequest = 15 * time.Second
+	retriesOpenAIRequest = 1
+	backoffBucketCheck   = 300 * time.Millisecond
+	retriesBucketCheck   = 4
 	defaultMaxWorkers    = 5
 	maxCraftConurrent    = 4
 	maxCraftDictionaries = 4
@@ -42,7 +45,7 @@ var (
 	dbDynamo  *cloud.Dynamo
 	s3Bucket  *cloud.Bucket
 
-	timeout = utils.GetTimeout(lambdaTimeout, 240*time.Second)
+	timeout = utils.GetTimeout(lambdaTimeout, lambdaWatchdog)
 )
 
 func prepareWithDefaults(i *int, defaultValue int) *int {
@@ -62,7 +65,7 @@ func init() {
 	gptClient = chatgpt.MustClient(
 		httpclient.New().
 			WithTimeout(timeout).
-			WithMaxRetries(defaultRetries, defaultBackoff).
+			WithMaxRetries(retriesOpenAIRequest, backoffOpenAIRequest).
 			WithRetryCondition(func(statusCode int, responseBody string) bool {
 				return statusCode >= 500 && statusCode < 600
 			}),
@@ -116,6 +119,16 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("upload dictionary to bucket failed")
 			continue
 		}
+		if err = s3Bucket.WaitOrError(
+			ctx,
+			dictionary.GetFilename(),
+			serviceProcessingBucket,
+			retriesBucketCheck,
+			backoffBucketCheck,
+		); err != nil {
+			log.Error().Any("dictionary", *dictionary).Err(err).Msg("failed check data in processing bucket")
+			continue
+		}
 
 		dynamoItem := applingoprocessing.SchemaItem{
 			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
@@ -132,7 +145,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Name:     dictionary.Meta.Name,
 
 			// craft info.
-			PromptCraft: fmt.Sprintf("%s::%s", dictionary.GetPrompt(), dictionary.GetModel()),
+			PromptCraft: dictionary.GetPrompt() + "::" + string(dictionary.GetModel()),
 			Description: dictionary.GetDictionaryDescription(),
 			Topic:       dictionary.GetDictionaryTopic(),
 			File:        dictionary.GetFilename(),
@@ -140,7 +153,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			// internal info.
 			Upload:      applingoprocessing.BoolToInt(false),
 			Created:     int(time.Now().Unix()),
-			Reason:      "wait for check",
+			Reason:      "waiting for check",
 			PromptCheck: "",
 			Score:       0,
 		}
