@@ -103,7 +103,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			continue
 		}
 
-		content, err := serializer.MarshalJSON(dictionary)
+		content, err := serializer.MarshalJSON(dictionary.GetWordsContainer())
 		if err != nil {
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
 			continue
@@ -131,7 +131,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 
 		dynamoItem := applingoprocessing.SchemaItem{
-			Id: utils.GenerateDictionaryID(dictionary.Meta.Name, dictionary.Meta.Author),
+			Id: utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 
 			// language info.
 			Languages:   utils.JoinValues(dictionary.GetLanguageFrom().Name, dictionary.GetLanguageTo().Name),
@@ -140,9 +140,9 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 			// dictionary info.
 			Words:    dictionary.GetWordsCount(),
-			Overview: dictionary.Meta.Description,
-			Author:   dictionary.Meta.Author,
-			Name:     dictionary.Meta.Name,
+			Overview: dictionary.GetDictionaryOverview(),
+			Author:   dictionary.GetDictionaryAuthor(),
+			Name:     dictionary.GetDictionaryName(),
 
 			// craft info.
 			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),

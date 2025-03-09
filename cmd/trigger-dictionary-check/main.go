@@ -81,10 +81,9 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		if err != nil {
 			return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
 		}
-		req := forge.NewRequestDictionaryCheck()
-		req.DictionaryFile = item.File
 
-		result, err := forge.Check(ctx, req, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
+		req := forge.NewRequestDictionaryCheck()
+		result, err := forge.Check(ctx, req, item, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
 		if err != nil {
 			log.Error().Err(err).Str("file", item.File).Msg("failed to check dictionary")
 			return fmt.Errorf("failed to check dictionary: %w", err)
@@ -98,11 +97,11 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		update := expression.
 			Set(
 				expression.Name(applingoprocessing.ColumnScore),
-				expression.Value(result.Meta.Score),
+				expression.Value(result.GetScore()),
 			).
 			Set(
 				expression.Name(applingoprocessing.ColumnReason),
-				expression.Value(result.Meta.Reason),
+				expression.Value(result.GetReason()),
 			).
 			Set(
 				expression.Name(applingoprocessing.ColumnPromptCheck),
