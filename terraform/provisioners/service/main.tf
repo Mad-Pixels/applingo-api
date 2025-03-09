@@ -67,7 +67,7 @@ module "scheduler_events" {
 
 resource "aws_lambda_event_source_mapping" "dynamo-stream-processing" {
   event_source_arn       = local.template_vars.processing_table_stream_arn
-  function_name          = module.lambda_functions["trigger-dictionary-check"].function_arn
+  function_name          = module.lambda_functions["trigger-processing-check"].function_arn
   starting_position      = "LATEST"
   maximum_retry_attempts = 0
 
