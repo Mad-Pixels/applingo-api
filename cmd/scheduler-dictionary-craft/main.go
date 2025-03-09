@@ -111,7 +111,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			dictionary.GetFilename(),
+			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -121,7 +121,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		if err = s3Bucket.WaitOrError(
 			ctx,
-			dictionary.GetFilename(),
+			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 			serviceProcessingBucket,
 			retriesBucketCheck,
 			backoffBucketCheck,
@@ -148,7 +148,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),
 			Description: dictionary.GetDictionaryDescription(),
 			Topic:       dictionary.GetDictionaryTopic(),
-			File:        dictionary.GetFilename(),
+			Filename:    dictionary.GetFilename(),
 
 			// internal info.
 			Upload:      applingoprocessing.BoolToInt(false),

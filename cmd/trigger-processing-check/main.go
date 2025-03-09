@@ -85,7 +85,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		req := forge.NewRequestDictionaryCheck()
 		result, err := forge.Check(ctx, req, item, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
 		if err != nil {
-			log.Error().Err(err).Str("file", item.File).Msg("failed to check dictionary")
+			log.Error().Err(err).Str("file", item.Filename).Msg("failed to check dictionary")
 			return fmt.Errorf("failed to check dictionary: %w", err)
 		}
 
@@ -136,8 +136,8 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				Topic:       item.Topic,
 				Level:       item.Level,
 				Words:       item.Words,
-				Filename:    fmt.Sprintf("%s.json", item.File),
-				Dictionary:  item.File,
+				Filename:    fmt.Sprintf("%s.json", item.Filename),
+				Dictionary:  item.Filename,
 
 				LevelSubcategoryIsPublic: fmt.Sprintf("%s#%s#%d", item.Level, item.Subcategory, applingodictionary.BoolToInt(true)),
 				SubcategoryIsPublic:      fmt.Sprintf("%s#%d", item.Subcategory, applingodictionary.BoolToInt(true)),
@@ -148,10 +148,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				return fmt.Errorf("failed prepare dynamo item: %w", err)
 			}
 
-			if err := s3Bucket.Copy(ctx, item.File, serviceProcessingBucket, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket); err != nil {
+			if err := s3Bucket.Copy(ctx, item.Id, serviceProcessingBucket, fmt.Sprintf("%s.json", item.Id), serviceDictionaryBucket); err != nil {
 				return fmt.Errorf("failed to copy dictionary from processing to service: %w", err)
 			}
-			if err := s3Bucket.WaitOrError(ctx, fmt.Sprintf("%s.json", item.File), serviceDictionaryBucket, 3, 200*time.Millisecond); err != nil {
+			if err := s3Bucket.WaitOrError(ctx, fmt.Sprintf("%s.json", item.Id), serviceDictionaryBucket, 3, 200*time.Millisecond); err != nil {
 				return fmt.Errorf("failed to check object in bucket")
 			}
 			if err := dbDynamo.Put(
@@ -160,7 +160,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				dynamoItem,
 				expression.AttributeNotExists(expression.Name(applingodictionary.ColumnId)),
 			); err != nil {
-				s3Err := s3Bucket.Delete(ctx, item.File, serviceProcessingBucket)
+				s3Err := s3Bucket.Delete(ctx, item.Id, serviceProcessingBucket)
 				if s3Err != nil {
 					return fmt.Errorf("failed add new dictionary in dynamoDB: %w, also cannot delete dictionary from bucket: %w", err, s3Err)
 				}
@@ -171,7 +171,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 	case "REMOVE":
 		var fileId string
-		if fileKey, ok := dynamoDBEvent.Change.Keys["file"]; ok {
+		if fileKey, ok := dynamoDBEvent.Change.Keys["id"]; ok {
 			fileId = fileKey.String()
 		}
 		if fileId == "" {
@@ -195,7 +195,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 func main() {
 	lambda.Start(
 		trigger.NewLambda(
-			trigger.Config{MaxWorkers: 6},
+			trigger.Config{MaxWorkers: defaultMaxWorkers},
 			handler,
 		).Handle,
 	)

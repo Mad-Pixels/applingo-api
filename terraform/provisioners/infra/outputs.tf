@@ -42,6 +42,10 @@ output "dynamo-dictionary-table_arn" {
   value = module.dynamo-dictionary-table.table_arn
 }
 
+output "dynamo-dictionary-stream_arn" {
+  value = module.dynamo-dictionary-table.stream_arn
+}
+
 output "dynamo-processing-table_name" {
   value = module.dynamo-processing-table.table_name
 }
@@ -53,20 +57,3 @@ output "dynamo-processing-table_arn" {
 output "dynamo-processing-stream_arn" {
   value = module.dynamo-processing-table.stream_arn
 }
-
-// TODO: SQS was removed from the project, use directly the table stream.
-# output "sqs-put-csv-dead-letter-queue_url" {
-#   value = module.dictionary_put_csv_queue.dead_letter_queue_url
-# }
-
-# output "sqs-put-csv-dead-letter-queue_arn" {
-#   value = module.dictionary_put_csv_queue.dead_letter_queue_arn
-# }
-
-# output "sqs-put-csv-queue_url" {
-#   value = module.dictionary_put_csv_queue.queue_url
-# }
-
-# output "sqs-put-csv-queue_arn" {
-#   value = module.dictionary_put_csv_queue.queue_arn
-# }

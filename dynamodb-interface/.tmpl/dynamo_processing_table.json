@@ -1,10 +1,10 @@
 {
   "table_name": "applingo-processing",
   "hash_key": "id",
-  "range_key": "file",
+  "range_key": "filename",
   "attributes": [
     { "name": "id", "type": "S" },
-    { "name": "file", "type": "S" }
+    { "name": "filename", "type": "S" }
   ],
   "common_attributes": [
     { "name": "reason", "type": "S" },
