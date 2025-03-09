@@ -136,8 +136,8 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 				Topic:       item.Topic,
 				Level:       item.Level,
 				Words:       item.Words,
-				Filename:    fmt.Sprintf("%s.json", item.Filename),
-				Dictionary:  item.Filename,
+				Filename:    fmt.Sprintf("%s.json", item.Id), // unused
+				Dictionary:  fmt.Sprintf("%s.json", item.Id),
 
 				LevelSubcategoryIsPublic: fmt.Sprintf("%s#%s#%d", item.Level, item.Subcategory, applingodictionary.BoolToInt(true)),
 				SubcategoryIsPublic:      fmt.Sprintf("%s#%d", item.Subcategory, applingodictionary.BoolToInt(true)),
