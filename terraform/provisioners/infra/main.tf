@@ -54,6 +54,8 @@ module "dynamo-dictionary-table" {
   attributes           = local.dictionary_dynamo_schema.attributes
   secondary_index_list = local.dictionary_dynamo_schema.secondary_indexes
   stream_enabled       = true
+
+  stream_type = "NEW_AND_OLD_IMAGES"
 }
 
 module "dynamo-processing-table" {
@@ -66,4 +68,6 @@ module "dynamo-processing-table" {
   attributes           = local.processing_dynamo_schema.attributes
   secondary_index_list = local.processing_dynamo_schema.secondary_indexes
   stream_enabled       = true
+
+  stream_type = "NEW_AND_OLD_IMAGES"
 }
