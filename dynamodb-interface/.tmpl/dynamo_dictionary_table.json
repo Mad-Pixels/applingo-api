@@ -17,8 +17,6 @@
     { "name": "author", "type": "S" },
     { "name": "category", "type": "S" },
     { "name": "description", "type": "S" },
-    { "name": "filename", "type": "S" },
-    { "name": "dictionary", "type": "S" },
     { "name": "topic", "type": "S" },
     { "name": "level", "type": "S" },
     { "name": "words", "type": "N" },
@@ -30,56 +28,56 @@
       "hash_key": "is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "level", "author", "rating", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "subcategory", "level", "author", "rating", "topic", "words", "downloads"]
     },
     {
       "name": "PublicByRatingIndex", 
       "hash_key": "is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "level", "author", "created", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "subcategory", "level", "author", "created", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelByDateIndex",
       "hash_key": "level#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "author", "rating", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "subcategory", "author", "rating", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelByRatingIndex",
       "hash_key": "level#is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "subcategory", "author", "created", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "subcategory", "author", "created", "topic", "words", "downloads"]
     },
     {
       "name": "PublicSubcategoryByDateIndex",
       "hash_key": "subcategory#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "rating", "level", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "author", "rating", "level", "topic", "words", "downloads"]
     },
     {
       "name": "PublicSubcategoryByRatingIndex",
       "hash_key": "subcategory#is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "created", "level", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "author", "created", "level", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelSubcategoryByDateIndex",
       "hash_key": "level#subcategory#is_public",
       "range_key": "created",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "rating", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "author", "rating", "topic", "words", "downloads"]
     },
     {
       "name": "PublicLevelSubcategoryByRatingIndex",
       "hash_key": "level#subcategory#is_public",
       "range_key": "rating",
       "projection_type": "INCLUDE",
-      "non_key_attributes": ["id", "dictionary", "name", "description", "category", "author", "created", "topic", "words", "downloads"]
+      "non_key_attributes": ["id", "name", "description", "category", "author", "created", "topic", "words", "downloads"]
     }
   ]
 }

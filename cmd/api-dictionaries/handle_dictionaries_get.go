@@ -14,9 +14,9 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -91,13 +91,13 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.Ra
 			Id:          item.Id,
 			Category:    applingoapi.BaseCategoryEnum(item.Category),
 			Public:      applingodictionary.IntToBool(item.IsPublic),
+			Dictionary:  utils.RecordToFileID(item.Id),
 			Downloads:   int64(item.Downloads),
 			Created:     int64(item.Created),
 			Rating:      int32(item.Rating),
 			Words:       int32(item.Words),
 			Subcategory: item.Subcategory,
 			Description: item.Description,
-			Dictionary:  item.Dictionary,
 			Author:      item.Author,
 			Name:        item.Name,
 			Level:       item.Level,
@@ -132,6 +132,7 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	useRatingSort := sortBy == applingoapi.Rating
 
+	// Выбор индекса в зависимости от параметров запроса
 	if params.Level != nil && params.Subcategory != nil {
 		if useRatingSort {
 			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
@@ -157,8 +158,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
 		}
 	}
+
+	// Всегда сортировать по убыванию для обоих типов сортировки
 	qb.OrderByDesc()
 
+	// Пагинация
 	if params.LastEvaluated != nil {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
@@ -172,27 +176,26 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	qb.Limit(pageLimit)
 
-	additionalFilter := expression.Name(applingodictionary.ColumnDictionary).AttributeExists().And(
-		expression.Name(applingodictionary.ColumnDictionary).NotEqual(expression.Value("")),
-	)
+	// Построение запроса
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
 
-	var filterCond expression.ConditionBuilder
-	if filterCondition != nil {
-		filterCond = filterCondition.And(additionalFilter)
-	} else {
-		filterCond = additionalFilter
-	}
-	return &cloud.QueryInput{
-		IndexName:         indexName,
-		KeyCondition:      keyCondition,
-		FilterCondition:   filterCond,
-		ProjectionFields:  applingodictionary.IndexProjections[indexName],
-		Limit:             pageLimit,
+	// Создание QueryInput с явной настройкой ScanForward=false для сортировки от большего к меньшему
+	queryInput := &cloud.QueryInput{
+		IndexName:        indexName,
+		KeyCondition:     keyCondition,
+		ProjectionFields: applingodictionary.IndexProjections[indexName],
+		Limit:            pageLimit,
+		// Явно устанавливаем FALSE для сортировки от большего к меньшему
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
-	}, nil
+	}
+
+	if filterCondition != nil {
+		queryInput.FilterCondition = *filterCondition
+	}
+
+	return queryInput, nil
 }

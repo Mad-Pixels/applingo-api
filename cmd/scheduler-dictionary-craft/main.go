@@ -148,7 +148,6 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),
 			Description: dictionary.GetDictionaryDescription(),
 			Topic:       dictionary.GetDictionaryTopic(),
-			Filename:    utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 
 			// internal info.
 			Upload:  applingoprocessing.BoolToInt(false),

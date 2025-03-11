@@ -334,3 +334,28 @@ func (d *Dynamo) GetRandomField(ctx context.Context, table, fieldName string) (s
 	}
 	return "", fmt.Errorf("field %s not found", fieldName)
 }
+
+// Exists checks if an item with the specified key exists in the DynamoDB table.
+func (d *Dynamo) Exists(ctx context.Context, table string, key map[string]types.AttributeValue) (bool, error) {
+	if err := validateTable(table); err != nil {
+		return false, err
+	}
+	if err := validateKey(key); err != nil {
+		return false, err
+	}
+
+	// Простой запрос GetItem для проверки существования элемента
+	input := &dynamodb.GetItemInput{
+		TableName:      aws.String(table),
+		Key:            key,
+		ConsistentRead: aws.Bool(false), // Для более быстрого ответа используем eventually consistent read
+	}
+
+	result, err := d.client.GetItem(ctx, input)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check if item exists")
+	}
+
+	// Если в ответе есть элемент, значит запись существует
+	return len(result.Item) > 0, nil
+}
