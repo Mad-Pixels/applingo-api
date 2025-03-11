@@ -78,10 +78,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			return fmt.Errorf("failed process item: %w", err)
 		}
 	case "MODIFY":
-		log.Info().Msg("MODIFY event")
-		if err := modify(ctx, dynamoDBEvent); err != nil {
-			return fmt.Errorf("failed modify item: %w", err)
-		}
+
 	case "REMOVE":
 		log.Info().Msg("REMOVE event")
 		if err := remove(ctx, dynamoDBEvent); err != nil {
