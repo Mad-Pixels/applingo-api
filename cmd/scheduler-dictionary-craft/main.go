@@ -29,7 +29,7 @@ const (
 	retriesOpenAIRequest = 1
 	backoffBucketCheck   = 300 * time.Millisecond
 	retriesBucketCheck   = 4
-	defaultMaxWorkers    = 5
+	defaultMaxWorkers    = 2
 	maxCraftConurrent    = 4
 	maxCraftDictionaries = 4
 )
@@ -151,11 +151,9 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			Filename:    utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
 
 			// internal info.
-			Upload:      applingoprocessing.BoolToInt(false),
-			Created:     int(time.Now().Unix()),
-			Reason:      "waiting for check",
-			PromptCheck: "",
-			Score:       0,
+			Upload:  applingoprocessing.BoolToInt(false),
+			Created: int(time.Now().Unix()),
+			Reason:  "waiting for check",
 		}
 		dynamoItems = append(dynamoItems, dynamoItem)
 	}
