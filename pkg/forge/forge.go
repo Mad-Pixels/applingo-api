@@ -11,6 +11,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
@@ -82,6 +83,9 @@ func Check(
 		if err := serializer.UnmarshalJSON([]byte(resp.GetResponseText()), &check); err != nil {
 			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorResponseObject, err)
 		}
+		if err := check.Meta.Validate(); err != nil {
+			return nil, errors.Join(ErrorForgeDictionaryCheck, ErrorInvalidResponseMetadata, err)
+		}
 
 		data.response = &check
 		return &data, nil
@@ -136,6 +140,9 @@ func Craft(ctx context.Context, req *RequestDictionaryCraft, promptBucket string
 		}
 		if len(dictionary.Words) == 0 {
 			return nil, errors.Join(ErrorForgeDictionaryCraft, errors.New("dictionary has no words"))
+		}
+		if err := dictionary.Meta.Validate(); err != nil {
+			return nil, errors.Join(ErrorForgeDictionaryCraft, ErrorInvalidResponseMetadata, err)
 		}
 
 		data.words = len(dictionary.Words)

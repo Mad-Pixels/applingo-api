@@ -8,6 +8,7 @@ import (
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingoprocessing"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 )
