@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
@@ -24,7 +23,7 @@ import (
 
 const pageLimit = 60
 
-func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, log json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
@@ -48,60 +47,56 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.Ra
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	queryInput, err := buildQueryInput(params)
+	// logger.Info().
+	// 	Any("subcategory", *params.Subcategory).
+	// 	Any("level", *params.Level).
+	// 	Any("public", *params.Public).
+	// 	Msg("Income")
+
+	queryInput, err := buildQueryInput(params, logger)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
+	logger.Info().Any("queryInput", queryInput).Msg("buildQueryInput")
 	dynamoQueryInput, err := dbDynamo.BuildQueryInput(*queryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
+	logger.Info().Any("dynamoQueryInput", dynamoQueryInput).Msg("Dynamo query")
 	result, err := dbDynamo.Query(ctx, applingodictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
-	var (
-		wg      sync.WaitGroup
-		itemsCh = make(chan applingodictionary.SchemaItem, len(result.Items))
-	)
+	// var (
+	// 	wg      sync.WaitGroup
+	// 	itemsCh = make(chan applingodictionary.SchemaItem, len(result.Items))
+	// )
 	response := applingoapi.DictionariesData{
 		Items: make([]applingoapi.DictionaryItemV1, 0, len(result.Items)),
 	}
 	for _, item := range result.Items {
-		wg.Add(1)
-		go func(item map[string]types.AttributeValue) {
-			defer wg.Done()
+		var dict applingodictionary.SchemaItem
+		if err := attributevalue.UnmarshalMap(item, &dict); err != nil {
+			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
+			continue
+		}
 
-			var dict applingodictionary.SchemaItem
-			if err := attributevalue.UnmarshalMap(item, &dict); err != nil {
-				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
-				return
-			}
-			itemsCh <- dict
-		}(item)
-	}
-	go func() {
-		wg.Wait()
-		close(itemsCh)
-	}()
-
-	for item := range itemsCh {
 		response.Items = append(response.Items, applingoapi.DictionaryItemV1{
-			Id:          item.Id,
-			Category:    applingoapi.BaseCategoryEnum(item.Category),
-			Public:      applingodictionary.IntToBool(item.IsPublic),
-			Dictionary:  utils.RecordToFileID(item.Id),
-			Downloads:   int64(item.Downloads),
-			Created:     int64(item.Created),
-			Rating:      int32(item.Rating),
-			Words:       int32(item.Words),
-			Subcategory: item.Subcategory,
-			Description: item.Description,
-			Author:      item.Author,
-			Name:        item.Name,
-			Level:       item.Level,
-			Topic:       item.Topic,
+			Id:          dict.Id,
+			Category:    applingoapi.BaseCategoryEnum(dict.Category),
+			Public:      applingodictionary.IntToBool(dict.IsPublic),
+			Dictionary:  utils.RecordToFileID(dict.Id),
+			Downloads:   int64(dict.Downloads),
+			Created:     int64(dict.Created),
+			Rating:      int32(dict.Rating),
+			Words:       int32(dict.Words),
+			Subcategory: dict.Subcategory,
+			Description: dict.Description,
+			Author:      dict.Author,
+			Name:        dict.Name,
+			Level:       dict.Level,
+			Topic:       dict.Topic,
 		})
 	}
 	if result.LastEvaluatedKey != nil {
@@ -119,7 +114,7 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.Ra
 	return openapi.DataResponseDictionaries(response), nil
 }
 
-func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
+func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.Logger) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
 	isPublic := true
@@ -132,30 +127,57 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	}
 	useRatingSort := sortBy == applingoapi.Rating
 
+	logger.Info().Bool("ratingSort", useRatingSort).Any("sortBy", sortBy).Msg("sort param")
+	var indexName string
+
 	// Выбор индекса в зависимости от параметров запроса
 	if params.Level != nil && params.Subcategory != nil {
 		if useRatingSort {
+			indexName = applingodictionary.IndexPublicLevelSubcategoryByRatingIndex
+
 			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicLevelSubcategoryByRatingIndexHashKey")
 		} else {
+			indexName = applingodictionary.IndexPublicLevelSubcategoryByDateIndex
+
 			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicLevelSubcategoryByDateIndexHashKey")
 		}
 	} else if params.Level != nil {
 		if useRatingSort {
+			indexName = applingodictionary.IndexPublicLevelByRatingIndex
+
 			qb.WithPublicLevelByRatingIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicLevelByRatingIndexHashKey")
 		} else {
 			qb.WithPublicLevelByDateIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicLevelByDateIndexHashKey")
 		}
 	} else if params.Subcategory != nil {
 		if useRatingSort {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
+			indexName = applingodictionary.IndexPublicByRatingIndex // Используем общий индекс
+			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
+			// Добавляем subcategory как условие фильтра, а не ключа
+			qb.WithSubcategory(*params.Subcategory)
+			logger.Info().Msg("using WithPublicByRatingIndexHashKey with subcategory filter")
 		} else {
-			qb.WithPublicSubcategoryByDateIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
+			indexName = applingodictionary.IndexPublicByDateIndex // Используем общий индекс
+			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
+			// Добавляем subcategory как условие фильтра, а не ключа
+			qb.WithSubcategory(*params.Subcategory)
+			logger.Info().Msg("using WithPublicByDateIndexHashKey with subcategory filter")
 		}
 	} else {
 		if useRatingSort {
+			indexName = applingodictionary.IndexPublicByRatingIndex
+
 			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicByRatingIndexHashKey")
 		} else {
+			indexName = applingodictionary.IndexPublicByDateIndex
+
 			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
+			logger.Info().Msg("using WithPublicByDateIndexHashKey")
 		}
 	}
 
@@ -177,10 +199,11 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	qb.Limit(pageLimit)
 
 	// Построение запроса
-	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
+	_, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
+	logger.Info().Any("idx", indexName).Msg("dynamoIndex")
 
 	// Создание QueryInput с явной настройкой ScanForward=false для сортировки от большего к меньшему
 	queryInput := &cloud.QueryInput{
