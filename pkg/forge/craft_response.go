@@ -15,7 +15,7 @@ type DictionaryMetaFromAI struct {
 	Name string `json:"name" validate:"required,min=1"`
 }
 
-// Validate validates the CraftMetaFromAI fields using the applingo-api validator.
+// Validate the CraftMetaFromAI fields using the applingo-api validator.
 func (d *DictionaryMetaFromAI) Validate() error {
 	return validator.New().ValidateStruct(d)
 }
