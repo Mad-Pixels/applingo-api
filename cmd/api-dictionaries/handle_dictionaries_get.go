@@ -23,7 +23,7 @@ import (
 
 const pageLimit = 60
 
-func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, log json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}
@@ -47,31 +47,19 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, log json.
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
 
-	// logger.Info().
-	// 	Any("subcategory", *params.Subcategory).
-	// 	Any("level", *params.Level).
-	// 	Any("public", *params.Public).
-	// 	Msg("Income")
-
-	queryInput, err := buildQueryInput(params, logger)
+	queryInput, err := buildQueryInput(params)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusBadRequest, Err: err}
 	}
-	logger.Info().Any("queryInput", queryInput).Msg("buildQueryInput")
 	dynamoQueryInput, err := dbDynamo.BuildQueryInput(*queryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
-	logger.Info().Any("dynamoQueryInput", dynamoQueryInput).Msg("Dynamo query")
 	result, err := dbDynamo.Query(ctx, applingodictionary.TableName, dynamoQueryInput)
 	if err != nil {
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
-	// var (
-	// 	wg      sync.WaitGroup
-	// 	itemsCh = make(chan applingodictionary.SchemaItem, len(result.Items))
-	// )
 	response := applingoapi.DictionariesData{
 		Items: make([]applingoapi.DictionaryItemV1, 0, len(result.Items)),
 	}
@@ -114,48 +102,35 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, log json.
 	return openapi.DataResponseDictionaries(response), nil
 }
 
-func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.Logger) (*cloud.QueryInput, error) {
+func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	// Устанавливаем основные параметры запроса
 	isPublic := true
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}
 	qb.WithIsPublic(applingodictionary.BoolToInt(isPublic))
 
-	// Добавляем параметры level и subcategory, если они указаны
 	if params.Level != nil {
 		qb.WithLevel(*params.Level)
-		logger.Info().Str("level", *params.Level).Msg("using level filter")
 	}
-
 	if params.Subcategory != nil {
 		qb.WithSubcategory(*params.Subcategory)
-		logger.Info().Str("subcategory", *params.Subcategory).Msg("using subcategory filter")
 	}
 
-	// Настраиваем сортировку
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
 		sortBy = applingoapi.ParamDictionarySortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
-	logger.Info().Bool("ratingSort", useRatingSort).Any("sortBy", sortBy).Msg("sort param")
-
-	// Добавляем условие сортировки в зависимости от параметра sortBy
 	if useRatingSort {
-		qb.WithPreferredSortKey("rating")
+		qb.WithPreferredSortKey(string(applingoapi.Rating))
 		qb.WithRatingGreaterThan(-1)
 	} else {
-		qb.WithPreferredSortKey("created")
+		qb.WithPreferredSortKey(string(applingoapi.Date))
 		qb.WithCreatedGreaterThan(0)
 	}
 
-	// Всегда сортировать по убыванию
-	qb.OrderByDesc()
-
-	// Пагинация
 	if params.LastEvaluated != nil {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
@@ -169,14 +144,10 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.
 	}
 	qb.Limit(pageLimit)
 
-	// Построение запроса - теперь Build() сам выберет нужный индекс
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
-	logger.Info().Str("selectedIndex", indexName).Msg("dynamoIndex")
-
-	// Создание QueryInput с явной настройкой ScanForward=false для сортировки от большего к меньшему
 	queryInput := &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
@@ -185,10 +156,8 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
 	}
-
 	if filterCondition != nil {
 		queryInput.FilterCondition = *filterCondition
 	}
-
 	return queryInput, nil
 }
