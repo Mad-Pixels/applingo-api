@@ -1,10 +1,9 @@
 package utils
 
 import (
-	"encoding/base64"
-	"errors"
+	"crypto/md5"
+	"encoding/hex"
 	"path/filepath"
-	"strings"
 )
 
 // GenerateDictionaryID generates an MD5 hash from the concatenation of the dictionary name and author,
@@ -13,16 +12,10 @@ func GenerateDictionaryID(name, author string) string {
 	return generateID(name, author)
 }
 
-// DecodeDictionaryID decodes an incoming ID to a []string containing the dictionary name and dictionary author.
-func DecodeDictionaryID(id string) ([]string, error) {
-	res, err := decodeID(id)
-	if err != nil {
-		return nil, errors.New("cannot decode id")
-	}
-	if len(res) != 2 {
-		return nil, errors.New("decode result has invalid format")
-	}
-	return res, nil
+// GenerateSubcategoryID generates an MD5 hash from the concatenation of the lang code and card side,
+// separated by a hyphen.This hash serves as the unique object ID for an item in the DynamoDB subcategory table.
+func GenerateSubcategoryID(code, side string) string {
+	return generateID(code, side)
 }
 
 // RecordToFileID return file identifier based on incomming DynamoDB record ID.
@@ -38,14 +31,7 @@ func RecordToFileID(id string) string {
 }
 
 func generateID(val1, val2 string) string {
-	data := val1 + "|" + val2
-	return base64.StdEncoding.EncodeToString([]byte(data))
-}
-
-func decodeID(id string) ([]string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(id)
-	if err != nil {
-		return nil, err
-	}
-	return strings.Split(string(decoded), "|"), nil
+	hash := md5.New()
+	hash.Write([]byte(val1 + "-" + val2))
+	return hex.EncodeToString(hash.Sum(nil))
 }
