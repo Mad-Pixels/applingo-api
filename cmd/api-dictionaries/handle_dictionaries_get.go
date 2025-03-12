@@ -117,71 +117,42 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, log json.
 func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.Logger) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
+	// Устанавливаем основные параметры запроса
 	isPublic := true
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}
+	qb.WithIsPublic(applingodictionary.BoolToInt(isPublic))
+
+	// Добавляем параметры level и subcategory, если они указаны
+	if params.Level != nil {
+		qb.WithLevel(*params.Level)
+		logger.Info().Str("level", *params.Level).Msg("using level filter")
+	}
+
+	if params.Subcategory != nil {
+		qb.WithSubcategory(*params.Subcategory)
+		logger.Info().Str("subcategory", *params.Subcategory).Msg("using subcategory filter")
+	}
+
+	// Настраиваем сортировку
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
 		sortBy = applingoapi.ParamDictionarySortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
-
 	logger.Info().Bool("ratingSort", useRatingSort).Any("sortBy", sortBy).Msg("sort param")
-	var indexName string
 
-	// Выбор индекса в зависимости от параметров запроса
-	if params.Level != nil && params.Subcategory != nil {
-		if useRatingSort {
-			indexName = applingodictionary.IndexPublicLevelSubcategoryByRatingIndex
-
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicLevelSubcategoryByRatingIndexHashKey")
-		} else {
-			indexName = applingodictionary.IndexPublicLevelSubcategoryByDateIndex
-
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicLevelSubcategoryByDateIndexHashKey")
-		}
-	} else if params.Level != nil {
-		if useRatingSort {
-			indexName = applingodictionary.IndexPublicLevelByRatingIndex
-
-			qb.WithPublicLevelByRatingIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicLevelByRatingIndexHashKey")
-		} else {
-			qb.WithPublicLevelByDateIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicLevelByDateIndexHashKey")
-		}
-	} else if params.Subcategory != nil {
-		if useRatingSort {
-			indexName = applingodictionary.IndexPublicByRatingIndex // Используем общий индекс
-			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
-			// Добавляем subcategory как условие фильтра, а не ключа
-			qb.WithSubcategory(*params.Subcategory)
-			logger.Info().Msg("using WithPublicByRatingIndexHashKey with subcategory filter")
-		} else {
-			indexName = applingodictionary.IndexPublicByDateIndex // Используем общий индекс
-			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
-			// Добавляем subcategory как условие фильтра, а не ключа
-			qb.WithSubcategory(*params.Subcategory)
-			logger.Info().Msg("using WithPublicByDateIndexHashKey with subcategory filter")
-		}
+	// Добавляем условие сортировки в зависимости от параметра sortBy
+	if useRatingSort {
+		qb.WithPreferredSortKey("rating")
+		qb.WithRatingGreaterThan(-1)
 	} else {
-		if useRatingSort {
-			indexName = applingodictionary.IndexPublicByRatingIndex
-
-			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicByRatingIndexHashKey")
-		} else {
-			indexName = applingodictionary.IndexPublicByDateIndex
-
-			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
-			logger.Info().Msg("using WithPublicByDateIndexHashKey")
-		}
+		qb.WithPreferredSortKey("created")
+		qb.WithCreatedGreaterThan(0)
 	}
 
-	// Всегда сортировать по убыванию для обоих типов сортировки
+	// Всегда сортировать по убыванию
 	qb.OrderByDesc()
 
 	// Пагинация
@@ -198,20 +169,19 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params, logger zerolog.
 	}
 	qb.Limit(pageLimit)
 
-	// Построение запроса
-	_, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
+	// Построение запроса - теперь Build() сам выберет нужный индекс
+	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
-	logger.Info().Any("idx", indexName).Msg("dynamoIndex")
+	logger.Info().Str("selectedIndex", indexName).Msg("dynamoIndex")
 
 	// Создание QueryInput с явной настройкой ScanForward=false для сортировки от большего к меньшему
 	queryInput := &cloud.QueryInput{
-		IndexName:        indexName,
-		KeyCondition:     keyCondition,
-		ProjectionFields: applingodictionary.IndexProjections[indexName],
-		Limit:            pageLimit,
-		// Явно устанавливаем FALSE для сортировки от большего к меньшему
+		IndexName:         indexName,
+		KeyCondition:      keyCondition,
+		ProjectionFields:  applingodictionary.IndexProjections[indexName],
+		Limit:             pageLimit,
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
 	}
