@@ -160,24 +160,22 @@ func TestLangCodeValidation(t *testing.T) {
 func TestFileValidation(t *testing.T) {
 	var (
 		validFiles = []string{
-			"file.txt",
-			"file-name.pdf",
-			"file_name.docx",
-			"file.name.with.dots",
-			"файл-с-русским-именем.pdf",
-			"日本語ファイル名.txt",
+			"d41d8cd98f00b204e9800998ecf8427e.json",
+			"5d41402abc4b2a76b9719d911017c592.json",
+			"e10adc3949ba59abbe56e057f20f883e.json",
 			"",
 		}
 
 		invalidFiles = []string{
-			"file/name.txt",
-			"file\\name.txt",
-			"file:name.txt",
-			"file*name.txt",
-			"file name.txt",
-			"file,name.txt",
-			"file#name.txt",
-			"file@name.txt",
+			"g41d8cd98f00b204e9800998ecf8427e.json",
+			"d41d8cd98f00b204e9800998ecf8427.json",
+			"d41d8cd98f00b204e9800998ecf8427eX.json",
+			"file.txt",
+			"document.pdf",
+			"image.png",
+			"file-name.pdf",
+			"file_name.docx",
+			"файл.pdf",
 		}
 	)
 	validator := New()

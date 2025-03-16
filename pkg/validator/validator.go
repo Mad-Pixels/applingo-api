@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -58,18 +59,8 @@ func registerCustomTags(v *validator.Validate) {
 	})
 
 	v.RegisterValidation("file", func(fl validator.FieldLevel) bool {
-		validChars := "-_."
-		return validateStringWithChars(fl.Field().String(), validChars)
+		return utils.IsFileID(fl.Field().String())
 	})
-}
-
-func validateStringWithChars(s string, validChars string) bool {
-	for _, r := range s {
-		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && !strings.ContainsRune(validChars, r) {
-			return false
-		}
-	}
-	return true
 }
 
 func validateStringWithoutInvalidChars(s string, invalidChars string) bool {
