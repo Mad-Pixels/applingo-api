@@ -102,7 +102,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			log.Error().Msg("dictionary is nil")
 			continue
 		}
-
+		var (
+			dictionaryID     = utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())
+			dictionaryFileID = utils.RecordToFileID(dictionaryID)
+		)
 		content, err := serializer.MarshalJSON(dictionary.GetWordsContainer())
 		if err != nil {
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
@@ -111,7 +114,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			utils.RecordToFileID(utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())),
+			dictionaryFileID,
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -121,7 +124,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		if err = s3Bucket.WaitOrError(
 			ctx,
-			utils.RecordToFileID(utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())),
+			dictionaryFileID,
 			serviceProcessingBucket,
 			retriesBucketCheck,
 			backoffBucketCheck,
@@ -131,7 +134,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 
 		dynamoItem := applingoprocessing.SchemaItem{
-			Id: utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			Id: dictionaryID,
 
 			// language info.
 			Languages:   utils.JoinValues(dictionary.GetLanguageFrom().Name, dictionary.GetLanguageTo().Name),

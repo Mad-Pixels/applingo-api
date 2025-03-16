@@ -18,7 +18,7 @@ type changes struct {
 	score  bool
 	upload bool
 
-	// action flags.
+	// actions
 	needProcess bool
 
 	// data
@@ -60,17 +60,17 @@ func modify(ctx context.Context, e events.DynamoDBEventRecord) error {
 	c := detectChanges(old, new)
 
 	if c.needProcess {
-		if err := processRecord(ctx, &c); err != nil {
+		if err := processRecordToDictionary(ctx, &c); err != nil {
 			return fmt.Errorf("failed to process record: %w", err)
 		}
-		if err := updateRecord(ctx, &c); err != nil {
+		if err := updateRecordUploadStatus(ctx, &c); err != nil {
 			return fmt.Errorf("failed to update record upload status: %w", err)
 		}
 	}
 	return nil
 }
 
-func updateRecord(ctx context.Context, c *changes) error {
+func updateRecordUploadStatus(ctx context.Context, c *changes) error {
 	key, err := applingoprocessing.CreateKeyFromItem(*c.newItem)
 	if err != nil {
 		return fmt.Errorf("failed to create key for item: %w", err)
@@ -80,17 +80,16 @@ func updateRecord(ctx context.Context, c *changes) error {
 			expression.Name(applingoprocessing.ColumnUpload),
 			expression.Value(applingoprocessing.BoolToInt(true)),
 		)
-	condition := expression.AttributeExists(expression.Name(applingoprocessing.ColumnId))
 	return dbDynamo.Update(
 		ctx,
-		applingoprocessing.TableSchema.TableName,
+		applingoprocessing.TableName,
 		key,
 		update,
-		condition,
+		expression.AttributeExists(expression.Name(applingoprocessing.ColumnId)),
 	)
 }
 
-func processRecord(ctx context.Context, c *changes) error {
+func processRecordToDictionary(ctx context.Context, c *changes) error {
 	existingKey, err := applingodictionary.CreateKey(c.newItem.Id, c.newItem.Subcategory)
 	if err != nil {
 		return fmt.Errorf("failed to create key for checking: %w", err)
@@ -132,12 +131,13 @@ func processRecord(ctx context.Context, c *changes) error {
 	if err != nil {
 		return fmt.Errorf("failed prepare dynamo item: %w", err)
 	}
+	dictionaryFileID := utils.RecordToFileID(c.newItem.Id)
 
 	// copy dictionary data.
-	if err = s3Bucket.Copy(ctx, utils.RecordToFileID(c.newItem.Id), serviceProcessingBucket, utils.RecordToFileID(c.newItem.Id), serviceDictionaryBucket); err != nil {
+	if err = s3Bucket.Copy(ctx, dictionaryFileID, serviceProcessingBucket, dictionaryFileID, serviceDictionaryBucket); err != nil {
 		return fmt.Errorf("failed to copy dictionary from processing to service: %w", err)
 	}
-	if err = s3Bucket.WaitOrError(ctx, utils.RecordToFileID(c.newItem.Id), serviceDictionaryBucket, 3, 200*time.Millisecond); err != nil {
+	if err = s3Bucket.WaitOrError(ctx, dictionaryFileID, serviceDictionaryBucket, 3, 200*time.Millisecond); err != nil {
 		return fmt.Errorf("failed to check object in bucket")
 	}
 
@@ -148,7 +148,7 @@ func processRecord(ctx context.Context, c *changes) error {
 		dynamoItem,
 		expression.AttributeNotExists(expression.Name(applingodictionary.ColumnId)),
 	); err != nil {
-		s3Err := s3Bucket.Delete(ctx, utils.RecordToFileID(c.newItem.Id), serviceProcessingBucket)
+		s3Err := s3Bucket.Delete(ctx, dictionaryFileID, serviceProcessingBucket)
 		if s3Err != nil {
 			return fmt.Errorf("failed add new dictionary in dynamoDB: %w, also cannot delete dictionary from bucket: %w", err, s3Err)
 		}
