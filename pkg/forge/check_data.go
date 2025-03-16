@@ -153,7 +153,7 @@ func (r *DictionaryCheckData) Setup(
 	// Dictionary worker.
 	runWorker(ctx, &wg, results, "dictionary", func() error {
 		r.dictionaryBuf.Reset()
-		if err := s3cli.Read(ctx, r.dictionaryBuf, r.item.Id, dictionaryBucketName); err != nil {
+		if err := s3cli.Read(ctx, r.dictionaryBuf, utils.RecordToFileID(r.item.Id), dictionaryBucketName); err != nil {
 			return errors.Join(ErrorGetBucketFileContent(r.item.Id, dictionaryBucketName), err)
 		}
 		return nil

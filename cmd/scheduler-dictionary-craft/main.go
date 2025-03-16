@@ -111,7 +111,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			utils.RecordToFileID(utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())),
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -121,7 +121,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		if err = s3Bucket.WaitOrError(
 			ctx,
-			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			utils.RecordToFileID(utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())),
 			serviceProcessingBucket,
 			retriesBucketCheck,
 			backoffBucketCheck,
