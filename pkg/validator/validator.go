@@ -40,13 +40,13 @@ func (v *Validator) StructErrorToString(err error) string {
 
 func registerCustomTags(v *validator.Validate) {
 	v.RegisterValidation("base_str", func(fl validator.FieldLevel) bool {
-		validChars := ".-_:"
-		return validateStringWithChars(fl.Field().String(), validChars)
+		invalidChars := "^*%$#@!~`\\/<>?"
+		return validateStringWithoutInvalidChars(fl.Field().String(), invalidChars)
 	})
 
 	v.RegisterValidation("ext_str", func(fl validator.FieldLevel) bool {
-		validChars := ",#№ +&|[]()\"'{}"
-		return validateStringWithChars(fl.Field().String(), validChars)
+		invalidChars := "^*%$@!~`\\/<>?"
+		return validateStringWithoutInvalidChars(fl.Field().String(), invalidChars)
 	})
 
 	v.RegisterValidation("lang_code", func(fl validator.FieldLevel) bool {
@@ -66,6 +66,15 @@ func registerCustomTags(v *validator.Validate) {
 func validateStringWithChars(s string, validChars string) bool {
 	for _, r := range s {
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && !strings.ContainsRune(validChars, r) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateStringWithoutInvalidChars(s string, invalidChars string) bool {
+	for _, r := range s {
+		if strings.ContainsRune(invalidChars, r) {
 			return false
 		}
 	}
