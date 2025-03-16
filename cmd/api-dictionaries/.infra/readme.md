@@ -7,7 +7,7 @@ Lambda for manage dictionaries.
 
 ```bash
 token="000XXX000"
-api="xa716jsuuh"
+api="yparzjdmnw"
 url="http://localhost:4566/restapis/${api}/live/_user_request_/v1/dictionaries"
 ```
 
@@ -24,6 +24,23 @@ timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')
 
 curl -X GET "${url}" -H "x-api-auth: ${timestamp}:::${signature}"
+
+timestamp=$(date -u +%s) 
+signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //') 
+curl -X GET "${url}" -H "x-api-auth: ${timestamp}:::${signature}" | jq
+
+
+timestamp=$(date -u +%s); signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //'); curl -X GET "${url}" -H "x-api-auth: ${timestamp}:::${signature}" | jq
+
+subcategory=ru-en&public=true&sort_by=date
+
+
+timestamp=$(date -u +%s); signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //'); curl -X GET "${url}"?sort_by=rating -H "x-api-auth: ${timestamp}:::${signature}" | jq
+
+timestamp=$(date -u +%s); signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //'); curl -X GET "${url}?sort_by=rating&subcategory=ru-en&public=true" -H "x-api-auth: ${timestamp}:::${signature}" | jq
+
+timestamp=$(date -u +%s); signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //'); curl -X GET "${url}?sort_by=rating&subcategory=ru-en" -H "x-api-auth: ${timestamp}:::${signature}" | jq
+
 
 timestamp=$(date -u +%s)
 signature=$(echo -n "${timestamp}${arn_get}" | openssl dgst -sha256 -hmac "${token}" | sed 's/^.* //')

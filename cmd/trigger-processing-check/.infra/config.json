@@ -18,6 +18,7 @@
       {
         "Effect": "Allow",
         "Action": [
+          "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:ListTables"
         ],

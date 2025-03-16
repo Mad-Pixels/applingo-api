@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/pkg/errors"
@@ -67,6 +69,7 @@ func GetRandomLanguageLevel() (LanguageLevel, error) {
 
 // ParseLanguageLevel converts string to LanguageLevel
 func ParseLanguageLevel(s string) (LanguageLevel, error) {
+	s = strings.ToUpper(s)
 	switch s {
 	case "A1":
 		return LevelA1, nil
