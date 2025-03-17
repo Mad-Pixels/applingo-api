@@ -504,19 +504,19 @@ components:
 
     BaseExtendedRequired:
       type: string 
-      minLength: 2
-      maxLength: 36
+      minLength: 8
+      maxLength: 100
       pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
       x-oapi-codegen-extra-tags:
-        validate: "required,ext_str,min=2,max=36"  
+        validate: "required,ext_str,min=8,max=100"  
     
     BaseExtendedOptional:
       type: string 
-      minLength: 2
-      maxLength: 36
+      minLength: 8
+      maxLength: 100
       pattern: ^[a-zA-Z0-9.,\-_#№ +&|\[\]()\"'\{\}]+$
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,ext_str,min=2,max=36"
+        validate: "omitempty,ext_str,min=8,max=100"
 
     BaseDescriptionRequired:
       type: string
@@ -1067,7 +1067,7 @@ components:
       schema: 
         $ref: '#/components/schemas/BaseExtendedRequired'
       x-oapi-codegen-extra-tags:
-        validate: "required,ext_str,min=2,max=36"
+        validate: "required,ext_str,min=8,max=100"
 
     ParamDictionaryNameOptional:
       name: name 
@@ -1076,7 +1076,7 @@ components:
       schema: 
         $ref: '#/components/schemas/BaseExtendedRequired'
       x-oapi-codegen-extra-tags:
-        validate: "omitempty,ext_str,min=2,max=36"
+        validate: "omitempty,ext_str,min=8,max=100"
     
     ParamDictionaryAuthorRequired:
       name: author 
