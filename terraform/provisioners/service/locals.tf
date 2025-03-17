@@ -59,21 +59,23 @@ locals {
 
 # Schedulers configs.
 locals {
-  _scheduler_configs = {
-    for fn in local.schedule_lambdas :
-    fn => [
-      for file in fileset("${local._root_dir}/${fn}/.infra", "scheduler*.json") :
-      jsondecode(
-        templatefile("${local._root_dir}/${fn}/.infra/${file}",
-          merge(local.template_vars, { target_lambda_name = "${fn}" })
+  _all_schedulers = flatten([
+    for fn in local.schedule_lambdas : [
+      for file in fileset("${local._root_dir}/${fn}/.infra", "scheduler*.json") : {
+        function_name  = fn
+        scheduler_name = replace(file, ".json", "")
+        short_name     = replace(replace(file, "scheduler_", ""), ".json", "")
+        config = jsondecode(
+          templatefile("${local._root_dir}/${fn}/.infra/${file}",
+            merge(local.template_vars, { target_lambda_name = "${fn}" })
+          )
         )
-      )
+      }
     ]
-  }
+  ])
 
   schedulers = {
-    for fn, configs in local._scheduler_configs : fn => (
-      length(configs) > 0 ? configs[0] : { Records = [], Config = {} }
-    )
+    for scheduler in local._all_schedulers :
+    "${scheduler.function_name}-${scheduler.short_name}" => scheduler
   }
 }
