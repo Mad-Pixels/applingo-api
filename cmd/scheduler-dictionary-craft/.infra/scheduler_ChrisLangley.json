@@ -2,13 +2,14 @@
   "Records": [
     {
       "dictionaries_count": 4,
-      "language_to": "en",
-      "language_from": "ru"
+      "language_from": "ru",
+      "prompt_name": "craftChrisLangley_v1",
+      "temperature": 0.6
     }
   ],
   "Config": {
     "target_lambda_name": "${target_lambda_name}",
-    "schedule_expression": "cron(0 4 * * ? *)",
+    "schedule_expression": "cron(0 */7 * * ? *)",
     "flexible_time_window_mode": "OFF",
     "maximum_retry_attempts": 0
   }

@@ -183,6 +183,8 @@ func (r *DictionaryCraftData) Setup(ctx context.Context, req *RequestDictionaryC
 				return errors.Join(ErrorGetKeyFromBucket(craftPromptPrefix, promptBucketName), err)
 			}
 			r.prompt = prompt
+		} else {
+			r.prompt = aws.ToString(req.PromptName)
 		}
 		// model.
 		if req.OpenaiModel == nil {
