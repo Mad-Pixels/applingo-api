@@ -16,7 +16,6 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -136,11 +135,17 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
 		}
-		var lastEvaluatedKeyMap map[string]types.AttributeValue
-		if err := json.Unmarshal(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
+
+		var jsonMap map[string]any
+		if err := json.Unmarshal(lastEvaluatedKeyJSON, &jsonMap); err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
 		}
-		qb.StartFrom(lastEvaluatedKeyMap)
+		lastEvaluatedKey, err := applingodictionary.ConvertMapToAttributeValues(jsonMap)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert last_evaluated to DynamoDB types")
+		}
+
+		qb.StartFrom(lastEvaluatedKey)
 	}
 	qb.Limit(pageLimit)
 
