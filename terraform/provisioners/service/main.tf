@@ -51,17 +51,17 @@ module "scheduler_events" {
   project        = local.project
   scheduler_name = each.key
 
-  schedule_expression          = try(each.value.Config.schedule_expression, "rate(1 day)")
-  flexible_time_window_mode    = try(each.value.Config.flexible_time_window_mode, "OFF")
-  maximum_window_in_minutes    = try(each.value.Config.maximum_window_in_minutes, 5)
-  maximum_retry_attempts       = try(each.value.Config.maximum_retry_attempts, null)
-  maximum_event_age_in_seconds = try(each.value.Config.maximum_event_age_in_seconds, 3600)
+  schedule_expression          = try(each.value.config.Config.schedule_expression, "rate(1 day)")
+  flexible_time_window_mode    = try(each.value.config.Config.flexible_time_window_mode, "OFF")
+  maximum_window_in_minutes    = try(each.value.config.Config.maximum_window_in_minutes, 5)
+  maximum_retry_attempts       = try(each.value.config.Config.maximum_retry_attempts, null)
+  maximum_event_age_in_seconds = try(each.value.config.Config.maximum_event_age_in_seconds, 3600)
 
-  target_arn  = format(local.lambda_arn_template, each.value.Config.target_lambda_name)
-  target_type = try(each.value.Config.target_type, "lambda")
-  policy      = try(each.value.Config.policy != null ? jsonencode(each.value.Config.policy) : "", "")
+  target_arn  = format(local.lambda_arn_template, each.value.config.Config.target_lambda_name)
+  target_type = try(each.value.config.Config.target_type, "lambda")
+  policy      = try(each.value.config.Config.policy != null ? jsonencode(each.value.config.Config.policy) : "", "")
 
-  input_json = jsonencode({ Records = each.value.Records })
+  input_json = jsonencode({ Records = each.value.config.Records })
   depends_on = [module.lambda_functions]
 }
 

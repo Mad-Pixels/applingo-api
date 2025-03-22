@@ -60,6 +60,7 @@ var (
 	ErrorGenerateDictionaryTopic       = errors.New("failed to generate random dictionary topic")
 	ErrorGenerateLanguageLevel         = errors.New("failed to generate random language level")
 	ErrorForgeDictionaryCheck          = errors.New("dictionary check process failed")
+	ErrorInvalidResponseMetadata       = errors.New("response metadata is invalid")
 	ErrorForgeDictionaryCraft          = errors.New("dictionary craft process failed")
 	ErrorReadFromBuffer                = errors.New("failed to read from buffer")
 	ErrorDictionaryFileIsRequired      = errors.New("dictionary file is required")
@@ -94,7 +95,6 @@ func runWorker(ctx context.Context, wg *sync.WaitGroup, results chan<- workerRes
 	go func() {
 		defer wg.Done()
 
-		// If the context is canceled, return the context error immediately.
 		select {
 		case <-ctx.Done():
 			results <- workerResult{
@@ -103,7 +103,6 @@ func runWorker(ctx context.Context, wg *sync.WaitGroup, results chan<- workerRes
 			}
 			return
 		default:
-			// Execute the worker function.
 			err := fn()
 			results <- workerResult{
 				key:   key,

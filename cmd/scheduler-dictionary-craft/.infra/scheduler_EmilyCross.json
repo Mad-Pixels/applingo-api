@@ -2,14 +2,16 @@
   "Records": [
     {
       "dictionaries_count": 4,
-      "language_to": "en",
-      "language_from": "ru"
+      "language_from": "ru",
+      "prompt_name": "craftEmilyCross_v1",
+      "temperature": 0.4
     }
   ],
   "Config": {
     "target_lambda_name": "${target_lambda_name}",
-    "schedule_expression": "cron(0 12 * * ? *)",
+    "schedule_expression": "cron(0 */8 * * ? *)",
     "flexible_time_window_mode": "OFF",
     "maximum_retry_attempts": 0
   }
 }
+  

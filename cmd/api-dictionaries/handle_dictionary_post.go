@@ -41,7 +41,6 @@ func handleDictionaryPost(ctx context.Context, logger zerolog.Logger, body json.
 		Id:          utils.GenerateDictionaryID(req.Name, req.Author),
 		Name:        req.Name,
 		Author:      req.Author,
-		Filename:    req.Filename,
 		Category:    string(req.Category),
 		Subcategory: req.Subcategory,
 		Description: req.Description,

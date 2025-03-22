@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"github.com/Mad-Pixels/applingo-api/dynamodb-interface/gen/applingodictionary"
 	"github.com/Mad-Pixels/applingo-api/openapi-interface"
@@ -14,10 +13,9 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/auth"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/serializer"
+	"github.com/Mad-Pixels/applingo-api/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -61,47 +59,31 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.Ra
 		return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 	}
 
-	var (
-		wg      sync.WaitGroup
-		itemsCh = make(chan applingodictionary.SchemaItem, len(result.Items))
-	)
 	response := applingoapi.DictionariesData{
 		Items: make([]applingoapi.DictionaryItemV1, 0, len(result.Items)),
 	}
 	for _, item := range result.Items {
-		wg.Add(1)
-		go func(item map[string]types.AttributeValue) {
-			defer wg.Done()
+		var dict applingodictionary.SchemaItem
+		if err := attributevalue.UnmarshalMap(item, &dict); err != nil {
+			logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
+			continue
+		}
 
-			var dict applingodictionary.SchemaItem
-			if err := attributevalue.UnmarshalMap(item, &dict); err != nil {
-				logger.Warn().Err(err).Msg("Failed to unmarshal DynamoDB item")
-				return
-			}
-			itemsCh <- dict
-		}(item)
-	}
-	go func() {
-		wg.Wait()
-		close(itemsCh)
-	}()
-
-	for item := range itemsCh {
 		response.Items = append(response.Items, applingoapi.DictionaryItemV1{
-			Id:          item.Id,
-			Category:    applingoapi.BaseCategoryEnum(item.Category),
-			Public:      applingodictionary.IntToBool(item.IsPublic),
-			Downloads:   int64(item.Downloads),
-			Created:     int64(item.Created),
-			Rating:      int32(item.Rating),
-			Words:       int32(item.Words),
-			Subcategory: item.Subcategory,
-			Description: item.Description,
-			Dictionary:  item.Dictionary,
-			Author:      item.Author,
-			Name:        item.Name,
-			Level:       item.Level,
-			Topic:       item.Topic,
+			Id:          dict.Id,
+			Category:    applingoapi.BaseCategoryEnum(dict.Category),
+			Public:      applingodictionary.IntToBool(dict.IsPublic),
+			Dictionary:  utils.RecordToFileID(dict.Id),
+			Downloads:   int64(dict.Downloads),
+			Created:     int64(dict.Created),
+			Rating:      int32(dict.Rating),
+			Words:       int32(dict.Words),
+			Subcategory: dict.Subcategory,
+			Description: dict.Description,
+			Author:      dict.Author,
+			Name:        dict.Name,
+			Level:       dict.Level,
+			Topic:       dict.Topic,
 		})
 	}
 	if result.LastEvaluatedKey != nil {
@@ -126,73 +108,61 @@ func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryIn
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}
+	qb.WithIsPublic(applingodictionary.BoolToInt(isPublic))
+
+	if params.Level != nil {
+		qb.WithLevel(*params.Level)
+	}
+	if params.Subcategory != nil {
+		qb.WithSubcategory(*params.Subcategory)
+	}
+
 	sortBy := applingoapi.Date
 	if params.SortBy != nil {
 		sortBy = applingoapi.ParamDictionarySortEnum(*params.SortBy)
 	}
 	useRatingSort := sortBy == applingoapi.Rating
-
-	if params.Level != nil && params.Subcategory != nil {
-		if useRatingSort {
-			qb.WithPublicLevelSubcategoryByRatingIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
-		} else {
-			qb.WithPublicLevelSubcategoryByDateIndexHashKey(*params.Level, *params.Subcategory, applingodictionary.BoolToInt(isPublic))
-		}
-	} else if params.Level != nil {
-		if useRatingSort {
-			qb.WithPublicLevelByRatingIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
-		} else {
-			qb.WithPublicLevelByDateIndexHashKey(*params.Level, applingodictionary.BoolToInt(isPublic))
-		}
-	} else if params.Subcategory != nil {
-		if useRatingSort {
-			qb.WithPublicSubcategoryByRatingIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
-		} else {
-			qb.WithPublicSubcategoryByDateIndexHashKey(*params.Subcategory, applingodictionary.BoolToInt(isPublic))
-		}
+	if useRatingSort {
+		qb.WithPreferredSortKey(string(applingoapi.Rating))
+		qb.WithRatingGreaterThan(-1)
 	} else {
-		if useRatingSort {
-			qb.WithPublicByRatingIndexHashKey(applingodictionary.BoolToInt(isPublic))
-		} else {
-			qb.WithPublicByDateIndexHashKey(applingodictionary.BoolToInt(isPublic))
-		}
+		qb.WithPreferredSortKey(string(applingoapi.Date))
+		qb.WithCreatedGreaterThan(0)
 	}
-	qb.OrderByDesc()
 
 	if params.LastEvaluated != nil {
 		lastEvaluatedKeyJSON, err := base64.StdEncoding.DecodeString(*params.LastEvaluated)
 		if err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to decode base64")
 		}
-		var lastEvaluatedKeyMap map[string]types.AttributeValue
-		if err := json.Unmarshal(lastEvaluatedKeyJSON, &lastEvaluatedKeyMap); err != nil {
+
+		var jsonMap map[string]any
+		if err := json.Unmarshal(lastEvaluatedKeyJSON, &jsonMap); err != nil {
 			return nil, errors.New("invalid last_evaluated key: unable to unmarshal JSON")
 		}
-		qb.StartFrom(lastEvaluatedKeyMap)
+		lastEvaluatedKey, err := applingodictionary.ConvertMapToAttributeValues(jsonMap)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert last_evaluated to DynamoDB types")
+		}
+
+		qb.StartFrom(lastEvaluatedKey)
 	}
 	qb.Limit(pageLimit)
 
-	additionalFilter := expression.Name(applingodictionary.ColumnDictionary).AttributeExists().And(
-		expression.Name(applingodictionary.ColumnDictionary).NotEqual(expression.Value("")),
-	)
 	indexName, keyCondition, filterCondition, exclusiveStartKey, err := qb.Build()
 	if err != nil {
 		return nil, err
 	}
-
-	var filterCond expression.ConditionBuilder
-	if filterCondition != nil {
-		filterCond = filterCondition.And(additionalFilter)
-	} else {
-		filterCond = additionalFilter
-	}
-	return &cloud.QueryInput{
+	queryInput := &cloud.QueryInput{
 		IndexName:         indexName,
 		KeyCondition:      keyCondition,
-		FilterCondition:   filterCond,
 		ProjectionFields:  applingodictionary.IndexProjections[indexName],
 		Limit:             pageLimit,
 		ScanForward:       false,
 		ExclusiveStartKey: exclusiveStartKey,
-	}, nil
+	}
+	if filterCondition != nil {
+		queryInput.FilterCondition = *filterCondition
+	}
+	return queryInput, nil
 }

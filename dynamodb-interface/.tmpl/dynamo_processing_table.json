@@ -1,22 +1,21 @@
 {
   "table_name": "applingo-processing",
   "hash_key": "id",
-  "range_key": "filename",
+  "range_key": "created",
   "attributes": [
     { "name": "id", "type": "S" },
-    { "name": "filename", "type": "S" }
+    { "name": "created", "type": "N" }
   ],
   "common_attributes": [
     { "name": "reason", "type": "S" },
+    { "name": "upload", "type": "N" },
     { "name": "name", "type": "S" },
     { "name": "description", "type": "S" },
     { "name": "overview", "type": "S" },
     { "name": "score", "type": "N" },
     { "name": "topic", "type": "S" },
-    { "name": "upload", "type": "N" },
     { "name": "level", "type": "S" },
     { "name": "languages", "type": "S" },
-    { "name": "created", "type": "N" },
     { "name": "words", "type": "N" },
     { "name": "author", "type": "S" },
     { "name": "subcategory", "type": "S" },

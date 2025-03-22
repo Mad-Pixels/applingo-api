@@ -29,7 +29,7 @@ const (
 	retriesOpenAIRequest = 1
 	backoffBucketCheck   = 300 * time.Millisecond
 	retriesBucketCheck   = 4
-	defaultMaxWorkers    = 5
+	defaultMaxWorkers    = 2
 	maxCraftConurrent    = 4
 	maxCraftDictionaries = 4
 )
@@ -102,7 +102,10 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			log.Error().Msg("dictionary is nil")
 			continue
 		}
-
+		var (
+			dictionaryID     = utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor())
+			dictionaryFileID = utils.RecordToFileID(dictionaryID)
+		)
 		content, err := serializer.MarshalJSON(dictionary.GetWordsContainer())
 		if err != nil {
 			log.Error().Any("dictionary", *dictionary).Err(err).Msg("wrong dictionary format")
@@ -111,7 +114,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 
 		if err = s3Bucket.Put(
 			ctx,
-			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			dictionaryFileID,
 			serviceProcessingBucket,
 			bytes.NewReader(content),
 			cloud.ContentTypeJSON,
@@ -121,7 +124,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 		if err = s3Bucket.WaitOrError(
 			ctx,
-			utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			dictionaryFileID,
 			serviceProcessingBucket,
 			retriesBucketCheck,
 			backoffBucketCheck,
@@ -131,7 +134,7 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 		}
 
 		dynamoItem := applingoprocessing.SchemaItem{
-			Id: utils.GenerateDictionaryID(dictionary.GetDictionaryName(), dictionary.GetDictionaryAuthor()),
+			Id: dictionaryID,
 
 			// language info.
 			Languages:   utils.JoinValues(dictionary.GetLanguageFrom().Name, dictionary.GetLanguageTo().Name),
@@ -148,14 +151,11 @@ func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) er
 			PromptCraft: utils.JoinValues(dictionary.GetPrompt(), string(dictionary.GetModel())),
 			Description: dictionary.GetDictionaryDescription(),
 			Topic:       dictionary.GetDictionaryTopic(),
-			Filename:    dictionary.GetFilename(),
 
 			// internal info.
-			Upload:      applingoprocessing.BoolToInt(false),
-			Created:     int(time.Now().Unix()),
-			Reason:      "waiting for check",
-			PromptCheck: "",
-			Score:       0,
+			Upload:  applingoprocessing.BoolToInt(false),
+			Created: int(time.Now().Unix()),
+			Reason:  "waiting for check",
 		}
 		dynamoItems = append(dynamoItems, dynamoItem)
 	}
