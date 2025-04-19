@@ -57,3 +57,11 @@ output "dynamo-processing-table_arn" {
 output "dynamo-processing-stream_arn" {
   value = module.dynamo-processing-table.stream_arn
 }
+
+output "dynamo-profile-table_name" {
+  value = module.dynamo-profile-table.table_name
+}
+
+output "dynamo-profile-table_arn" {
+  value = module.dynamo-profile-table.table_arn
+}

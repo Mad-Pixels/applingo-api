@@ -23,6 +23,7 @@ locals {
     dictionary_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-dictionary-stream_arn
     processing_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-processing-table_arn
     processing_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-processing-stream_arn
+    profile_table_arn           = data.terraform_remote_state.infra.outputs.dynamo-profile-table_arn
   }
 }
 

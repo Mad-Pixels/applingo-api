@@ -1,0 +1,13 @@
+{
+  "table_name": "applingo-profile",
+  "hash_key": "id",
+  "range_key": null,
+  "attributes": [
+    { "name": "id", "type": "S" }
+  ],
+  "common_attributes": [
+    { "name": "level", "type": "N" },
+    { "name": "xp", "type": "N" }
+  ],
+  "secondary_indexes": []
+}
