@@ -26,4 +26,8 @@ var (
 	DataResponseLevels = func(data applingoapi.LevelsData) applingoapi.ResponseGetLevelsV1 {
 		return applingoapi.ResponseGetLevelsV1{Data: data}
 	}
+
+	DataResponseProfile = func(data applingoapi.ProfileData) applingoapi.ResponsePatchProfileV1 {
+		return applingoapi.ResponsePatchProfileV1{Data: data}
+	}
 )

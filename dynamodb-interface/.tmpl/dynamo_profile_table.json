@@ -7,7 +7,8 @@
   ],
   "common_attributes": [
     { "name": "level", "type": "N" },
-    { "name": "xp", "type": "N" }
+    { "name": "xp", "type": "N" },
+    { "name": "last_sync", "type": "N"}
   ],
   "secondary_indexes": []
 }

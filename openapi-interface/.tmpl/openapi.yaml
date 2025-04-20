@@ -226,12 +226,12 @@ paths:
             schema:
               $ref: '#/components/schemas/RequestPostProfileV1'
       responses:
-        "201":
-          description: "Profile successfully created"
+        "200":
+          description: "Successfully retrieved dictionaries"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseMessage'
+                $ref: '#/components/schemas/ResponsePatchProfileV1'
       x-amazon-apigateway-integration:
         httpMethod: "POST" 
         uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_profile}/invocations"
@@ -249,7 +249,7 @@ paths:
             schema:
               $ref: '#/components/schemas/RequestPatchProfileV1'
       responses:
-        "204":
+        "200":
           description: "Profile successfully patched"
         default:
           description: "Got error message"
@@ -888,7 +888,7 @@ components:
 
     # =================================================================================================================== #
     # ------------------------------------------------------------------------------------------------------------------- #
-    # Data Response                                                                                                       #
+    # Data                                                                                                                #
     # ------------------------------------------------------------------------------------------------------------------- #
     # =================================================================================================================== #
 
@@ -906,7 +906,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SubcategoryItemV1'
-    
+
+    ProfileData:
+      type: object
+      required:
+        - level
+        - xp 
+      properties:
+        level: 
+          $ref: '#/components/schemas/BaseNumberRequired'
+        xp: 
+          $ref: '#/components/schemas/BaseNumberRequired'
+
     LevelsData:
       type: object
       required:
@@ -1111,6 +1122,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DictionariesData'
+
+    ResponsePatchProfileV1:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProfileData' 
 
     ResponsePostUrlsV1:
       type: object
