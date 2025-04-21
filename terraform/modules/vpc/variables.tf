@@ -58,6 +58,12 @@ variable "shared_tags" {
   default     = {}
 }
 
+variable "ssh_allowed_cidr_blocks" {
+  description = "CIDR blocks allowed for SSH access"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "create_endpoint_sg" {
   description = "Whether to create security group for VPC endpoints"
   type        = bool
@@ -70,8 +76,7 @@ variable "create_ssh_sg" {
   default     = false
 }
 
-variable "ssh_allowed_cidr_blocks" {
-  description = "CIDR blocks allowed for SSH access"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
+variable "create_grafana_sg" {
+  type    = bool
+  default = false
 }

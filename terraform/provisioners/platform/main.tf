@@ -12,6 +12,7 @@ module "vpc-infra" {
   enable_internet_gateway = true
   
   create_ssh_sg      = true
+  create_grafana_sg  = true
   create_endpoint_sg = true
 }
 
@@ -28,4 +29,6 @@ module "ec2-monitoring" {
 
   graviton_size   = "micro"
   use_localstack  = var.use_localstack
+
+  user_data = file("${path.module}/scripts/ec2-monitoring.sh")
 }
