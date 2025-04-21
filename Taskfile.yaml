@@ -311,7 +311,11 @@ tasks:
         rm -rf .terraform/ .terraform.lock.hcl terraform.tfstate terraform.tfstate.backup
         terraform init -reconfigure -backend-config=backend_aws.hcl
       fi
-      terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{ARCH}}"
+      if [ -z "{{.ARCH}}" ]; then
+        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}"
+      else
+        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{.ARCH}}"
+      fi
     env:
       AWS_DEFAULT_REGION:      '{{.REGION}}'
       AWS_ACCESS_KEY_ID:       '{{.KEY_ID}}'
@@ -447,6 +451,26 @@ tasks:
           DEVICE_API_TOKEN: "000XXX000"
           JWT_SECRET:       'yHc8vF9xJzZP@!kU1&3aD#LmQw$rT^GnB5Xs2Ev*Ny%pC7o'
           OPENAI_KEY:       'sk-proj-000XXX000'
+    silent: true
+
+  env/localstack/platform:
+    desc: Deploy platform to localstack
+    deps:
+      - _localstack/install
+    cmds:
+      - |
+        if [ -z "$LOCALSTACK_AUTH_TOKEN" ]; then
+          echo "Error: LOCALSTACK_AUTH_TOKEN is not set. Please set this environment variable before running LocalStack."
+          exit 1
+        fi
+      - "{{.HOME}}/.pyenv/bin/localstack start -d"
+      - task: _terraform/apply
+        vars:
+          DIR:        "{{.git_root}}/terraform/provisioners/platform"
+          REGION:     us-east-1
+          LOCALSTACK: "true"
+          KEY_ID:     test
+          ACCESS_KEY: test
     silent: true
 
   env/localstack/stop:

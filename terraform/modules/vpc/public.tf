@@ -29,7 +29,11 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
 
   route {
-    cidr_block      = "0.0.0.0/0"
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.this[0].id
+  }
+
+  route {
     ipv6_cidr_block = "::/0"
     gateway_id      = aws_internet_gateway.this[0].id
   }
@@ -48,5 +52,5 @@ resource "aws_route_table" "public" {
 resource "aws_route_table_association" "public" {
   count          = var.use_public_subnets && var.enable_internet_gateway ? length(aws_subnet.public) : 0
   subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.public[0].id
 }
