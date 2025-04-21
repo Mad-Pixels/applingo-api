@@ -17,7 +17,7 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_iam_role.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.scheduler](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.dead_letter_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.target_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_scheduler_schedule.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/scheduler_schedule) | resource |
@@ -48,8 +48,6 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_role_arn"></a> [role\_arn](#output\_role\_arn) | ARN of the IAM role created for the scheduler |
-| <a name="output_role_name"></a> [role\_name](#output\_role\_name) | Name of the IAM role created for the scheduler |
 | <a name="output_schedule_arn"></a> [schedule\_arn](#output\_schedule\_arn) | ARN of the created schedule |
 | <a name="output_schedule_name"></a> [schedule\_name](#output\_schedule\_name) | Name of the created schedule |
 <!-- END_TF_DOCS -->
