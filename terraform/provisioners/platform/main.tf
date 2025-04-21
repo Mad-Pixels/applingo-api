@@ -15,7 +15,7 @@ module "vpc-infra" {
   create_endpoint_sg = true
 }
 
-module "ec2-metrics" {
+module "ec2-monitoring" {
   source = "../../modules/ec2"
 
   project         = local.project
