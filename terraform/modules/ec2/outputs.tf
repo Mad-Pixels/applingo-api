@@ -1,0 +1,11 @@
+output "instance_id" {
+  value = aws_instance.this.id
+}
+
+output "public_ipv6" {
+  value = aws_instance.this.ipv6_addresses[0]
+}
+
+output "private_ip" {
+  value = aws_instance.this.private_ip
+}
