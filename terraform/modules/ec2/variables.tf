@@ -12,7 +12,7 @@ variable "ami_id" {
 variable "graviton_size" {
   description = "Instance size (e.g. micro, small, medium)"
   type        = string
-  default     = "micro"
+  default     = "nano"
 }
 
 variable "shared_tags" {
@@ -47,4 +47,10 @@ variable "user_data" {
   description = "User data script to run at instance launch"
   type        = string
   default     = ""
+}
+
+variable "use_localstack" {
+  description = "Whether to use LocalStack"
+  type        = bool
+  default     = false
 }

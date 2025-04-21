@@ -3,7 +3,7 @@ output "instance_id" {
 }
 
 output "public_ipv6" {
-  value = aws_instance.this.ipv6_addresses[0]
+  value = length(aws_instance.this.ipv6_addresses) > 0 ? aws_instance.this.ipv6_addresses[0] : null
 }
 
 output "private_ip" {

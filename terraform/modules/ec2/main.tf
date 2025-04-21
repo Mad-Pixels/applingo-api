@@ -1,5 +1,6 @@
 data "aws_ami" "amazon_linux" {
   most_recent = true
+  owners      = ["137112412989"]
 
   filter {
     name   = "name"
@@ -15,34 +16,29 @@ data "aws_ami" "amazon_linux" {
     name   = "architecture"
     values = ["arm64"]
   }
-
-  owners = ["137112412989"]
-}
-
-data "aws_ami" "selected" {
-  count       = var.ami_id != "" ? 1 : 0
-  owners      = ["amazon"]
-  image_id    = var.ami_id
-  most_recent = false
 }
 
 resource "aws_instance" "this" {
-  ami           = var.ami_id != "" ? var.ami_id : data.aws_ami.amazon_linux.id
+  ami           = local.selected_ami_id
   instance_type = "t4g.${var.graviton_size}"
 
-  vpc_security_group_ids      = var.security_group_ids
-  subnet_id                   = var.subnet_id
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = var.security_group_ids
+
   associate_public_ip_address = false
   ipv6_address_count          = 1
 
   user_data = var.user_data != "" ? var.user_data : null
   key_name  = var.key_name  != "" ? var.key_name  : null
 
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    instance_metadata_tags      = "enabled"
-    http_put_response_hop_limit = 1
+  dynamic "metadata_options" {
+    for_each = var.use_localstack ? [] : [1]
+    content {
+      http_endpoint               = "enabled"
+      http_tokens                 = "required"
+      instance_metadata_tags      = "enabled"
+      http_put_response_hop_limit = 1
+    }
   }
 
   root_block_device {
@@ -52,12 +48,7 @@ resource "aws_instance" "this" {
     throughput            = 125
     iops                  = 3000
 
-    volume_size = max(
-      var.volume_size, 
-      var.ami_id != "" 
-        ? data.aws_ami.selected[0].block_device_mappings[0].ebs.volume_size 
-        : data.aws_ami.amazon_linux.block_device_mappings[0].ebs.volume_size
-    )
+    volume_size = max(var.volume_size, local.selected_root_volume_size)
   }
 
   tags = merge(
