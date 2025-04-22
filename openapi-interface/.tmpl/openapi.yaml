@@ -704,8 +704,6 @@ components:
     BaseNumberRequired:
       type: integer
       format: int64
-      x-oapi-codegen-extra-tags: 
-        validate: "required"
 
     BaseUuidRequired:
       type: string
