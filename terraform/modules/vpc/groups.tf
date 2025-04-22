@@ -56,10 +56,10 @@ resource "aws_security_group" "ssh_security_group" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"           = "true",
-      "Type"         = "ssh",
-      "Project"      = var.project,
-      "Github"       = "github.com/Mad-Pixels/applingo-api",
+      "TF"      = "true",
+      "Type"    = "ssh",
+      "Project" = var.project,
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }
@@ -70,7 +70,7 @@ resource "aws_security_group_rule" "grafana_security_group" {
   from_port         = 3000
   to_port           = 3000
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"] 
+  cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.ssh_security_group[0].id
   description       = "Allow access to Grafana"
 }

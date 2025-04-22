@@ -10,7 +10,7 @@ module "vpc-infra" {
   enable_dns_support      = true
   enable_dns_hostnames    = true
   enable_internet_gateway = true
-  
+
   create_ssh_sg      = true
   create_grafana_sg  = true
   create_endpoint_sg = true
@@ -19,16 +19,16 @@ module "vpc-infra" {
 module "ec2-monitoring" {
   source = "../../modules/ec2"
 
-  project         = local.project
-  subnet_id       = module.vpc-infra.subnet_ids[0]
+  project   = local.project
+  subnet_id = module.vpc-infra.subnet_ids[0]
 
   security_group_ids = compact([
     module.vpc-infra.ssh_security_group_id,
     module.vpc-infra.endpoint_security_group_id
   ])
 
-  graviton_size   = "micro"
-  use_localstack  = var.use_localstack
+  graviton_size  = "micro"
+  use_localstack = var.use_localstack
 
-  user_data = file("${path.module}/scripts/ec2-monitoring.sh")
+  //user_data = file("${path.module}/scripts/ec2-monitoring.sh")
 }

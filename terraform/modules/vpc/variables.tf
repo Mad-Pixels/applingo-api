@@ -19,7 +19,7 @@ variable "vpc_base_ip" {
 }
 
 variable "vpc_zones" {
-  description = "Availability zones count." 
+  description = "Availability zones count."
   type        = number
 
   validation {

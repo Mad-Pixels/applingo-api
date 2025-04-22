@@ -29,7 +29,7 @@ resource "aws_instance" "this" {
   ipv6_address_count          = 1
 
   user_data = var.user_data != "" ? var.user_data : null
-  key_name  = var.key_name  != "" ? var.key_name  : null
+  key_name  = var.key_name != "" ? var.key_name : null
 
   dynamic "metadata_options" {
     for_each = var.use_localstack ? [] : [1]

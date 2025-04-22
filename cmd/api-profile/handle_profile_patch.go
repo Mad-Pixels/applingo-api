@@ -83,8 +83,8 @@ func handleProfilePatch(ctx context.Context, _ zerolog.Logger, body json.RawMess
 	}
 
 	response := applingoapi.ProfileData{
-		Level: applingoapi.BaseNumberRequired(profile.Level),
-		Xp:    applingoapi.BaseNumberRequired(profile.Xp),
+		Level: applingoapi.BaseNumberOptional(profile.Level),
+		Xp:    applingoapi.BaseNumberOptional(profile.Xp),
 	}
 	return openapi.DataResponseProfile(response), nil
 }

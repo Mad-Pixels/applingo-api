@@ -547,3 +547,34 @@ tasks:
           fi
         done
     silent: true
+
+
+  aws/deploy/platform:
+    desc: Deploy to AWS
+    cmds:
+      - |
+        if [ -z "$AWS_DEFAULT_REGION" ]; then
+          echo "Error: AWS_DEFAULT_REGION is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+          echo "Error: AWS_ACCESS_KEY_ID is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+          echo "Error: AWS_SECRET_ACCESS_KEY is not set."
+          exit 1
+        fi
+        if [ -z "$AWS_ACCOUNT_ID" ]; then
+          echo "Error: AWS_ACCOUNT_ID is not set."
+          exit 1
+        fi
+      - task: _terraform/fmt/check
+      - task: _terraform/apply
+        vars:
+          DIR:        "{{.git_root}}/terraform/provisioners/platform"
+          LOCALSTACK: "false"
+          REGION:     '{{.AWS_DEFAULT_REGION}}'
+          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
+          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
+    silent: true

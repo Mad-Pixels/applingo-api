@@ -701,7 +701,7 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty"
 
-    BaseNumberRequired:
+    BaseNumberOptional:
       type: integer
       format: int64
 
@@ -912,9 +912,9 @@ components:
         - xp 
       properties:
         level: 
-          $ref: '#/components/schemas/BaseNumberRequired'
+          $ref: '#/components/schemas/BaseNumberOptional'
         xp: 
-          $ref: '#/components/schemas/BaseNumberRequired'
+          $ref: '#/components/schemas/BaseNumberOptional'
 
     LevelsData:
       type: object
@@ -1000,9 +1000,9 @@ components:
           $ref: '#/components/schemas/BaseDescriptionRequired'
           description: 'iCloud ID or UUID'
         level: 
-          $ref: '#/components/schemas/BaseNumberRequired'
+          $ref: '#/components/schemas/BaseNumberOptional'
         xp: 
-          $ref: '#/components/schemas/BaseNumberRequired'
+          $ref: '#/components/schemas/BaseNumberOptional'
 
     RequestPostDictionaryV1:
       type: object

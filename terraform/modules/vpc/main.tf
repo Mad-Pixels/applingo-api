@@ -1,11 +1,11 @@
 resource "aws_vpc" "this" {
-    cidr_block           = "${var.vpc_base_ip}/16"
-    enable_dns_hostnames = var.enable_dns_hostnames
-    enable_dns_support   = var.enable_dns_support
+  cidr_block           = "${var.vpc_base_ip}/16"
+  enable_dns_hostnames = var.enable_dns_hostnames
+  enable_dns_support   = var.enable_dns_support
 
-    assign_generated_ipv6_cidr_block = true
+  assign_generated_ipv6_cidr_block = true
 
-    tags = merge(
+  tags = merge(
     var.shared_tags,
     {
       "TF"           = "true",
@@ -24,9 +24,9 @@ resource "aws_internet_gateway" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"         = "true",
-      "Project"    = var.project,
-      "Github"       = "github.com/Mad-Pixels/applingo-api",
+      "TF"      = "true",
+      "Project" = var.project,
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 }
