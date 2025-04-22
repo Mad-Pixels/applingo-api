@@ -86,6 +86,21 @@ resource "aws_security_group" "monitoring_sg" {
   depends_on = [module.vpc]
 }
 
+resource "aws_route53_record" "monitoring_aaaa" {
+  zone_id = var.domain_zone_id 
+  name    = var.domain_name
+  type    = "AAAA"
+
+  alias {
+    name                   = module.distribution.domain_name
+    zone_id                = module.distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+
+  depends_on = [module.distribution]
+}
+
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -121,4 +136,16 @@ module "instance" {
 
   subnet_id = element(module.vpc.public_subnets, 0)
   user_data = file("${path.module}/scripts/init-instance.sh")
+}
+
+module "distribution" {
+  source = "../../modules/cloudfront"
+
+  project = local.project
+  name    = "monitoring"
+
+  domain_name        = var.domain_name
+  origin_domain_name = module.instance.instance_public_dns
+  certificate_arn    = var.domain_acm_arn 
+  forwarded_headers  = ["Host", "Authorization"]
 }

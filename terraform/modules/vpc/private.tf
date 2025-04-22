@@ -5,8 +5,9 @@ resource "aws_subnet" "private" {
   cidr_block = local.used_private_cidrs[count.index]
 
   assign_ipv6_address_on_creation = true
-  ipv6_cidr_block                 = cidrsubnet(aws_vpc.this.ipv6_cidr_block, 8, count.index + var.vpc_zones)
-  availability_zone               = data.aws_availability_zones.azs.names[count.index]
+
+  ipv6_cidr_block   = cidrsubnet(aws_vpc.this.ipv6_cidr_block, 8, count.index + var.vpc_zones)
+  availability_zone = data.aws_availability_zones.azs.names[count.index]
 
   tags = merge(
     var.shared_tags,
