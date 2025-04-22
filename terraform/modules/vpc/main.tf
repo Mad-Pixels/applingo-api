@@ -1,7 +1,11 @@
+data "aws_availability_zones" "azs" {
+  state = "available"
+}
+
 resource "aws_vpc" "this" {
-  cidr_block           = "${var.vpc_base_ip}/16"
-  enable_dns_hostnames = var.enable_dns_hostnames
+  cidr_block           = local.vpc_cidr_block
   enable_dns_support   = var.enable_dns_support
+  enable_dns_hostnames = var.enable_dns_hostnames
 
   assign_generated_ipv6_cidr_block = true
 
@@ -26,6 +30,7 @@ resource "aws_internet_gateway" "this" {
     var.shared_tags,
     {
       "TF"      = "true",
+      "Name"    = var.name,
       "Project" = var.project,
       "Github"  = "github.com/Mad-Pixels/applingo-api",
     }

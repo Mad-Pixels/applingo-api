@@ -59,3 +59,9 @@ variable "use_localstack" {
   type        = bool
   default     = false
 }
+
+variable "associate_public_ip_address" {
+  description = "Associate public ip address (ipv4)"
+  type        = bool
+  default     = false
+}

@@ -1,16 +1,13 @@
-data "aws_availability_zones" "region_az_list" {
-  state = "available"
-}
-
 resource "aws_subnet" "public" {
-  count  = var.use_public_subnets ? var.vpc_zones : 0
-  vpc_id = aws_vpc.this.id
+  count = var.use_public_subnets ? var.vpc_zones : 0
+
+  vpc_id     = aws_vpc.this.id
+  cidr_block = local.used_public_cidrs[count.index]
 
   assign_ipv6_address_on_creation = true
 
   ipv6_cidr_block   = cidrsubnet(aws_vpc.this.ipv6_cidr_block, 8, count.index)
-  cidr_block        = cidrsubnet("${var.vpc_base_ip}/16", 4, count.index)
-  availability_zone = data.aws_availability_zones.region_az_list.names[count.index]
+  availability_zone = data.aws_availability_zones.azs.names[count.index]
 
   tags = merge(
     var.shared_tags,
@@ -18,7 +15,7 @@ resource "aws_subnet" "public" {
       "TF"      = "true",
       "Type"    = "public",
       "Project" = var.project,
-      "Name"    = "${var.name}-public"
+      "Name"    = "${var.name}-public",
       "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
@@ -32,12 +29,12 @@ resource "aws_route_table" "public" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.this[0].id
+    gateway_id = local.igw_id
   }
 
   route {
     ipv6_cidr_block = "::/0"
-    gateway_id      = aws_internet_gateway.this[0].id
+    gateway_id      = local.igw_id
   }
 
   tags = merge(
@@ -46,7 +43,7 @@ resource "aws_route_table" "public" {
       "TF"      = "true",
       "Type"    = "public",
       "Project" = var.project,
-      "Name"    = "${var.name}-public"
+      "Name"    = "${var.name}-public",
       "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )

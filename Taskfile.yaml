@@ -549,7 +549,7 @@ tasks:
     silent: true
 
 
-  aws/deploy/platform:
+  aws/deploy/monitoring:
     desc: Deploy to AWS
     cmds:
       - |
@@ -572,7 +572,7 @@ tasks:
       - task: _terraform/fmt/check
       - task: _terraform/apply
         vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/platform"
+          DIR:        "{{.git_root}}/terraform/provisioners/monitoring"
           LOCALSTACK: "false"
           REGION:     '{{.AWS_DEFAULT_REGION}}'
           KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
