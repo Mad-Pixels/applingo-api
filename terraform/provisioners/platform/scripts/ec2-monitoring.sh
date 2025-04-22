@@ -1,4 +1,5 @@
 #!/bin/bash
+# /var/log/cloud-init-output.log
 set -euxo pipefail
 
 # Update the system
@@ -9,7 +10,7 @@ amazon-linux-extras install docker -y
 systemctl enable docker
 systemctl start docker
 
-# Add EC2-user to the docker group (note: should use ec2-user instead of ec2)
+# Add EC2-user to the docker group
 usermod -aG docker ec2-user
 
 # Install necessary tools
@@ -18,10 +19,10 @@ yum install -y amazon-cloudwatch-agent jq awslogs
 # Set up Docker to start on boot
 systemctl enable docker.service
 
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/download/v2.18.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+# Install Docker Compose using pip with правильными версиями зависимостей
+yum install -y python3-pip
+pip3 install urllib3==1.26.16
+pip3 install docker-compose
 
 # Configure memory and swap limits
 echo "vm.swappiness=10" >> /etc/sysctl.conf
