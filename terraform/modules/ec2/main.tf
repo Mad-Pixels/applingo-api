@@ -57,6 +57,7 @@ resource "aws_instance" "this" {
       "TF"      = "true",
       "Project" = var.project,
       "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Name"    = var.name
     }
   )
 }

@@ -19,6 +19,7 @@ module "vpc-infra" {
 module "ec2-monitoring" {
   source = "../../modules/ec2"
 
+  name      = "monitoring-${local.project}"
   project   = local.project
   subnet_id = module.vpc-infra.subnet_ids[0]
 

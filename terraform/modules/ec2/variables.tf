@@ -3,6 +3,11 @@ variable "project" {
   type        = string
 }
 
+variable "name" {
+  description = "Instance name"
+  type        = string
+}
+
 variable "ami_id" {
   description = "AMI ID for the instance"
   type        = string
