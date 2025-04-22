@@ -23,6 +23,11 @@ output "subnet_azs" {
 }
 
 output "allow_ssh_ipv6" {
-  value       = var.create_ssh_sg ? aws_security_group.ssh_security_group[0].id : ""
+  value       = var.allow_ssh ? aws_security_group.ssh_security_group[0].id : ""
   description = "Security group ID for SSH over IPv6"
+}
+
+output "allow_egress" {
+  value       = var.allow_egress ? aws_security_group.egress_security_group[0].id : ""
+  description = "Security group ID for Egress"
 }

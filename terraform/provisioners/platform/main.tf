@@ -12,9 +12,8 @@ module "vpc-infra" {
   enable_dns_hostnames    = true
   enable_internet_gateway = true
 
-  create_ssh_sg      = true
-  create_grafana_sg  = true
-  create_endpoint_sg = true
+  allow_ssh    = true
+  allow_egress = true
 }
 
 module "ec2-monitoring" {
@@ -27,11 +26,11 @@ module "ec2-monitoring" {
 
   security_group_ids = compact([
     module.vpc-infra.allow_ssh_ipv6,
+    module.vpc-infra.allow_egress,
   ])
 
   graviton_size  = "micro"
   use_localstack = var.use_localstack
 
-
-  //user_data = file("${path.module}/scripts/ec2-monitoring.sh")
+  user_data = file("${path.module}/scripts/ec2-monitoring.sh")
 }

@@ -1,32 +1,44 @@
 #!/bin/bash
 set -euxo pipefail
 
-um update -y
+# Update the system
+yum update -y
+
+# Install Docker
 amazon-linux-extras install docker -y
 systemctl enable docker
 systemctl start docker
-usermod -aG docker ec2
 
-DOCKER_COMPOSE_VERSION="2.24.0"
-curl -SL https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-aarch64 -o /usr/local/bin/docker-compose
+# Add EC2-user to the docker group (note: should use ec2-user instead of ec2)
+usermod -aG docker ec2-user
+
+# Install necessary tools
+yum install -y amazon-cloudwatch-agent jq awslogs
+
+# Set up Docker to start on boot
+systemctl enable docker.service
+
+# Install Docker Compose
+curl -L "https://github.com/docker/compose/releases/download/v2.18.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-mkdir -p /opt/grafana
-cat > /opt/grafana/docker-compose.yml <<EOF
-version: "3"
-services:
-  grafana:
-    image: grafana/grafana-oss:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-storage:/var/lib/grafana
-volumes:
-  grafana-storage:
+# Configure memory and swap limits
+echo "vm.swappiness=10" >> /etc/sysctl.conf
+echo "vm.max_map_count=262144" >> /etc/sysctl.conf
+sysctl -p
+
+# Set up log rotation for Docker
+cat > /etc/logrotate.d/docker << 'EOF'
+/var/lib/docker/containers/*/*.log {
+    rotate 7
+    daily
+    compress
+    size=10M
+    missingok
+    delaycompress
+    copytruncate
+}
 EOF
 
-cd /opt/grafana
-docker-compose up -d
+echo "EC2 instance setup completed successfully"

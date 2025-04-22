@@ -69,19 +69,14 @@ variable "ssh_allowed_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
-variable "create_endpoint_sg" {
-  description = "Whether to create security group for VPC endpoints"
+variable "allow_ssh" {
+  description = "Allow SSH"
   type        = bool
   default     = false
 }
 
-variable "create_ssh_sg" {
-  description = "Whether to create security group with port 22 open"
+variable "allow_egress" {
+  description = "Allo all outbound traffic"
   type        = bool
   default     = false
-}
-
-variable "create_grafana_sg" {
-  type    = bool
-  default = false
 }
