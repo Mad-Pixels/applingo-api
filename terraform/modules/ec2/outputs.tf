@@ -6,6 +6,14 @@ output "public_ipv6" {
   value = length(aws_instance.this.ipv6_addresses) > 0 ? aws_instance.this.ipv6_addresses[0] : null
 }
 
+output "public_ipv4" {
+  value = aws_instance.this.associate_public_ip_address ? aws_instance.this.public_ip : ""
+}
+
+output "dns" {
+  value = aws_instance.this.public_dns
+}
+
 output "private_ip" {
   value = aws_instance.this.private_ip
 }

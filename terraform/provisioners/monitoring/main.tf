@@ -60,6 +60,14 @@ resource "aws_security_group" "monitoring_sg" {
   }
 
   ingress {
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
     from_port        = 9090
     to_port          = 9090
     protocol         = "tcp"
@@ -87,8 +95,8 @@ resource "aws_security_group" "monitoring_sg" {
 }
 
 resource "aws_route53_record" "monitoring_aaaa" {
-  zone_id = var.domain_zone_id 
-  name    = var.domain_name
+  zone_id = var.domain_zone_id
+  name    = "monitoring.applingo.madpixels.io" //var.domain_name
   type    = "AAAA"
 
   alias {
@@ -136,6 +144,8 @@ module "instance" {
 
   subnet_id = element(module.vpc.public_subnets, 0)
   user_data = file("${path.module}/scripts/init-instance.sh")
+
+  associate_public_ip_address = true
 }
 
 module "distribution" {
@@ -144,8 +154,8 @@ module "distribution" {
   project = local.project
   name    = "monitoring"
 
-  domain_name        = var.domain_name
-  origin_domain_name = module.instance.instance_public_dns
-  certificate_arn    = var.domain_acm_arn 
+  domain_name        = "applingo.madpixels.io" //var.domain_name
+  origin_domain_name = module.instance.dns
+  certificate_arn    = var.domain_acm_arn
   forwarded_headers  = ["Host", "Authorization"]
 }

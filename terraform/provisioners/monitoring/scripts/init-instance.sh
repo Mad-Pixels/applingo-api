@@ -2,36 +2,22 @@
 # /var/log/cloud-init-output.log
 set -euxo pipefail
 
-# Update the system
+# -------- common setup --------
 yum update -y
-
-# Install Docker
 amazon-linux-extras install docker -y
 systemctl enable docker
 systemctl start docker
-
-# Add EC2-user to the docker group
 usermod -aG docker ec2-user
-
-# Install necessary tools
 yum install -y amazon-cloudwatch-agent jq awslogs
-
-# Set up Docker to start on boot
 systemctl enable docker.service
-
-# Install Docker Compose
 yum install -y python3-pip
-pip3 install urllib3==1.26.16
-pip3 install docker-compose
-
+pip3 install urllib3==1.26.16 docker-compose
 ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-# Configure memory and swap limits
-echo "vm.swappiness=10" >> /etc/sysctl.conf
+echo "vm.swappiness=10"    >> /etc/sysctl.conf
 echo "vm.max_map_count=262144" >> /etc/sysctl.conf
 sysctl -p
 
-# Set up log rotation for Docker
 cat > /etc/logrotate.d/docker << 'EOF'
 /var/lib/docker/containers/*/*.log {
     rotate 7
@@ -44,12 +30,11 @@ cat > /etc/logrotate.d/docker << 'EOF'
 }
 EOF
 
-# Create monitoring directory structure
-mkdir -p /home/ec2-user/monitoring/grafana
-mkdir -p /home/ec2-user/monitoring/prometheus
+# -------- monitoring dirs --------
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx}
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
-# Create Prometheus configuration
+# -------- prometheus.yml --------
 cat > /home/ec2-user/monitoring/prometheus/prometheus.yml << 'EOF'
 global:
   scrape_interval: 15s
@@ -59,16 +44,33 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
 EOF
 
-# Create docker-compose.yml configuration
+# -------- nginx.conf --------
+cat > /home/ec2-user/monitoring/nginx/nginx.conf << 'EOF'
+events {}
+http {
+  server {
+    listen 80 default_server;
+    server_name _;
+
+    location / {
+      proxy_pass         http://grafana:3000/;
+      proxy_set_header   Host              $host;
+      proxy_set_header   X-Real-IP         $remote_addr;
+      proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+      proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+  }
+}
+EOF
+
+# -------- docker-compose.yml --------
 cat > /home/ec2-user/monitoring/docker-compose.yml << 'EOF'
 version: '3'
-
 services:
   prometheus:
     image: prom/prometheus:latest
@@ -80,13 +82,10 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     ports:
       - "9090:9090"
-    networks:
-      - monitoring
+    networks: [monitoring]
 
   grafana:
     image: grafana/grafana:latest
@@ -97,12 +96,12 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
     ports:
       - "3000:3000"
-    networks:
-      - monitoring
-    depends_on:
-      - prometheus
+    networks: [monitoring]
+    depends_on: [prometheus]
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -119,6 +118,18 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - "9100:9100"
+    networks: [monitoring]
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - grafana
     networks:
       - monitoring
 
@@ -131,17 +142,10 @@ volumes:
   grafana_data:
 EOF
 
-# Fix permissions
-chown -R ec2-user:ec2-user /home/ec2-user/monitoring
-
-# Wait for docker-compose to be available
-sleep 5
-
-# Start monitoring stack with absolute path
+# -------- start stack & systemd unit --------
 cd /home/ec2-user/monitoring
 /usr/bin/docker-compose up -d
 
-# Create systemd service to start monitoring on boot
 cat > /etc/systemd/system/monitoring.service << 'EOF'
 [Unit]
 Description=Docker Compose Monitoring Stack
@@ -159,7 +163,6 @@ ExecStop=/usr/bin/docker-compose down
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the monitoring service
 systemctl enable monitoring.service
 
 echo "EC2 instance setup completed successfully with monitoring stack"
