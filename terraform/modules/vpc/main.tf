@@ -9,6 +9,7 @@ resource "aws_vpc" "this" {
     var.shared_tags,
     {
       "TF"           = "true",
+      "Name"         = var.name,
       "Project"      = var.project,
       "DnsSupport"   = var.enable_dns_support,
       "DnsHostnames" = var.enable_dns_hostnames,

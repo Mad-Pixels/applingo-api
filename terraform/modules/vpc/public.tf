@@ -18,6 +18,8 @@ resource "aws_subnet" "public" {
       "TF"      = "true",
       "Type"    = "public",
       "Project" = var.project,
+      "Name"    = "${var.name}-public"
+      "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )
 
@@ -44,6 +46,7 @@ resource "aws_route_table" "public" {
       "TF"      = "true",
       "Type"    = "public",
       "Project" = var.project,
+      "Name"    = "${var.name}-public"
       "Github"  = "github.com/Mad-Pixels/applingo-api",
     }
   )

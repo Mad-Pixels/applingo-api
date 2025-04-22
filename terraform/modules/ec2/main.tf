@@ -55,9 +55,9 @@ resource "aws_instance" "this" {
     var.shared_tags,
     {
       "TF"      = "true",
+      "Name"    = var.name,
       "Project" = var.project,
       "Github"  = "github.com/Mad-Pixels/applingo-api",
-      "Name"    = var.name
     }
   )
 }

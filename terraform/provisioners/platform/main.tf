@@ -3,6 +3,7 @@ module "vpc-infra" {
 
   project     = local.project
   aws_region  = var.aws_region
+  name        = "platform-${local.project}"
   vpc_base_ip = "10.100.0.0"
   vpc_zones   = 1
 
@@ -19,17 +20,18 @@ module "vpc-infra" {
 module "ec2-monitoring" {
   source = "../../modules/ec2"
 
+  subnet_id = module.vpc-infra.subnet_ids[0]
   name      = "monitoring-${local.project}"
   project   = local.project
-  subnet_id = module.vpc-infra.subnet_ids[0]
+  key_name  = local.project
 
   security_group_ids = compact([
-    module.vpc-infra.ssh_security_group_id,
-    module.vpc-infra.endpoint_security_group_id
+    module.vpc-infra.allow_ssh_ipv6,
   ])
 
   graviton_size  = "micro"
   use_localstack = var.use_localstack
+
 
   //user_data = file("${path.module}/scripts/ec2-monitoring.sh")
 }

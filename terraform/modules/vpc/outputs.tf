@@ -22,12 +22,7 @@ output "subnet_azs" {
   value = aws_subnet.public[*].availability_zone
 }
 
-output "endpoint_security_group_id" {
-  description = "ID of the endpoint security group (if created)"
-  value       = var.create_endpoint_sg ? aws_security_group.endpoint_security_group[0].id : null
-}
-
-output "ssh_security_group_id" {
-  description = "ID of the SSH security group (if created)"
-  value       = var.create_ssh_sg ? aws_security_group.ssh_security_group[0].id : null
+output "allow_ssh_ipv6" {
+  value       = var.create_ssh_sg ? aws_security_group.ssh_security_group[0].id : ""
+  description = "Security group ID for SSH over IPv6"
 }
