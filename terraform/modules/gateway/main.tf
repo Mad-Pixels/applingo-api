@@ -12,6 +12,7 @@ locals {
     api_subcategories = var.invoke_lambdas_arns["api-subcategories"].arn
     api_dictionaries  = var.invoke_lambdas_arns["api-dictionaries"].arn
     api_reports       = var.invoke_lambdas_arns["api-reports"].arn
+    api_profile       = var.invoke_lambdas_arns["api-profile"].arn
     api_levels        = var.invoke_lambdas_arns["api-levels"].arn
     api_schema        = var.invoke_lambdas_arns["api-schema"].arn
     api_urls          = var.invoke_lambdas_arns["api-urls"].arn

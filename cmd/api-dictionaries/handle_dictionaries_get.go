@@ -20,7 +20,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const pageLimit = 60
+const pageLimit = 150
 
 func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {

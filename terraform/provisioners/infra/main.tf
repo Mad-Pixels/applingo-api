@@ -71,3 +71,15 @@ module "dynamo-processing-table" {
 
   stream_type = "NEW_AND_OLD_IMAGES"
 }
+
+module "dynamo-profile-table" {
+  source = "../../modules/dynamo"
+
+  project              = local.project
+  table_name           = local.profile_dynamo_schema.table_name
+  hash_key             = local.profile_dynamo_schema.hash_key
+  range_key            = local.profile_dynamo_schema.range_key
+  attributes           = local.profile_dynamo_schema.attributes
+  secondary_index_list = local.profile_dynamo_schema.secondary_indexes
+  stream_enabled       = false
+}
