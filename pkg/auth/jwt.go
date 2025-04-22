@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +12,7 @@ import (
 type Claims struct {
 	Identifier int  `json:"identifier"`
 	Role       Role `json:"role"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // JWTAuth handles JWT-specific authentication
@@ -51,9 +51,9 @@ func (j *JWTAuth) GenerateToken(identifier int, role Role, expiresIn time.Durati
 		Identifier: identifier,
 		Role:       role,
 
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(expiresIn).Unix(),
-			IssuedAt:  time.Now().Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
