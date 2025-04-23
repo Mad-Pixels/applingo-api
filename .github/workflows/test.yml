@@ -10,10 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
-      AWS_REGION: us-east-1 
-      TF_DIR: "./terraform/provisioners/monitoring" 
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      TF_DIR: "./terraform/provisioners/monitoring"
+
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_use_localstack: "false"
+      TF_VAR_domain_name: ${{ secrets.AWS_MONITORING_DOMAIN }}
+      TF_VAR_domain_zone_id: ${{ secrets.AWS_DOMAIN_ZONE_ID }}
+      TF_VAR_domain_acm_arn: ${{ secrets.AWS_MONITORING_ACM }}
       
     defaults:
       run:
@@ -32,9 +39,9 @@ jobs:
     - name: Create backend_aws.hcl
       run: |
         cat > backend_aws.hcl << 'EOF'
-        bucket  = "tfstates-madpixels"
-        key     = "lingocards-api/monitoring.tfstate"
-        region  = "eu-central-1"
+        bucket  = "${{ secrets.AWS_BACKEND_BUCKET }}"
+        key     = "${{ secrets.AWS_BACKEND_MONITORING_KEY }}"
+        region  = "${{ secrets.AWS_BACKEND_REGION }}"
         encrypt = true
         EOF
       
