@@ -1,0 +1,88 @@
+name: 'Terraform Runner'
+description: 'Init, workspace, fmt/validate and plan/apply in one place'
+
+inputs:
+  tf_dir:
+    description: 'Path to Terraform config'
+    required: true
+  command:
+    description: 'plan or apply'
+    required: true
+    default: plan
+  workspace:
+    description: 'Terraform workspace'
+    required: false
+    default: default
+  aws_region:
+    description: 'AWS region'
+    required: true
+  backend_bucket:
+    description: 'S3 bucket for state'
+    required: true
+  backend_key:
+    description: 'S3 key for state'
+    required: true
+  backend_region:
+    description: 'Region of S3 bucket'
+    required: true
+  terraform_version:
+    description: 'Terraform version'
+    required: false
+    default: '1.6.1'
+  tf_vars:
+    description: 'Extra `-var` flags (CLI)'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+        aws-region:            ${{ inputs.aws_region }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Create backend HCL
+      working-directory: ${{ inputs.tf_dir }}
+      run: |
+        cat > backend_aws.hcl <<EOF
+        bucket  = "${{ inputs.backend_bucket }}"
+        key     = "${{ inputs.backend_key }}"
+        region  = "${{ inputs.backend_region }}"
+        encrypt = true
+        EOF
+
+    - name: Terraform Init
+      working-directory: ${{ inputs.tf_dir }}
+      run: terraform init -input=false -reconfigure -backend-config=backend_aws.hcl
+
+    - name: Select or create workspace
+      working-directory: ${{ inputs.tf_dir }}
+      run: |
+        terraform workspace select "${{ inputs.workspace }}" \
+          || terraform workspace new "${{ inputs.workspace }}"
+
+    - name: Terraform fmt & validate
+      working-directory: ${{ inputs.tf_dir }}
+      run: |
+        terraform fmt -check -recursive
+        terraform validate
+
+    - name: Terraform ${{ inputs.command }}
+      working-directory: ${{ inputs.tf_dir }}
+      run: |
+        if [ "${{ inputs.command }}" = "apply" ]; then
+          terraform apply -input=false -auto-approve ${{ inputs.tf_vars }}
+        else
+          terraform plan -input=false ${{ inputs.tf_vars }}
+        fi

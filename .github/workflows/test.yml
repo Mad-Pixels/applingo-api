@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Terraform Plan (monitoring)
-        uses: Mad-Pixels/github-workflows/.github/actions/terraform/action.yml@main
+        uses: ./.github/actions/terraform
         with:
           tf_dir:          terraform/provisioners/monitoring
           command:         plan
