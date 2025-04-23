@@ -7,8 +7,12 @@ on:
 jobs:
   terraform-monitoring:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Run Terraform Plan (monitoring)
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Terraform Plan (monitoring)
         uses: ./.github/actions/terraform
         with:
           aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY }}
