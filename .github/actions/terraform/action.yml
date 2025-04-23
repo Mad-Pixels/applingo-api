@@ -53,12 +53,16 @@ runs:
         aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
         aws-region:            ${{ inputs.aws_region }}
 
+    - name: Export AWS region for Terraform
+      shell: bash
+      run: echo "TF_VAR_aws_region=${{ inputs.aws_region }}" >> $GITHUB_ENV
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: ${{ inputs.terraform_version }}
 
-    - name: Create backend HCL
+    - name: Create backend_aws.hcl
       shell: bash
       working-directory: ${{ inputs.tf_dir }}
       run: |
@@ -67,6 +71,16 @@ runs:
         key     = "${{ inputs.backend_key }}"
         region  = "${{ inputs.backend_region }}"
         encrypt = true
+        EOF
+
+    - name: Create backend.tf with S3 backend block
+      shell: bash
+      working-directory: ${{ inputs.tf_dir }}
+      run: |
+        cat > backend.tf <<EOF
+        terraform {
+          backend "s3" {}
+        }
         EOF
 
     - name: Terraform Init
