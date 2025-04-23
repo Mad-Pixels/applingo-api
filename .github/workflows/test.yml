@@ -2,8 +2,7 @@ name: Monitor Terraform Plan
 
 on:
   push:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches: ["**"]
 
 jobs:
   terraform-monitoring:
