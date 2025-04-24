@@ -14,8 +14,8 @@ on:
         required: true
 
 env:
-  aws_access_key_id:     ${{ inputs.aws_access_key }}
-  aws_secret_access_key: ${{ inputs.aws_secret_key }}
+  aws_access_key_id:     ${{ secrets.aws_access_key }}
+  aws_secret_access_key: ${{ secrets.aws_secret_key }}
   aws_region:            ${{ secrets.AWS_REGION }}
 
   backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-${{ inputs.environment }}
@@ -23,7 +23,7 @@ env:
 
 jobs:
   tf-infra:
-    name: TF Invoke Infra
+    name: Tf Infra
     runs-on: ubuntu-latest
 
     steps:
@@ -47,7 +47,7 @@ jobs:
             -var environment=${{ inputs.environment }}
 
   tf-monitoring:
-    name: TF Invoke Monitoring
+    name: Tf Monitoring
     runs-on: ubuntu-latest
 
     steps:
@@ -73,7 +73,7 @@ jobs:
             -var domain_acm_arn=""
 
   tf-service:
-    name: TF Invoke Service
+    name: Tf Service
     runs-on: ubuntu-latest
 
     steps:
