@@ -22,10 +22,22 @@ jobs:
 
   build:
     needs: prepare
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
     
-    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-    with:
-      command: docker/build/func FUNC=${{ matrix.function }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker image
+        uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
+        with:
+          command: docker/build/func FUNC=${{ matrix.function }}
