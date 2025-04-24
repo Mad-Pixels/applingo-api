@@ -1,11 +1,13 @@
-name: Commit 
+name: Base PR
 
 on:
-  push:
+  pull_request:
+    types: [opened, synchronize]
     branches-ignore:
       - main
       - release/**
 
 jobs:
   checks:
+    name: Checks
     uses: ./.github/workflows/.checks.yml

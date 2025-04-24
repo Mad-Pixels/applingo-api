@@ -1,0 +1,66 @@
+name: Release PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - release/**
+
+env:
+  environment: stg
+
+  aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY_STG }}
+  aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_STG }}
+  aws_region:            ${{ secrets.AWS_REGION }}
+
+  backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-stg
+  backend_region:        ${{ secrets.AWS_BACKEND_REGION }}
+
+jobs:
+  tf-infra:
+    name: infra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Plan
+        uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
+        with:
+          aws_access_key_id:     ${{ env.aws_access_key_id }}
+          aws_secret_access_key: ${{ env.aws_secret_access_key }}
+          aws_region:            ${{ env.aws_region }}
+
+          backend_bucket:        ${{ env.backend_bucket }}
+          backend_key:           ${{ secrets.AWS_BACKEND_INFRA_KEY }}
+          backend_region:        ${{ env.backend_region }}
+
+          tf_dir:                terraform/provisioners/infra
+          tf_command:            plan
+          tf_vars: >-
+            -var environment=${{ env.environment }}
+
+  tf-monitoring:
+    name: monitoring
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Plan
+        uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
+        with:
+          aws_access_key_id:     ${{ env.aws_access_key_id }}
+          aws_secret_access_key: ${{ env.aws_secret_access_key }}
+          aws_region:            ${{ env.aws_region }}
+
+          backend_bucket:        ${{ env.backend_bucket }}
+          backend_key:           ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
+          backend_region:        ${{ env.backend_region }}
+
+          tf_dir:                terraform/provisioners/monitoring
+          tf_command:            plan
+          tf_vars: >-
+            -var domain_name=""
