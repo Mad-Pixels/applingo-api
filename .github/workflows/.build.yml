@@ -4,6 +4,15 @@ on:
   workflow_call:
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
