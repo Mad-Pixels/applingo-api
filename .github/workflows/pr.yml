@@ -18,7 +18,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_STG }}
           aws_region:            ${{ secrets.AWS_REGION }}
           tf_dir:                terraform/provisioners/monitoring
-          command:               apply
+          tf_command:            apply
           backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-stg
           backend_key:           ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
           backend_region:        ${{ secrets.AWS_BACKEND_REGION }}
