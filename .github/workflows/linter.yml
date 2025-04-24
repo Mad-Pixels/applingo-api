@@ -1,11 +1,16 @@
-name: Commit flow
+name: Linter
 
 on:
   push:
     branches: ["**"]
 
 jobs:
-  terraform-fmt:
+  terraform:
     uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
     with:
       tf_dir: ./terraform
+  
+  golang:
+    uses: Mad-Pixels/github-workflows/.github/workflows/golang-lint.yml@main
+    with:
+      go_dir: ./
