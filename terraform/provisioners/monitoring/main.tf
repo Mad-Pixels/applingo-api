@@ -133,7 +133,7 @@ module "instance" {
   name    = "${local.project}-monitoring"
 
   use_localstack = var.use_localstack
-  key_name       = "monotoring"
+  key_name       = "monitoring"
   graviton_size  = "micro"
 
   security_group_ids = [
