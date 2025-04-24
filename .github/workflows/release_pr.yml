@@ -18,7 +18,7 @@ env:
 
 jobs:
   tf-infra:
-    name: infra
+    name: TF Plan Infra
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +42,7 @@ jobs:
             -var environment=${{ env.environment }}
 
   tf-monitoring:
-    name: monitoring
+    name: TF Plan Monitoring
     runs-on: ubuntu-latest
 
     steps:
@@ -64,3 +64,5 @@ jobs:
           tf_command:            plan
           tf_vars: >-
             -var domain_name=""
+            -var domain_zone_id=""
+            -var domain_acm_arn=""
