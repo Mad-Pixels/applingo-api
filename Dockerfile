@@ -44,7 +44,8 @@ COPY --from=builder-amd64 /tmp/aws-ca-bundle.pem /etc/ssl/certs/aws-ca-bundle.pe
 ENTRYPOINT ["/bootstrap"]
 
 # arm64
-FROM --platform=linux/arm64/v8 golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-arm64
+#FROM --platform=linux/arm64/v8 golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-arm64
+FROM --platform=linux/arm64/v8 golang:${GO_VERSION}-bullseye AS builder-arm64
 ARG FUNC_NAME
 ARG ASM_FLAGS
 ARG GC_FLAGS
@@ -72,8 +73,10 @@ RUN --mount=type=cache,target=${GOCACHE} \
              -gcflags="${GC_FLAGS}"   \
              -o /bin/bootstrap
 
-RUN apk add --no-cache upx && upx --best --lzma /bin/bootstrap \
-    && wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem
+RUN apt-get update && apt-get install -y upx wget && \
+    upx --best --lzma /bin/bootstrap && \
+    wget -O /tmp/aws-ca-bundle.pem https://curl.se/ca/cacert.pem && \
+    rm -rf /var/lib/apt/lists/*
 
 FROM scratch AS arm64
 COPY --from=builder-arm64 /bin/bootstrap /bootstrap
