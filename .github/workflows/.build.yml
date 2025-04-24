@@ -1,0 +1,29 @@
+name: Build 
+
+on:
+  workflow_call:
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Find functions to build
+        id: get_functions
+        run: |
+          FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
+          echo "Functions: ${FUNCTIONS}"
+
+  build:
+    needs: prepare
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.prepare.outputs.functions) }}
+    
+    uses: ./.github/workflows/task-runner.yml
+    with:
+      command: docker/build/func FUNC=${{ matrix.function }}
