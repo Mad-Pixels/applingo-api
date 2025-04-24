@@ -33,23 +33,10 @@ jobs:
 
   build-function:
     needs: prepare
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Create and use builder
-        run: |
-          docker buildx create --name applingo-builder --driver docker-container --use || true
-          docker buildx inspect --bootstrap
-
-      - name: Run build task
-        uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-        with:
-          command: docker/builds/func FUNC=${{ matrix.function }}
+    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
+    with:
+      command: docker/builds/func FUNC=${{ matrix.function }}
