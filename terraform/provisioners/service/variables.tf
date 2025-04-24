@@ -34,3 +34,8 @@ variable "jwt_secret" {
   description = "Auth JWT secret which use for lambda request validate from external"
   type        = string
 }
+
+variable "environment" {
+  description = "Stage environment"
+  type        = string 
+}
