@@ -8,8 +8,8 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/.build.yml
     name: Build
+    uses: ./.github/workflows/build.yml
 
   # plan:
   #   uses: ./.github/workflows/.terraform.yml
