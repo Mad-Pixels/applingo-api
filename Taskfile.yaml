@@ -230,10 +230,11 @@ tasks:
       FUNC_NAME: '{{ .FUNC }}'
     cmds:
       - docker buildx build --platform linux/arm64 \
-          -t {{.api_image_name}}:{{.FUNC_NAME}} \
-          --build-arg FUNC_NAME={{.FUNC_NAME}} \
-          --build-arg GO_VERSION={{.go_version}} \
-          --load .  # <— важно, если ты потом `docker run` или `docker push` не делаешь
+        -t {{.api_image_name}}:{{.FUNC_NAME}} \
+        --build-arg FUNC_NAME={{.FUNC_NAME}} \
+        --build-arg GO_VERSION={{.go_version}} \
+        --load \
+        .
     silent: true
   
   _docker/push/all:
