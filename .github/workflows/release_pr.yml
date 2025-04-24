@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/.build.yml
+    name: Build
 
   # plan:
   #   uses: ./.github/workflows/.terraform.yml
