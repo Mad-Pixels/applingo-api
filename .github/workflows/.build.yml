@@ -7,6 +7,8 @@ jobs:
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.get_functions.outputs.functions }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
