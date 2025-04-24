@@ -1,8 +1,7 @@
-name: Linter
+name: Checks
 
 on:
-  push:
-    branches: ["**"]
+  workflow_call:
 
 jobs:
   terraform:
@@ -15,5 +14,7 @@ jobs:
     with:
       command: "go/run/lint"
 
-
-    
+  tests: 
+    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
+    with:
+     command: "go/run/tests" 

@@ -143,6 +143,12 @@ tasks:
     internal: true
     silent: true
 
+  go/run/tests:
+    desc: Tests 
+    dir: "{{ .git_root }}" 
+    cmd: echo "Hello"
+    silent: true
+
   go/run/imports:
     desc: Run 'goimports'.
     dir: "{{ .git_root }}"

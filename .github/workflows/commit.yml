@@ -1,0 +1,11 @@
+name: Commit 
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - release/**
+
+jobs:
+  checks:
+    uses: ./.github/workflows/.checks.yml
