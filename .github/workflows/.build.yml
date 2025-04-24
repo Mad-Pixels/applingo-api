@@ -5,7 +5,7 @@ on:
 
 jobs:
   prepare:
-    name: 🛠️ Prepare Functions
+    name: Prepare
     runs-on: ubuntu-latest
     outputs:
       functions: ${{ steps.get_functions.outputs.functions }}
@@ -19,25 +19,39 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Create and use applingo-builder
+      - name: Create and use custom builder
         run: |
           docker buildx create --name applingo-builder --driver docker-container --use
           docker buildx inspect --bootstrap
 
-      - name: Detect functions in /cmd
+      - name: Find functions to build
         id: get_functions
         run: |
           FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
-          echo "✅ Detected functions: ${FUNCTIONS}"
+          echo "Functions: ${FUNCTIONS}"
 
   build-function:
-    name: 🐳 Build Function - ${{ matrix.function }}
+    name: Build ${{ matrix.function }}
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
-    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-    with:
-      command: docker/builds/func FUNC=${{ matrix.function }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create and use applingo-builder
+        run: |
+          docker buildx create --name applingo-builder --driver docker-container --use
+          docker buildx inspect --bootstrap
+
+      - name: Run build task for ${{ matrix.function }}
+        uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
+        with:
+          command: docker/builds/func FUNC=${{ matrix.function }}
