@@ -94,19 +94,19 @@ resource "aws_security_group" "monitoring_sg" {
   depends_on = [module.vpc]
 }
 
-resource "aws_route53_record" "monitoring_aaaa" {
-  zone_id = var.domain_zone_id
-  name    = "monitoring.applingo.madpixels.io" //var.domain_name
-  type    = "AAAA"
+# resource "aws_route53_record" "monitoring_aaaa" {
+#   zone_id = var.domain_zone_id
+#   name    = "monitoring.applingo.madpixels.io" //var.domain_name
+#   type    = "AAAA"
 
-  alias {
-    name                   = module.distribution.domain_name
-    zone_id                = module.distribution.hosted_zone_id
-    evaluate_target_health = false
-  }
+#   alias {
+#     name                   = module.distribution.domain_name
+#     zone_id                = module.distribution.hosted_zone_id
+#     evaluate_target_health = false
+#   }
 
-  depends_on = [module.distribution]
-}
+#   depends_on = [module.distribution]
+# }
 
 
 module "vpc" {
@@ -148,14 +148,14 @@ module "instance" {
   associate_public_ip_address = true
 }
 
-module "distribution" {
-  source = "../../modules/cloudfront"
+# module "distribution" {
+#   source = "../../modules/cloudfront"
 
-  project = local.project
-  name    = "monitoring"
+#   project = local.project
+#   name    = "monitoring"
 
-  domain_name        = "applingo.madpixels.io" //var.domain_name
-  origin_domain_name = module.instance.dns
-  certificate_arn    = var.domain_acm_arn
-  forwarded_headers  = ["Host", "Authorization"]
-}
+#   domain_name        = "applingo.madpixels.io" //var.domain_name
+#   origin_domain_name = module.instance.dns
+#   certificate_arn    = var.domain_acm_arn
+#   forwarded_headers  = ["Host", "Authorization"]
+# }

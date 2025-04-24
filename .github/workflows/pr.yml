@@ -14,15 +14,15 @@ jobs:
       - name: Terraform Plan (monitoring)
         uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
         with:
-          aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY }}
+          aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY_STG }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_STG }}
           aws_region:            ${{ secrets.AWS_REGION }}
           tf_dir:                terraform/provisioners/monitoring
-          command:               plan
-          backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}
+          command:               apply
+          backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-stg
           backend_key:           ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
           backend_region:        ${{ secrets.AWS_BACKEND_REGION }}
           tf_vars: >-
-            -var domain_name=${{ secrets.AWS_MONITORING_DOMAIN }}
-            -var domain_zone_id=${{ secrets.AWS_DOMAIN_ZONE_ID }}
-            -var domain_acm_arn=${{ secrets.AWS_MONITORING_ACM }}
+            -var domain_name=""
+            -var domain_zone_id=""
+            -var domain_acm_arn=""
