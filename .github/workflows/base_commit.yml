@@ -8,5 +8,5 @@ on:
 
 jobs:
   checks:
-    name: 🧪
+    name: Checks
     uses: ./.github/workflows/.checks.yml
