@@ -32,8 +32,8 @@ jobs:
           echo "Functions: ${FUNCTIONS}"
 
   build-function:
-  
-    # needs: prepare
+
+    needs: prepare
     # strategy:
     #   matrix:
     #     function: ${{ fromJson(needs.prepare.outputs.functions) }}
