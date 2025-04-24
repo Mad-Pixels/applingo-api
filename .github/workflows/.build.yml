@@ -1,4 +1,4 @@
-name: Build 
+name: Build
 
 on:
   workflow_call:
@@ -15,14 +15,14 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-          use: true
-          driver-opts: network=host
-          buildkitd-flags: --allow-insecure-entitlement security.insecure
+
+      - name: Create and use custom builder
+        run: |
+          docker buildx create --name applingo-builder --driver docker-container --use
+          docker buildx inspect --bootstrap
 
       - name: Find functions to build
         id: get_functions
@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
-    
+
     uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
       command: docker/builds/func FUNC=${{ matrix.function }}
