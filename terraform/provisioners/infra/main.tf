@@ -9,28 +9,28 @@ module "s3-forge-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "forge"
+  bucket_name = "forge-${var.environment}"
 }
 
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "dictionary"
+  bucket_name = "dictionary-${var.environment}"
 }
 
 module "s3-processing-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "processing"
+  bucket_name = "processing-${var.environment}"
 }
 
 module "s3-errors-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "errors"
+  bucket_name = "errors-${var.environment}"
 
   rule = {
     id     = "cleanup"

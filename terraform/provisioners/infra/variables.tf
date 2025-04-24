@@ -15,7 +15,12 @@ variable "aws_region" {
   type        = string
 }
 
-variable "arch" {
-  description = "Set architecture which will be use in lambda services"
-  type        = string
+variable "environment" {
+  description = "Stage environment"
+  type        = string 
 }
+
+# variable "arch" {
+#   description = "Set architecture which will be use in lambda services"
+#   type        = string
+# }

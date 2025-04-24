@@ -14,21 +14,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       
-      # - name: "[infra] apply"
-      #   uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
-      #   with:
-      #     aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY_STG }}
-      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_STG }}
-      #     aws_region:            ${{ secrets.AWS_REGION }} 
-      #     backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-stg
-      #     backend_key:           ${{ secrets.AWS_BACKEND_INFRA_KEY }}
-      #     backend_region:        ${{ secrets.AWS_BACKEND_REGION }}
-      #     tf_dir:                terraform/provisioners/infra
-      #     tf_command:            apply
-      #     tf_vars: >-
-      #       -var domain_name=""
-      #       -var domain_zone_id=""
-      #       -var domain_acm_arn=""
+      - name: "[infra] apply"
+        uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
+        with:
+          aws_access_key_id:     ${{ secrets.AWS_ACCESS_KEY_STG }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_STG }}
+          aws_region:            ${{ secrets.AWS_REGION }} 
+          backend_bucket:        ${{ secrets.AWS_BACKEND_BUCKET }}-${{ env.environment }}
+          backend_key:           ${{ secrets.AWS_BACKEND_INFRA_KEY }}
+          backend_region:        ${{ secrets.AWS_BACKEND_REGION }}
+          tf_dir:                terraform/provisioners/infra
+          tf_command:            apply
+          tf_vars: >-
+            -var environment=${{ env.environment }}
         
       - name: "[monitoring] apply"
         uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
