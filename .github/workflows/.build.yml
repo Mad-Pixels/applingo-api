@@ -40,3 +40,5 @@ jobs:
     uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
       command: docker/builds/func FUNC=${{ matrix.function }}
+    env:
+      FUNC: ${{ matrix.function }}
