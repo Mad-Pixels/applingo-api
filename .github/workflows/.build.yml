@@ -21,7 +21,7 @@ jobs:
 
       - name: Create and use custom builder
         run: |
-          docker buildx create --name applingo-builder --driver docker-container --use
+          docker buildx create --name applingo-builder --driver docker-container --use || true
           docker buildx inspect --bootstrap
 
       - name: Find functions to build
@@ -36,9 +36,6 @@ jobs:
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
-
     uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
       command: docker/builds/func FUNC=${{ matrix.function }}
-    env:
-      FUNC: ${{ matrix.function }}
