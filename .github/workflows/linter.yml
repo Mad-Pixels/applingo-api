@@ -11,6 +11,9 @@ jobs:
       tf_dir: ./terraform
   
   golang:
-    uses: Mad-Pixels/github-workflows/.github/workflows/golang-lint.yml@main
+    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
-      go_dir: ./
+      command: "go/run/lint"
+
+
+    

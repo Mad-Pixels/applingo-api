@@ -17,7 +17,7 @@ variable "aws_region" {
 
 variable "environment" {
   description = "Stage environment"
-  type        = string 
+  type        = string
 }
 
 # variable "arch" {

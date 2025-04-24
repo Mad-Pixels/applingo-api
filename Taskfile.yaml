@@ -66,6 +66,7 @@ tasks:
       - _go/version/check
       - go/generate/dynamo
       - go/generate/openapi
+      - go/generate/openapispec
     cmds:
       - |
         if [ -d "{{.git_root}}/vendor" ]; then
@@ -93,6 +94,7 @@ tasks:
     dir: "{{.git_root}}"
     deps:
       - _go/install/lint
+      - _go/mod/vendor 
     cmds: 
       - "{{.go_root}}/bin/golangci-lint run cmd/... -v --timeout=15m"
   

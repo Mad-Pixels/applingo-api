@@ -37,5 +37,5 @@ variable "jwt_secret" {
 
 variable "environment" {
   description = "Stage environment"
-  type        = string 
+  type        = string
 }
