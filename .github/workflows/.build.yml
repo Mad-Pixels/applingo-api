@@ -24,6 +24,6 @@ jobs:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
     
-    uses: ./.github/workflows/task-runner.yml
+    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
       command: docker/build/func FUNC=${{ matrix.function }}
