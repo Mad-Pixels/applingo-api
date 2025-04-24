@@ -5,19 +5,19 @@ on:
 
 jobs:
   terraform:
-    name: TF
+    name: Tf
     uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
     with:
       tf_dir: ./terraform
   
   golang:
-    name: Go
+    name: GoLint
     uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
       command: "go/run/lint"
 
   tests:
-    name: Go
+    name: GoTest
     uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
     with:
      command: "go/run/tests" 
