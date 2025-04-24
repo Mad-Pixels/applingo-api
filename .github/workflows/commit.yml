@@ -1,0 +1,11 @@
+name: Commit flow
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  terraform-fmt:
+    uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
+    with:
+      tf_dir: ./terraform
