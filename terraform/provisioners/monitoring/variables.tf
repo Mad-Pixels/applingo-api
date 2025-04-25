@@ -15,12 +15,17 @@ variable "aws_region" {
   type        = string
 }
 
-variable "environment" {
-  description = "Stage environment"
+variable "domain_name" {
+  description = "Project monitoring service domain"
   type        = string
 }
 
-# variable "arch" {
-#   description = "Set architecture which will be use in lambda services"
-#   type        = string
-# }
+variable "domain_zone_id" {
+  description = "Domain zone id"
+  type        = string
+}
+
+variable "domain_acm_arn" {
+  description = "ACM certificate ARN"
+  type        = string
+}

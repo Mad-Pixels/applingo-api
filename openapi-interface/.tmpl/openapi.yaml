@@ -216,6 +216,81 @@ paths:
               method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
 
+  /v1/profile:
+    post:
+      operationId: postProfileV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPostProfileV1'
+      responses:
+        "200":
+          description: "Successfully retrieved dictionaries"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePatchProfileV1'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST" 
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_profile}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+        passthroughBehavior: "when_no_match" 
+        type: "aws_proxy"
+    patch: 
+      operationId: patchProfileV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPatchProfileV1'
+      responses:
+        "200":
+          description: "Profile successfully patched"
+        default:
+          description: "Got error message"
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ResponseMessage'
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${api_profile}/invocations"
+        responses:
+          default:
+            statusCode: "204"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "CORS support"
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Allow-Credentials:
+              $ref: '#/components/headers/AccessControlAllowCredentials'
+          content: {}
+      x-amazon-apigateway-integration:
+        type: "mock"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST,PATCH'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-timestamp,x-signature'"
+
   /v1/dictionary:
     post:
       operationId: postDictionaryV1
@@ -626,6 +701,10 @@ components:
       x-oapi-codegen-extra-tags:
         validate: "omitempty"
 
+    BaseNumberOptional:
+      type: integer
+      format: int64
+
     BaseUuidRequired:
       type: string
       minLength: 36
@@ -807,7 +886,7 @@ components:
 
     # =================================================================================================================== #
     # ------------------------------------------------------------------------------------------------------------------- #
-    # Data Response                                                                                                       #
+    # Data                                                                                                                #
     # ------------------------------------------------------------------------------------------------------------------- #
     # =================================================================================================================== #
 
@@ -825,7 +904,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SubcategoryItemV1'
-    
+
+    ProfileData:
+      type: object
+      required:
+        - level
+        - xp 
+      properties:
+        level: 
+          $ref: '#/components/schemas/BaseNumberOptional'
+        xp: 
+          $ref: '#/components/schemas/BaseNumberOptional'
+
     LevelsData:
       type: object
       required:
@@ -889,6 +979,30 @@ components:
           $ref: '#/components/schemas/BaseCountryCodeRequired'
         description:
           $ref: '#/components/schemas/BaseExtendedRequired'
+
+    RequestPostProfileV1:
+      type: object
+      required:
+        - id
+      properties:
+        id: 
+          $ref: '#/components/schemas/BaseDescriptionRequired'
+          description: 'iCloud ID or UUID'
+    
+    RequestPatchProfileV1:
+      type: object
+      required:
+        - id
+        - level
+        - xp 
+      properties:
+        id: 
+          $ref: '#/components/schemas/BaseDescriptionRequired'
+          description: 'iCloud ID or UUID'
+        level: 
+          $ref: '#/components/schemas/BaseNumberOptional'
+        xp: 
+          $ref: '#/components/schemas/BaseNumberOptional'
 
     RequestPostDictionaryV1:
       type: object
@@ -1006,6 +1120,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DictionariesData'
+
+    ResponsePatchProfileV1:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProfileData' 
 
     ResponsePostUrlsV1:
       type: object

@@ -12,6 +12,7 @@ locals {
     api_subcategories = var.invoke_lambdas_arns["api-subcategories"].arn
     api_dictionaries  = var.invoke_lambdas_arns["api-dictionaries"].arn
     api_reports       = var.invoke_lambdas_arns["api-reports"].arn
+    api_profile       = var.invoke_lambdas_arns["api-profile"].arn
     api_levels        = var.invoke_lambdas_arns["api-levels"].arn
     api_schema        = var.invoke_lambdas_arns["api-schema"].arn
     api_urls          = var.invoke_lambdas_arns["api-urls"].arn
@@ -69,6 +70,8 @@ resource "aws_api_gateway_stage" "this" {
     destination_arn = aws_cloudwatch_log_group.this.arn
     format          = "{\"requestId\":\"$context.requestId\",\"traceId\":\"$context.xrayTraceId\",\"ip\":\"$context.identity.sourceIp\",\"caller\":\"$context.identity.caller\",\"user\":\"$context.identity.user\",\"requestTime\":\"$context.requestTime\",\"httpMethod\":\"$context.httpMethod\",\"domainName\":\"$context.domainName\",\"resourcePath\":\"$context.resourcePath\",\"status\":\"$context.status\",\"error\":\"$context.error.message\",\"validationError\":\"$context.error.validationErrorString\",\"lambdaStatus\":\"$context.integration.status\",\"lambdaLatency\":\"$context.integration.latency\",\"authStatus\":\"$context.authorizer.status\",\"protocol\":\"$context.protocol\",\"responseLength\":\"$context.responseLength\",\"user-agent\":\"$context.identity.userAgent\",\"wafResponse\":\"$context.wafResponseCode\",\"wafError\":\"$context.waf.error\"}"
   }
+
+  depends_on = [aws_api_gateway_account.this]
 }
 
 resource "aws_api_gateway_method_settings" "this" {

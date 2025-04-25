@@ -9,28 +9,28 @@ module "s3-forge-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "forge"
+  bucket_name = "forge-${var.environment}"
 }
 
 module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "dictionary"
+  bucket_name = "dictionary-${var.environment}"
 }
 
 module "s3-processing-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "processing"
+  bucket_name = "processing-${var.environment}"
 }
 
 module "s3-errors-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
-  bucket_name = "errors"
+  bucket_name = "errors-${var.environment}"
 
   rule = {
     id     = "cleanup"
@@ -70,4 +70,16 @@ module "dynamo-processing-table" {
   stream_enabled       = true
 
   stream_type = "NEW_AND_OLD_IMAGES"
+}
+
+module "dynamo-profile-table" {
+  source = "../../modules/dynamo"
+
+  project              = local.project
+  table_name           = local.profile_dynamo_schema.table_name
+  hash_key             = local.profile_dynamo_schema.hash_key
+  range_key            = local.profile_dynamo_schema.range_key
+  attributes           = local.profile_dynamo_schema.attributes
+  secondary_index_list = local.profile_dynamo_schema.secondary_indexes
+  stream_enabled       = false
 }

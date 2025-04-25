@@ -1,0 +1,13 @@
+name: Base PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches-ignore:
+      - main
+      - release/**
+
+jobs:
+  checks:
+    name: Checks
+    uses: ./.github/workflows/.checks.yml

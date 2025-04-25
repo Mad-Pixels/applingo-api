@@ -1,8 +1,7 @@
 # Base constants.
 locals {
-  project      = "applingo"
-  state_bucket = "tfstates-madpixels"
-  tfstate_file = "lingocards-api/infra.tfstate"
+  project = "applingo"
+
 }
 
 # Base variables.
@@ -23,6 +22,7 @@ locals {
     dictionary_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-dictionary-stream_arn
     processing_table_arn        = data.terraform_remote_state.infra.outputs.dynamo-processing-table_arn
     processing_table_stream_arn = data.terraform_remote_state.infra.outputs.dynamo-processing-stream_arn
+    profile_table_arn           = data.terraform_remote_state.infra.outputs.dynamo-profile-table_arn
   }
 }
 

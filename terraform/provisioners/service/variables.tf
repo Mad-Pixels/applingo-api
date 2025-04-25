@@ -34,3 +34,23 @@ variable "jwt_secret" {
   description = "Auth JWT secret which use for lambda request validate from external"
   type        = string
 }
+
+variable "environment" {
+  description = "Stage environment"
+  type        = string
+}
+
+variable "infra_backend_bucket" {
+  description = "Infra backend bucket"
+  type        = string
+}
+
+variable "infra_backend_region" {
+  description = "Infra backend region"
+  type        = string
+}
+
+variable "infra_backend_key" {
+  description = "Infra backend key"
+  type        = string
+}

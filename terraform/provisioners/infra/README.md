@@ -38,6 +38,7 @@ No resources.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_dynamo-dictionary-stream_arn"></a> [dynamo-dictionary-stream\_arn](#output\_dynamo-dictionary-stream\_arn) | n/a |
 | <a name="output_dynamo-dictionary-table_arn"></a> [dynamo-dictionary-table\_arn](#output\_dynamo-dictionary-table\_arn) | n/a |
 | <a name="output_dynamo-dictionary-table_name"></a> [dynamo-dictionary-table\_name](#output\_dynamo-dictionary-table\_name) | n/a |
 | <a name="output_dynamo-processing-stream_arn"></a> [dynamo-processing-stream\_arn](#output\_dynamo-processing-stream\_arn) | n/a |
