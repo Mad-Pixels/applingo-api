@@ -1,8 +1,7 @@
 # Base constants.
 locals {
   project      = "applingo"
-  state_bucket = "tfstates-madpixels"
-  tfstate_file = "lingocards-api/infra.tfstate"
+
 }
 
 # Base variables.

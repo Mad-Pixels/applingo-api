@@ -104,7 +104,7 @@ func handleDictionariesGet(ctx context.Context, logger zerolog.Logger, _ json.Ra
 func buildQueryInput(params applingoapi.GetDictionariesV1Params) (*cloud.QueryInput, error) {
 	qb := applingodictionary.NewQueryBuilder()
 
-	isPublic := true
+	isPublic := true //nolint:staticcheck
 	if params.Public != nil && !*params.Public {
 		isPublic = false
 	}

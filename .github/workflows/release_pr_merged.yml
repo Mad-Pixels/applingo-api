@@ -1,0 +1,41 @@
+name: Release PR Merged
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - release/**
+
+jobs:
+  apply:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/.terraform.yml
+    name: Apply 
+    with:
+      environment: "stg"
+      tf_command: "apply"
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+
+      aws_backend_bucket:         ${{ secrets.AWS_BACKEND_BUCKET }}
+      aws_backend_region:         ${{ secrets.AWS_BACKEND_REGION }}
+
+      aws_backend_monitoring_key: ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
+      aws_backend_service_key:    ${{ secrets.AWS_BACKEND_SERVICE_KEY }}
+      aws_backend_infra_key:      ${{ secrets.AWS_BACKEND_INFRA_KEY }}
+
+      api_web_jwt_stg:            ${{ secrets.API_WEB_JWT_STG }}
+      api_openai_key_stg:         ${{ secrets.API_OPENAI_KEY_STG }}
+      api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
+
+  rollout:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/.rollout.yml
+    name: Rollout 
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+      aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}

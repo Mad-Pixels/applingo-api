@@ -1,0 +1,29 @@
+name: Checks
+
+on:
+  workflow_call:
+
+jobs:
+  terraform:
+    name: Tf
+    uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
+    with:
+      tf_dir: ./terraform
+  
+  golang:
+    name: GoLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run GoLint
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/lint
+
+  tests:
+    name: GoTest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Go Tests
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/tests
