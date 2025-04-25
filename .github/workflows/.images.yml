@@ -27,6 +27,7 @@ jobs:
   build:
     needs: prepare
     runs-on: ubuntu-latest
+    name: ${{ matrix.function }}
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
