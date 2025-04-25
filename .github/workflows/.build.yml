@@ -31,13 +31,30 @@ jobs:
           echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
           echo "Functions: ${FUNCTIONS}"
 
+  # build-function:
+  #   needs: prepare
+  #   strategy:
+  #     matrix:
+  #       function: ${{ fromJson(needs.prepare.outputs.functions) }}
+        
+  #   uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
+  #   with:
+  #     command: docker/builds/func FUNC=api-dictionaries
+  #     vars: FUNC:${{ matrix.function }},ARCH:arm64
+
   build-function:
     needs: prepare
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         function: ${{ fromJson(needs.prepare.outputs.functions) }}
-        
-    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-    with:
-      command: docker/builds/func FUNC=api-dictionaries
-      vars: FUNC:${{ matrix.function }},ARCH:arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run Task with vars
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: docker/builds/func
+          vars: FUNC:${{ matrix.function }},ARCH:arm64
