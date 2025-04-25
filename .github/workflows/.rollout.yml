@@ -1,0 +1,50 @@
+name: Rollout 
+
+on:
+  workflow_call:
+    secrets:
+      # AWS creds
+      aws_secret_key:
+        required: true
+      aws_access_key:
+        required: true
+      aws_region: 
+        required: true
+      aws_account: 
+        required: true
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.get_functions.outputs.functions }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Find functions to build
+        id: get_functions
+        run: |
+          FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
+          echo "Functions: ${FUNCTIONS}"
+
+  rollout:
+    needs: prepare
+    runs-on: ubuntu-latest
+    name: ${{ matrix.function }}
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.prepare.outputs.functions) }}
+    
+    steps: 
+      - name: Lambda restart 
+        uses: Mad-Pixels/github-workflows/.github/actions/lambda-restart@main
+        with: 
+          aws_access_key_id: ${{ secrets.aws_access_key }}
+          aws_secret_access_key: ${{ secrets.aws_secret_key }}
+          aws_region: ${{ secrets.aws_region }}
+          aws_account_id: ${{ secrets.aws_account }}
+          function: ${{ matrix.function }}
+          repository: applingo-images

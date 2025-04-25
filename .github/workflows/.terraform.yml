@@ -90,6 +90,7 @@ jobs:
             -var domain_acm_arn=""
 
   tf-service:
+    needs: tf-infra
     name: Tf Service
     runs-on: ubuntu-latest
 
