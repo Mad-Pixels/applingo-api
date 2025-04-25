@@ -1,0 +1,80 @@
+name: Release Commit 
+
+on:
+  push:
+    branches:
+      - release/**
+
+jobs:
+  terraform:
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    name: Tf
+    uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
+    with:
+      tf_dir: ./terraform
+  
+  golang:
+    name: GoLint
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run GoLint
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/lint
+
+  tests:
+    name: GoTest
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Go Tests
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/tests
+
+  build:
+    needs: [terraform, golang, tests]
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    uses: ./.github/workflows/.build.yml
+    name: build
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+      aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}
+
+  apply:
+    needs: [terraform, golang, tests]
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    uses: ./.github/workflows/.terraform.yml
+    name: Apply 
+    with:
+      environment: "stg"
+      tf_command: "apply"
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+
+      aws_backend_bucket:         ${{ secrets.AWS_BACKEND_BUCKET }}
+      aws_backend_region:         ${{ secrets.AWS_BACKEND_REGION }}
+
+      aws_backend_monitoring_key: ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
+      aws_backend_service_key:    ${{ secrets.AWS_BACKEND_SERVICE_KEY }}
+      aws_backend_infra_key:      ${{ secrets.AWS_BACKEND_INFRA_KEY }}
+
+      api_web_jwt_stg:            ${{ secrets.API_WEB_JWT_STG }}
+      api_openai_key_stg:         ${{ secrets.API_OPENAI_KEY_STG }}
+      api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
+
+  rollout:
+    needs: apply
+    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    uses: ./.github/workflows/.rollout.yml
+    name: Rollout 
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+      aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}

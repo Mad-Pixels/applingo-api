@@ -1,6 +1,6 @@
 # Base constants.
 locals {
-  project      = "applingo"
+  project = "applingo"
 
 }
 

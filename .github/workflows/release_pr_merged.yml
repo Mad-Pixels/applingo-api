@@ -31,6 +31,7 @@ jobs:
       api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
 
   rollout:
+    needs: apply
     if: github.event.pull_request.merged == true
     uses: ./.github/workflows/.rollout.yml
     name: Rollout 
