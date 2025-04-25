@@ -1,8 +1,7 @@
 # Base constants.
 locals {
   project      = "applingo"
-  state_bucket = "applingo-tfstates-stg"
-  tfstate_file = "applingo-api/infra.tfstate"
+
 }
 
 # Base variables.

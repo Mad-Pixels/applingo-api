@@ -111,6 +111,10 @@ jobs:
           tf_dir:                terraform/provisioners/service
           tf_command:            ${{ inputs.tf_command }}
           tf_vars: >-
+            -var infra_backend_bucket=${{ secrets.aws_backend_bucket }}-${{ inputs.environment }}
+            -var infra_backend_region=${{ secrets.aws_backend_region }}
+            -var infra_backend_key=${{ secrets.aws_backend_infra_key }}
+
             -var environment=${{ inputs.environment }}
             -var jwt_secret=${{ secrets.api_web_jwt_stg }}
             -var openai_key=${{ secrets.api_openai_key_stg }}

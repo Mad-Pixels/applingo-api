@@ -39,3 +39,18 @@ variable "environment" {
   description = "Stage environment"
   type        = string
 }
+
+variable "infra_backend_bucket" {
+  description = "Infra backend bucket"
+  type        = string
+}
+
+variable "infra_backend_region" {
+  description = "Infra backend region"
+  type        = string
+}
+
+variable "infra_backend_key" {
+  description = "Infra backend key"
+  type        = string
+}

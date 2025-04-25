@@ -6,9 +6,9 @@ data "terraform_remote_state" "infra" {
   config = var.use_localstack ? {
     path = "../infra/terraform.tfstate"
     } : {
-    bucket = local.state_bucket
-    key    = local.tfstate_file
-    region = "us-east-2"
+    bucket = var.infra_backend_bucket
+    region = var.infra_backend_region
+    key    = var.infra_backend_key
   }
 }
 
