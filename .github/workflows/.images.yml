@@ -2,6 +2,16 @@ name: Images
 
 on:
   workflow_call:
+    secrets:
+      # AWS creds
+      aws_secret_key:
+        required: true
+      aws_access_key:
+        required: true
+      aws_region: 
+        required: true
+      aws_account: 
+        required: true
 
 permissions:
   actions: write
@@ -44,3 +54,12 @@ jobs:
         with:
           command: docker/build/func
           vars: FUNC:${{ matrix.function }},ARCH:arm64
+      
+      - name: Push to ECR
+        uses: Mad-Pixels/github-workflows/.github/actions/ecr-push@main
+        with:
+          aws_access_key_id: ${{ secrets.aws_access_key }}
+          aws_secret_access_key: ${{ secrets.aws_secret_key }}
+          aws_region: ${{ secrets.aws_region }}
+          aws_account_id: ${{ secrets.aws_account }}
+          image: applingo-images:${{ matrix.function }}
