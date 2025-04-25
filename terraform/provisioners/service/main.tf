@@ -8,7 +8,7 @@ data "terraform_remote_state" "infra" {
     } : {
     bucket = local.state_bucket
     key    = local.tfstate_file
-    region = "eu-central-1"
+    region = "us-east-2"
   }
 }
 
