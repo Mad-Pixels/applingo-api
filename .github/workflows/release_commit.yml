@@ -69,7 +69,7 @@ jobs:
       api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
 
   rollout:
-    needs: apply
+    needs: [apply, build]
     if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
     uses: ./.github/workflows/.rollout.yml
     name: Rollout 
