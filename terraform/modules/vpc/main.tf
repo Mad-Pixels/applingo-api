@@ -1,7 +1,3 @@
-data "aws_availability_zones" "azs" {
-  state = "available"
-}
-
 resource "aws_vpc" "this" {
   cidr_block           = local.vpc_cidr_block
   enable_dns_support   = var.enable_dns_support
@@ -12,12 +8,7 @@ resource "aws_vpc" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"           = "true",
-      "Name"         = var.name,
-      "Project"      = var.project,
-      "DnsSupport"   = var.enable_dns_support,
-      "DnsHostnames" = var.enable_dns_hostnames,
-      "Github"       = "github.com/Mad-Pixels/applingo-api",
+      "Name" = var.name,
     }
   )
 }
@@ -29,10 +20,7 @@ resource "aws_internet_gateway" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Name"    = var.name,
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Name" = var.name,
     }
   )
 }

@@ -12,11 +12,8 @@ resource "aws_subnet" "private" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Type"    = "private",
-      "Project" = var.project,
-      "Name"    = "${var.name}-private",
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Type" = "private",
+      "Name" = "${var.name}-private",
     }
   )
 
@@ -30,11 +27,8 @@ resource "aws_eip" "nat" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Type"    = "nat",
-      "Project" = var.project,
-      "Name"    = var.name,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Type" = "nat",
+      "Name" = var.name,
     }
   )
 
@@ -49,11 +43,8 @@ resource "aws_nat_gateway" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Type"    = "nat",
-      "Project" = var.project,
-      "Name"    = "${var.name}-nat",
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Type" = "nat",
+      "Name" = "${var.name}-nat",
     }
   )
 
@@ -75,11 +66,8 @@ resource "aws_route_table" "private" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Type"    = "private",
-      "Project" = var.project,
-      "Name"    = "${var.name}-private",
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Type" = "private",
+      "Name" = "${var.name}-private",
     }
   )
 }
