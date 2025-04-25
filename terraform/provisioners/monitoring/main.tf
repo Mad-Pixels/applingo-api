@@ -65,7 +65,9 @@ resource "aws_security_group" "ingress_sg" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  name           = "${local.project}-${local.provisioner}"
+  name        = "${local.project}-${local.provisioner}"
+  shared_tags = local.tags
+
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
 }
@@ -73,8 +75,10 @@ module "vpc" {
 module "instance" {
   source = "../../modules/ec2"
 
-  name          = "${local.project}-monitoring"
-  key_name      = "monitoring"
+  name        = "${local.project}-monitoring"
+  shared_tags = local.tags
+
+  key_name      = local.provisioner
   subnet_id     = element(module.vpc.public_subnets, 0)
   graviton_size = var.environment == "prd" ? "micro" : "nano"
 

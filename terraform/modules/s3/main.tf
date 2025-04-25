@@ -2,14 +2,7 @@ resource "aws_s3_bucket" "this" {
   bucket        = "${var.project}-${var.bucket_name}"
   force_destroy = var.force_destroy
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }
 
 resource "aws_s3_bucket_versioning" "this" {
