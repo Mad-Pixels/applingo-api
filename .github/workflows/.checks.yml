@@ -12,12 +12,18 @@ jobs:
   
   golang:
     name: GoLint
-    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-    with:
-      command: "go/run/lint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run GoLint
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/lint
 
   tests:
     name: GoTest
-    uses: Mad-Pixels/github-workflows/.github/workflows/invoke-task.yml@main
-    with:
-     command: "go/run/tests" 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Go Tests
+        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
+        with:
+          command: go/run/tests
