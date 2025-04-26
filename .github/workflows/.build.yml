@@ -70,6 +70,7 @@ jobs:
 
   build:
     needs: prepare
+    if: ${{ fromJson(needs.prepare.outputs.functions) != [] }}
     runs-on: ubuntu-latest
     name: ${{ matrix.function }}
     strategy:
