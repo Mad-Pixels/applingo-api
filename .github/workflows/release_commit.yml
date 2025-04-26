@@ -21,6 +21,11 @@ jobs:
         uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Debug output
+        run: |
+          echo "Proceed value: ${{ steps.commit_check.outputs.proceed }}"
+          echo "PR numbers: ${{ steps.commit_check.outputs.pr_numbers }}"
 
   terraform:
     needs: check-commit
@@ -54,7 +59,7 @@ jobs:
 
   build:
     needs: [terraform, golang, tests]
-    if: needs.check-commit.outputs.proceed == 'true'
+    if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.build.yml
     name: build
     secrets:
@@ -65,7 +70,7 @@ jobs:
 
   apply:
     needs: [terraform, golang, tests]
-    if: needs.check-commit.outputs.proceed == 'true'
+    if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.terraform.yml
     name: Apply
     with:
@@ -86,7 +91,7 @@ jobs:
 
   rollout:
     needs: [apply, build]
-    if: needs.check-commit.outputs.proceed == 'true'
+    if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.rollout.yml
     name: Rollout
     secrets:
