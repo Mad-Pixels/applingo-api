@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  - name: Check if regular commit
-    id: check-commit
+  check-commit:
+    name: Check if regular commit
     uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
     with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
