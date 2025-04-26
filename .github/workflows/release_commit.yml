@@ -5,6 +5,10 @@ on:
     branches:
       - release/**
 
+concurrency:
+  group: release-commit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   terraform:
     if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
