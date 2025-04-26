@@ -1,4 +1,4 @@
-name: Release Commit 
+name: Release Commit
 
 on:
   push:
@@ -10,16 +10,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - name: Check if normal commit (not merge)
+        id: check
+        run: |
+          if [[ "${{ github.actor }}" == "web-flow" || "${{ github.event.head_commit.message }}" == Merge* ]]; then
+            echo "proceed=false" >> $GITHUB_OUTPUT
+          else
+            echo "proceed=true" >> $GITHUB_OUTPUT
+          fi
+
   terraform:
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    needs: check-commit
+    if: needs.check-commit.outputs.proceed == 'true'
     name: Tf
     uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
     with:
       tf_dir: ./terraform
-  
+
   golang:
+    needs: check-commit
+    if: needs.check-commit.outputs.proceed == 'true'
     name: GoLint
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
     runs-on: ubuntu-latest
     steps:
       - name: Run GoLint
@@ -28,8 +44,9 @@ jobs:
           command: go/run/lint
 
   tests:
+    needs: check-commit
+    if: needs.check-commit.outputs.proceed == 'true'
     name: GoTest
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
     runs-on: ubuntu-latest
     steps:
       - name: Run Go Tests
@@ -39,7 +56,7 @@ jobs:
 
   build:
     needs: [terraform, golang, tests]
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    if: needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.build.yml
     name: build
     secrets:
@@ -50,9 +67,9 @@ jobs:
 
   apply:
     needs: [terraform, golang, tests]
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    if: needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.terraform.yml
-    name: Apply 
+    name: Apply
     with:
       environment: "stg"
       tf_command: "apply"
@@ -60,23 +77,20 @@ jobs:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
       aws_region:                 ${{ secrets.AWS_REGION }}
-
       aws_backend_bucket:         ${{ secrets.AWS_BACKEND_BUCKET }}
       aws_backend_region:         ${{ secrets.AWS_BACKEND_REGION }}
-
       aws_backend_monitoring_key: ${{ secrets.AWS_BACKEND_MONITORING_KEY }}
       aws_backend_service_key:    ${{ secrets.AWS_BACKEND_SERVICE_KEY }}
       aws_backend_infra_key:      ${{ secrets.AWS_BACKEND_INFRA_KEY }}
-
       api_web_jwt_stg:            ${{ secrets.API_WEB_JWT_STG }}
       api_openai_key_stg:         ${{ secrets.API_OPENAI_KEY_STG }}
       api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
 
   rollout:
     needs: [apply, build]
-    if: ${{ github.actor != 'web-flow' && !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+    if: needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.rollout.yml
-    name: Rollout 
+    name: Rollout
     secrets:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
