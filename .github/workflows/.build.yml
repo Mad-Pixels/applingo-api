@@ -22,20 +22,55 @@ jobs:
     name: Prepare
     runs-on: ubuntu-latest
     outputs:
-      functions: ${{ steps.get_functions.outputs.functions }}
+      functions: ${{ steps.set_functions.outputs.functions }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
-      - name: Find functions to build
-        id: get_functions
+
+      - name: Find changed files
+        id: changed
         run: |
-          FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
-          echo "Functions: ${FUNCTIONS}"
+          git fetch origin ${{ github.base_ref }}
+          git diff --name-only origin/${{ github.base_ref }} > changed_files.txt
+
+      - name: Find functions to build
+        id: set_functions
+        run: |
+          ALL_FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+          CHANGED_FILES=$(cat changed_files.txt)
+          SHOULD_BUILD_ALL=false
+
+          for file in $CHANGED_FILES; do
+            if [[ "$file" == "go.mod" || "$file" == "Dockerfile" || "$file" == pkg/* || "$file" == openapi-interface/* || "$file" == lingo-interface/* || "$file" == dynamodb-interface/* ]]; then
+              SHOULD_BUILD_ALL=true
+              break
+            fi
+          done
+
+          if [[ "$SHOULD_BUILD_ALL" == "true" ]]; then
+            echo "Detected global changes, will build all functions."
+            echo "functions=$(echo $ALL_FUNCTIONS | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CHANGED_FUNCTIONS=()
+          for func in $ALL_FUNCTIONS; do
+            if echo "$CHANGED_FILES" | grep -q "^cmd/$func/"; then
+              CHANGED_FUNCTIONS+=("$func")
+            fi
+          done
+
+          if [[ ${#CHANGED_FUNCTIONS[@]} -eq 0 ]]; then
+            echo "No functions changed, skipping build."
+            echo "functions=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "functions=$(printf '%s\n' "${CHANGED_FUNCTIONS[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
+    if: ${{ needs.prepare.outputs.functions != '[]' }}
     runs-on: ubuntu-latest
     name: ${{ matrix.function }}
     strategy:

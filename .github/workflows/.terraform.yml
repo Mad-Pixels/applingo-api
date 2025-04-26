@@ -85,9 +85,7 @@ jobs:
           tf_dir:                terraform/provisioners/monitoring
           tf_command:            ${{ inputs.tf_command }}
           tf_vars: >-
-            -var domain_name=""
-            -var domain_zone_id=""
-            -var domain_acm_arn=""
+            -var environment=${{ inputs.environment }}
 
   tf-service:
     needs: tf-infra

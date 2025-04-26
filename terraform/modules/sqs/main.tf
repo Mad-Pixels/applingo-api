@@ -2,14 +2,7 @@ resource "aws_sqs_queue" "dead_letter" {
   name                      = "${var.queue_name}-dlq"
   message_retention_seconds = var.dlq_message_retention_seconds
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }
 
 resource "aws_sqs_queue" "this" {
@@ -24,12 +17,5 @@ resource "aws_sqs_queue" "this" {
     maxReceiveCount     = var.max_receive_count
   })
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }

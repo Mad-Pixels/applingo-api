@@ -66,12 +66,5 @@ resource "aws_iam_role" "scheduler" {
     ]
   })
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }

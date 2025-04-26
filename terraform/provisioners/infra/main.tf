@@ -2,6 +2,7 @@ module "ecr-repository-api" {
   source = "../../modules/ecr"
 
   project         = local.project
+  shared_tags     = local.tags
   repository_name = "images"
 }
 
@@ -9,6 +10,7 @@ module "s3-forge-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
+  shared_tags = local.tags
   bucket_name = "forge-${var.environment}"
 }
 
@@ -16,6 +18,7 @@ module "s3-dictionary-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
+  shared_tags = local.tags
   bucket_name = "dictionary-${var.environment}"
 }
 
@@ -23,6 +26,7 @@ module "s3-processing-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
+  shared_tags = local.tags
   bucket_name = "processing-${var.environment}"
 }
 
@@ -30,6 +34,7 @@ module "s3-errors-bucket" {
   source = "../../modules/s3"
 
   project     = local.project
+  shared_tags = local.tags
   bucket_name = "errors-${var.environment}"
 
   rule = {
@@ -39,7 +44,7 @@ module "s3-errors-bucket" {
       prefix = "logs-"
     }
     expiration = {
-      days = 30
+      days = var.environment == "prd" ? 30 : 7
     }
   }
 }
@@ -56,6 +61,7 @@ module "dynamo-dictionary-table" {
   stream_enabled       = true
 
   stream_type = "NEW_AND_OLD_IMAGES"
+  shared_tags = local.tags
 }
 
 module "dynamo-processing-table" {
@@ -70,6 +76,7 @@ module "dynamo-processing-table" {
   stream_enabled       = true
 
   stream_type = "NEW_AND_OLD_IMAGES"
+  shared_tags = local.tags
 }
 
 module "dynamo-profile-table" {
@@ -82,4 +89,6 @@ module "dynamo-profile-table" {
   attributes           = local.profile_dynamo_schema.attributes
   secondary_index_list = local.profile_dynamo_schema.secondary_indexes
   stream_enabled       = false
+
+  shared_tags = local.tags
 }

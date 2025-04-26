@@ -28,11 +28,8 @@ resource "aws_lambda_function" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Type"    = "image",
-      "Arch"    = var.arch,
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Type" = "image",
+      "Arch" = var.arch,
     }
   )
 
@@ -62,14 +59,7 @@ resource "aws_iam_role" "this" {
     ]
   })
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }
 
 resource "aws_lambda_function_event_invoke_config" "this" {

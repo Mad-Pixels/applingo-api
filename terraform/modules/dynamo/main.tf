@@ -38,9 +38,7 @@ resource "aws_dynamodb_table" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Name" = var.table_name,
     }
   )
 
