@@ -12,9 +12,15 @@ concurrency:
 jobs:
   check-commit:
     name: Check if regular commit
-    uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.commit_check.outputs.proceed }}
+    steps:
+      - name: Check if normal commit
+        id: commit_check
+        uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   terraform:
     needs: check-commit
