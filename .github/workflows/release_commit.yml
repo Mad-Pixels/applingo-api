@@ -11,55 +11,16 @@ concurrency:
 
 jobs:
   check-commit:
+    name: Check if regular commit
     runs-on: ubuntu-latest
     outputs:
-      proceed: ${{ steps.check.outputs.proceed }}
+      proceed: ${{ steps.commit_check.outputs.proceed }}
     steps:
-      - name: Gather context
-        id: vars
-        run: |
-          echo "ACTOR=${{ github.actor }}"  >> $GITHUB_ENV
-          echo "MSG='${{ github.event.head_commit.message }}'" >> $GITHUB_ENV
-          echo "SHA=${{ github.event.head_commit.id }}"  >> $GITHUB_ENV
-
-      - name: Initial actor/message check
-        id: check
-        run: |
-          if [[ "$ACTOR" == "web-flow" ]]; then
-            echo "proceed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          # классические merge-коммиты
-          if echo "$MSG" | grep -Eiq "merge pull request"; then
-            echo "proceed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          # сквош-мерж из UI тоже имеет actor=web-flow, но если вдруг CLI-сквош:
-          if echo "$MSG" | grep -Eiq "\(#[0-9]+\)"; then
-            echo "proceed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          # пока не решили — подготовим go дальше
-          echo "proceed=maybe" >> $GITHUB_OUTPUT
-
-      - name: Check via GitHub API if commit is in a PR
-        if: steps.check.outputs.proceed == 'maybe'
-        id: prcheck
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SHA:         ${{ env.SHA }}
-          REPO:        ${{ github.repository }}
-        run: |
-          prs=$(curl -s \
-            -H "Accept: application/vnd.github.groot-preview+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            https://api.github.com/repos/$REPO/commits/$SHA/pulls)
-          count=$(echo "$prs" | jq 'length')
-          if [ "$count" -gt 0 ]; then
-            echo "proceed=false" >> $GITHUB_OUTPUT
-          else
-            echo "proceed=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Check if normal commit
+        id: commit_check
+        uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   terraform:
     needs: check-commit
