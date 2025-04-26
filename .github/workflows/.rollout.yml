@@ -3,7 +3,6 @@ name: Rollout
 on:
   workflow_call:
     secrets:
-      # AWS creds
       aws_secret_key:
         required: true
       aws_access_key:
@@ -28,7 +27,6 @@ jobs:
         run: |
           FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
-          echo "Functions: ${FUNCTIONS}"
 
   rollout:
     needs: prepare
@@ -42,9 +40,10 @@ jobs:
       - name: Lambda restart 
         uses: Mad-Pixels/github-workflows/.github/actions/lambda-restart@main
         with: 
-          aws_access_key_id: ${{ secrets.aws_access_key }}
+          aws_access_key_id:     ${{ secrets.aws_access_key }}
           aws_secret_access_key: ${{ secrets.aws_secret_key }}
-          aws_region: ${{ secrets.aws_region }}
-          aws_account_id: ${{ secrets.aws_account }}
-          function: ${{ matrix.function }}
-          repository: applingo-images
+          aws_region:            ${{ secrets.aws_region }}
+          aws_account_id:        ${{ secrets.aws_account }}
+
+          function:              ${{ matrix.function }}
+          repository:            applingo-images
