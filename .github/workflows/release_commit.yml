@@ -14,7 +14,8 @@ jobs:
     name: Check if regular commit
     runs-on: ubuntu-latest
     outputs:
-      proceed: ${{ steps.output_check.outputs.proceed }}
+      proceed: ${{ steps.commit_check.outputs.proceed }}
+      pr_numbers: ${{ steps.commit_check.outputs.pr_numbers }}
     steps:
       - name: Check if normal commit
         id: commit_check
@@ -22,19 +23,10 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
-      # Добавляем шаг для явной передачи значения в output job'а
-      - name: Set job output
-        id: output_check
+      - name: Debug outputs
         run: |
-          # Получаем значение из output action'а и устанавливаем его в output шага
-          PROCEED_VALUE=$(cat $GITHUB_OUTPUT | grep "^proceed=" | cut -d= -f2-)
-          if [ -z "$PROCEED_VALUE" ]; then
-            # Если значение пусто, проверяем вывод action'а напрямую
-            echo "Action output is empty, checking logs..."
-            PROCEED_VALUE="true"  # Значение по умолчанию, если не удается получить из action'а
-          fi
-          echo "proceed=$PROCEED_VALUE" >> $GITHUB_OUTPUT
-          echo "Debug - Proceed value: $PROCEED_VALUE"
+          echo "Proceed value: ${{ steps.commit_check.outputs.proceed }}"
+          echo "PR numbers: ${{ steps.commit_check.outputs.pr_numbers }}"
 
   terraform:
     needs: check-commit
