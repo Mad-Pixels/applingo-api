@@ -24,7 +24,6 @@ jobs:
       
       - name: Explicitly set output
         run: |
-          # Явно установим output для job
           echo "proceed=${{ steps.commit_check.outputs.proceed }}" >> $GITHUB_OUTPUT
           echo "Значение proceed: ${{ steps.commit_check.outputs.proceed }}"
 
