@@ -2,6 +2,12 @@ name: Images
 
 on:
   workflow_call:
+    inputs:
+      base_ref:
+        description: "Base reference for comparison (e.g. 'main')"
+        required: false
+        type: string
+        default: "main"
     secrets:
       # AWS creds
       aws_secret_key:
@@ -26,12 +32,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Find changed files
         id: changed
         run: |
-          git fetch origin ${{ github.base_ref }}
-          git diff --name-only origin/${{ github.base_ref }} > changed_files.txt
+          # Определяем, в каком контексте мы запущены
+          echo "GitHub context info:"
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.base_ref: ${{ github.base_ref }}"
+          
+          if [ -n "${{ github.base_ref }}" ]; then
+            # Мы в контексте PR
+            BASE_REF="${{ github.base_ref }}"
+            echo "Running in PR context, comparing with $BASE_REF"
+            git diff --name-only origin/$BASE_REF...HEAD > changed_files.txt
+          else
+            # Мы в контексте Push или другом
+            BASE_REF="${{ inputs.base_ref }}"
+            CURRENT_SHA="${{ github.sha }}"
+            PREV_SHA=$(git rev-parse $CURRENT_SHA^)
+            
+            echo "Running in push context, using base_ref: $BASE_REF"
+            
+            if [ "${{ github.event_name }}" == "push" ]; then
+              echo "Comparing with previous commit"
+              git diff --name-only $PREV_SHA $CURRENT_SHA > changed_files.txt
+            else
+              echo "Comparing with $BASE_REF branch"
+              git fetch origin $BASE_REF
+              git diff --name-only origin/$BASE_REF HEAD > changed_files.txt
+            fi
+          fi
+          
+          echo "Changed files:"
+          cat changed_files.txt
 
       - name: Find functions to build
         id: set_functions
