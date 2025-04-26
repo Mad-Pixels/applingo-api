@@ -15,19 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       proceed: ${{ steps.commit_check.outputs.proceed }}
-      pr_numbers: ${{ steps.commit_check.outputs.pr_numbers }}
     steps:
-      - name: Check if normal commit
+      - name: IsCommit 
         id: commit_check
         uses: Mad-Pixels/github-workflows/.github/actions/is-commit@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Debug output
-        run: |
-          echo "Proceed value: ${{ steps.commit_check.outputs.proceed }}"
-          echo "PR numbers: ${{ steps.commit_check.outputs.pr_numbers }}"
-
   terraform:
     needs: check-commit
     if: needs.check-commit.outputs.proceed == 'true'
@@ -63,6 +57,8 @@ jobs:
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.build.yml
     name: build
+    with:
+      base_ref: ${{ github.ref_name }}
     secrets:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}

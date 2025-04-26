@@ -37,6 +37,8 @@ jobs:
     needs: plan
     uses: ./.github/workflows/.build.yml
     name: build
+    with:
+      base_ref: ${{ github.base_ref }}
     secrets:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
