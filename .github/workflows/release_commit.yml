@@ -23,7 +23,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Debug outputs
+      - name: Debug output
         run: |
           echo "Proceed value: ${{ steps.commit_check.outputs.proceed }}"
           echo "PR numbers: ${{ steps.commit_check.outputs.pr_numbers }}"
