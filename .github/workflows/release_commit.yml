@@ -18,7 +18,10 @@ jobs:
       - name: Check if normal commit (not merge)
         id: check
         run: |
-          if [[ "${{ github.actor }}" == "web-flow" || "${{ github.event.head_commit.message }}" == Merge* ]]; then
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          if [[ "${{ github.actor }}" == "web-flow" ]]; then
+            echo "proceed=false" >> $GITHUB_OUTPUT
+          elif echo "${{ github.event.head_commit.message }}" | grep -Eiq "(merge pull request|merged pr)"; then
             echo "proceed=false" >> $GITHUB_OUTPUT
           else
             echo "proceed=true" >> $GITHUB_OUTPUT
