@@ -5,7 +5,7 @@ module "lambda_functions" {
   function_name = each.key
   project       = local.project
   image         = "${data.terraform_remote_state.infra.outputs.ecr-repository-api_url}:${each.key}"
-  log_level     = var.use_localstack || var.environment ? "DEBUG" : "ERROR"
+  log_level     = (var.use_localstack || var.environment != "prd") ? "DEBUG" : "ERROR"
   arch          = var.arch
   shared_tags   = local.tags
 

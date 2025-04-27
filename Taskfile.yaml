@@ -7,13 +7,14 @@ vars:
     sh: go env GOPATH
   go_version:
     sh: grep '^go ' ./go.mod | awk '{print $2}'
-  go_lint: v1.60.3
+  
   go_imports: latest
   go_fumpt: latest
-  go_outdated: latest
-  trivy: v0.54.1
+  go_lint: v2.1.2
+
   terraform: 1.9.5
   terraform_docs: v0.18.0
+
   api_image_name: applingo-images
 
 tasks:
@@ -23,19 +24,9 @@ tasks:
       - echo "Please enter a task or use '-l' or '--list-all' to list all available tasks"
     silent: true
 
-  go/generate/dynamo:
-    desc: Run DynamoDB codegen from ./dynamodb-interface/.tmpl
-    dir: "{{.git_root}}/dynamodb-interface"
-    cmds:
-      - go run main.go
-    silent: true
-
-  go/generate/openapispec:
-    desc: Run OpenAPI spec generation process
-    dir: "{{.git_root}}/openapi-interface/spec"
-    cmds:
-      - go run main.go
-    silent: true
+  # =================================================
+  # ---------------------INTERNAL-------------------#
+  # =================================================
 
   _go/version/check:
     desc: Check actual golang version.
@@ -59,7 +50,163 @@ tasks:
     silent: true
     internal: true
 
-  _go/mod/vendor:
+  _go/install/lint:
+    desc: Install 'golangci-lint'.
+    deps:
+      - _go/version/check
+    cmds:
+      - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{.go_root}}/bin {{.golint_version}}
+      - "{{.go_root}}/bin/golangci-lint version"
+    sources:
+      - "{{.go_root}}/bin/golangci-lint"
+    internal: true
+    silent: true
+
+  _go/install/fumpt:
+    desc: Install 'gofumpt'.
+    deps:
+      - _go/version/check
+    cmd: go install mvdan.cc/gofumpt@{{.go_fumpt}}
+    internal: true
+    silent: true
+
+  _go/install/oapi-codegen:
+    desc: Install oapi
+    deps:
+      - _go/version/check
+    cmds:
+      - go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+    sources:
+      - "{{.go_root}}/bin/oapi-codegen"
+    internal: true
+    silent: true
+
+  _docker/build/all:
+    desc: Run 'docker build' for all funcs.
+    dir: "{{.git_root}}"
+    deps:
+      - go/mod/vendor
+    cmds:
+      - |
+        for dir in {{.git_root}}/cmd/*; do
+          if [ -d "$dir" ]; then
+            task docker/build/func FUNC=$(basename "$dir")
+          fi
+        done
+    silent: true
+    internal: true
+  
+  _docker/push/all:
+    desc: Run 'docker oush' for all funcs. 
+    vars:
+      REPO_URL: '{{.REPO_URL}}'
+    cmds:
+      - |
+        if [ -z "{{.REPO_URL}}" ]; then
+          echo "Error: REPO_URL is not set"
+          exit 1
+        fi
+        for f in {{.git_root}}/cmd/*; do
+          if [ -d "$f" ]; then
+            func=$(basename "$f")
+            image="{{.api_image_name}}:$func"
+
+            if docker image inspect "${image}" >/dev/null 2>&1; then
+              echo "Pushing ${image} to {{.REPO_URL}}"
+              docker image tag "${image}" "{{.REPO_URL}}/${image}"
+              docker push "{{.REPO_URL}}/${image}"
+            fi
+          fi
+        done
+    env:
+      AWS_DEFAULT_REGION:    us-east-1
+      AWS_ACCESS_KEY_ID:     test
+      AWS_SECRET_ACCESS_KEY: test
+    silent: true
+    internal: true
+
+  _terraform/install:
+    desc: Install 'terraform'.
+    cmds:
+      - curl -sL https://releases.hashicorp.com/terraform/{{.terraform}}/terraform_{{.terraform}}_{{OS}}_{{ARCH}}.zip -o /tmp/terraform.zip
+      - sudo unzip -o /tmp/terraform.zip -d /usr/local/bin/
+      - sudo chmod a+x /usr/local/bin/terraform
+      - terraform version
+    sources:
+      - /usr/local/bin/terraform
+    silent: true
+    internal: true
+
+  _terraform/apply:
+    desc: Apply terraform to localstack
+    dir: "{{.DIR}}"
+    deps:
+      - _terraform/install
+    cmds:
+      - |
+        cat << EOF > backend.tf
+        terraform {
+          backend "local" {}
+        }
+        EOF
+
+        terraform init -reconfigure
+        terraform apply -input=false -auto-approve {{.TF_VARS}}
+    silent: true
+    internal: true
+
+  _terraform/docs/install:
+    desc: Install 'terraform docs'
+    cmds:
+      - curl -sL https://terraform-docs.io/dl/{{.terraform_docs}}/terraform-docs-{{.terraform_docs}}-{{OS}}-{{ARCH}}.tar.gz -o /tmp/terraform-docs.tar.gz
+      - sudo tar -C /tmp -xzf /tmp/terraform-docs.tar.gz
+      - sudo chmod a+x /tmp/terraform-docs
+      - sudo mv /tmp/terraform-docs /usr/local/bin
+      - terraform-docs version
+    sources:
+      - /usr/local/bin/terraform-docs
+    silent: true
+    internal: true
+
+  _localstack/install:
+    desc: Install "localstack".
+    cmds:
+      - python3 -m venv {{.HOME}}/.pyenv
+      - ~/.pyenv/bin/python3 -m pip install localstack
+    sources:
+      - "{{.HOME}}/.pyenv/bin/localstack"
+    silent: true
+    internal: true
+
+  # =================================================
+  # ----------------------PUBLIC--------------------#
+  # =================================================
+
+  go/generate/dynamo:
+    desc: Run DynamoDB codegen from ./dynamodb-interface/.tmpl
+    dir: "{{.git_root}}/dynamodb-interface"
+    cmds:
+      - go run main.go
+    silent: true
+
+  go/generate/openapispec:
+    desc: Run OpenAPI spec generation process
+    dir: "{{.git_root}}/openapi-interface/spec"
+    cmds:
+      - go run main.go
+    silent: true
+
+  go/generate/openapi:
+    desc: Generate GoLang models from openapi.yml
+    deps:
+      - _go/install/oapi-codegen
+    dir: "{{.git_root}}/openapi-interface"
+    cmds:
+      - mkdir -p ./gen/applingoapi
+      - oapi-codegen -generate types -o ./gen/applingoapi/applingoapi.go -package applingoapi ./.tmpl/openapi.yaml
+    silent: true
+
+  go/mod/vendor:
     desc: Run 'go mod vendor'.
     dir: "{{.git_root}}"
     deps:
@@ -74,73 +221,23 @@ tasks:
         else 
           cd {{.git_root}} && go mod tidy && go mod vendor
         fi
-    internal: true
     silent: true
 
-  _go/install/lint:
-    desc: Install 'golangci-lint'.
-    deps:
-      - _go/version/check
-    cmds:
-      - cmd: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b {{.go_root}}/bin {{.golint_version}}
-      - "{{.go_root}}/bin/golangci-lint version"
-    sources:
-      - "{{.go_root}}/bin/golangci-lint"
-    internal: true
-    silent: true
-  
   go/run/lint:
     desc: Run 'golangci-lint'.
     dir: "{{.git_root}}"
     deps:
       - _go/install/lint
-      - _go/mod/vendor 
+      - go/mod/vendor 
     cmds: 
       - "{{.go_root}}/bin/golangci-lint run cmd/... -v --timeout=15m"
   
-  _go/install/fumpt:
-    desc: Install 'gofumpt'.
-    deps:
-      - _go/version/check
-    cmd: go install mvdan.cc/gofumpt@{{.go_fumpt}}
-    internal: true
-    silent: true
-    
   go/run/fumpt:
     desc: Run 'gofumpt'.
     dir: "{{.git_root}}"
     deps:
       - _go/install/fumpt
     cmd: gofumpt -l -w .
-    silent: true
-  
-  _go/install/oapi-codegen:
-    desc: Install oapi
-    deps:
-      - _go/version/check
-    cmds:
-      - go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-    sources:
-      - "{{.go_root}}/bin/oapi-codegen"
-    internal: true
-    silent: true
-
-  go/generate/openapi:
-    desc: Generate GoLang models from openapi.yml
-    deps:
-      - _go/install/oapi-codegen
-    dir: "{{.git_root}}/openapi-interface"
-    cmds:
-      - mkdir -p ./gen/applingoapi
-      - oapi-codegen -generate types -o ./gen/applingoapi/applingoapi.go -package applingoapi ./.tmpl/openapi.yaml
-    silent: true
-    
-  _go/install/imports:
-    desc: Install 'goimports'.
-    deps:
-      - _go/version/check
-    cmd: go install golang.org/x/tools/cmd/goimports@{{.go_imports}}
-    internal: true
     silent: true
 
   go/run/tests:
@@ -149,66 +246,11 @@ tasks:
     cmd: echo "Hello"
     silent: true
 
-  go/run/imports:
-    desc: Run 'goimports'.
-    dir: "{{ .git_root }}"
-    deps:
-      - _go/install/imports
-    cmd: goimports -w $(find {{.git_root}} -type f -name '*.go' -not -path "{{.git_root}}/vendor/*")
-    silent: true
-
-  _go/install/outdated:
-    desc: Install 'go-mod-outdated'.
-    deps: 
-      - _go/mod/vendor
-    cmd: go install github.com/psampaz/go-mod-outdated@{{.go_outdated}}
-    internal: true
-    silent: true
-
-  go/run/outdated:
-    desc: Run 'outdated'.
-    dir: "{{.git_root}}"
-    deps:
-      - _go/install/outdated
-    cmd: go list -mod=mod -u -m -json all | go-mod-outdated -update -direct
-    silent: true
-  
-  _trivy/install:
-    desc: Install 'trivy'.
-    cmd: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b {{.go_root}}/bin {{.trivy}}
-    internal: true
-    silent: true
-  
-  trivy/check/config:
-    desc: Run 'trivy config'.
-    deps:
-      - _trivy/install
-    cmd: trivy config {{.git_root}}/terraform 
-    silent: true
-  
-  trivy/check/repository:
-    desc: Run 'trivy repository'.
-    deps:
-      - _trivy/install
-    cmd: trivy repository {{.git_root}}
-    silent: true
-
-  # docker/build/func:
-  #   desc: Run 'docker build' for 'FUNC=...' argument.
-  #   dir: "{{.git_root}}"
-  #   deps:
-  #     - _go/mod/vendor
-  #   vars:
-  #     FUNC_NAME: '{{ .FUNC }}'
-  #   cmds:
-  #     - docker build -t {{.api_image_name}}:{{.FUNC_NAME }} --build-arg FUNC_NAME={{.FUNC_NAME}} --build-arg GO_VERSION={{.go_version}} .
-  #   silent: true
-  
   docker/build/func:
     desc: Build single-function image
     dir: "{{.git_root}}"
     deps:
-      - _go/mod/vendor
+      - go/mod/vendor
     vars:
       FUNC_NAME: '{{ .FUNC }}'
       IMAGE_ARCH: '{{ .ARCH | default ARCH }}'
@@ -226,156 +268,6 @@ tasks:
           --load .
     silent: true
 
-  _docker/build/all:
-    desc: Run 'docker build' for all funcs.
-    dir: "{{.git_root}}"
-    deps:
-      - _go/mod/vendor
-    cmds:
-      - |
-        for dir in {{.git_root}}/cmd/*; do
-          if [ -d "$dir" ]; then
-            func=$(basename "$dir")
-            echo "Building $func"
-            docker build -t {{.api_image_name}}:$func --build-arg FUNC_NAME=$func --build-arg GO_VERSION={{.go_version}} .
-          fi
-        done
-    silent: true
-    internal: true
-  
-  docker/builds/func:
-    desc: Build single-function image for ARM64
-    dir: "{{.git_root}}"
-    deps:
-      - _go/mod/vendor
-    vars:
-      FUNC_NAME: '{{ .FUNC }}'
-    cmds:
-      - docker buildx build --builder applingo-builder --platform linux/arm64 -t applingo-images:{{.FUNC_NAME}} --build-arg FUNC_NAME={{.FUNC_NAME}} --build-arg GO_VERSION={{.go_version}} --load .
-    silent: true
-  
-  _docker/push/all:
-    desc: push all images to repository.
-    vars:
-      REPO_URL: '{{.REPO_URL}}'
-#    deps:
-#      - _trivy/install
-    cmds:
-      - |
-        if [ -z "{{.REPO_URL}}" ]; then
-          echo "Error: REPO_URL is not set"
-          exit 1
-        fi
-        if [[ "{{.REPO_URL}}" == *.amazonaws.com ]]; then
-          aws ecr get-login-password --region {{.REGION}} | docker login --username AWS --password-stdin {{.REPO_URL}}
-        fi
-        for f in {{.git_root}}/cmd/*; do
-          if [ -d "$f" ]; then
-            func=$(basename "$f")
-            image="{{.api_image_name}}:$func"
-
-            if docker image inspect "${image}" >/dev/null 2>&1; then
-              echo "Checking by trivy ${image}"
-              #trivy image "${image}"
-
-              echo "Pushing ${image} to {{.REPO_URL}}"
-              docker image tag "${image}" "{{.REPO_URL}}/${image}"
-              docker push "{{.REPO_URL}}/${image}"
-            fi
-          fi
-        done
-    env:
-      AWS_DEFAULT_REGION:    '{{.REGION}}'
-      AWS_ACCESS_KEY_ID:     '{{.KEY_ID}}'
-      AWS_SECRET_ACCESS_KEY: '{{.ACCESS_KEY}}'
-    silent: true
-    internal: true
-
-  _terraform/install:
-    desc: Install 'terraform'.
-    cmds:
-      - curl -sL https://releases.hashicorp.com/terraform/{{.terraform}}/terraform_{{.terraform}}_{{OS}}_{{ARCH}}.zip -o /tmp/terraform.zip
-      - sudo unzip -o /tmp/terraform.zip -d /usr/local/bin/
-      - sudo chmod a+x /usr/local/bin/terraform
-      - terraform version
-    sources:
-      - /usr/local/bin/terraform
-    silent: true
-    internal: true
-
-  _terraform/plan:
-    desc: Run 'terraform plan'.
-    dir: "{{.DIR}}"
-    deps:
-      - _terraform/install
-    cmds:
-      - |
-        if [ -z "${LOCALSTACK}" ]; then
-          echo "Error: LOCALSTACK is not set"
-          exit 1
-        fi
-        if [ -z "${REGION}" ]; then
-          echo "Error: REGION is not set"
-          exit 1
-        fi
-        terraform init -reconfigure
-        terraform plan -var="use_localstack=${LOCALSTACK}" -var="aws_region=${REGION}" -var="arch={{ARCH}}"
-    env:
-      AWS_DEFAULT_REGION:    '${REGION}'
-      AWS_ACCESS_KEY_ID:     '${KEY_ID}'
-      AWS_SECRET_ACCESS_KEY: '${ACCESS_KEY}'
-    silent: true
-    internal: true
-
-  _terraform/apply:
-    desc: Run 'terraform apply'.
-    dir: "{{.DIR}}"
-    deps:
-      - _terraform/install
-    cmds:
-    - |
-      if [ "{{.LOCALSTACK}}" = "true" ]; then
-        cat << EOF > backend.tf
-      terraform {
-        backend "local" {
-        }
-      }
-      EOF
-        terraform init -reconfigure
-      else
-        cat << EOF > backend.tf
-      terraform {
-        backend "s3" {
-        }
-      }
-      EOF
-        rm -rf .terraform/ .terraform.lock.hcl terraform.tfstate terraform.tfstate.backup
-        terraform init -reconfigure -backend-config=backend_aws.hcl
-      fi
-      if [ -z "{{.ARCH}}" ]; then
-        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}"
-      else
-        terraform apply --auto-approve -var="use_localstack={{.LOCALSTACK}}" -var="aws_region={{.REGION}}" -var="arch={{.ARCH}}"
-      fi
-    env:
-      AWS_DEFAULT_REGION:      '{{.REGION}}'
-      AWS_ACCESS_KEY_ID:       '{{.KEY_ID}}'
-      AWS_SECRET_ACCESS_KEY:   '{{.ACCESS_KEY}}'
-      # service specific envs
-      TF_VAR_device_api_token: '{{.DEVICE_API_TOKEN}}'
-      TF_VAR_jwt_secret:       '{{.JWT_SECRET}}'
-      TF_VAR_openai_key:       '{{.OPENAI_KEY}}'
-    silent: true
-    internal: true
-
-  _terraform/fmt/check:
-    desc: Run 'terraform fmt'.
-    deps:
-      - _terraform/install
-    cmd: terraform fmt -recursive -check --diff {{.git_root}} || { exit 1; };
-    silent: true
-    internal: true
-
   terraform/fmt/fix:
     desc: Run 'terraform fix fmt'.
     dir: "{{.git_root}}/terraform"
@@ -383,19 +275,6 @@ tasks:
       - _terraform/install
     cmd: terraform fmt -recursive --diff --write=true
     silent: true
-
-  _terraform/docs/install:
-    desc: Install 'terraform docs'
-    cmds:
-      - curl -sL https://terraform-docs.io/dl/{{.terraform_docs}}/terraform-docs-{{.terraform_docs}}-{{OS}}-{{ARCH}}.tar.gz -o /tmp/terraform-docs.tar.gz
-      - sudo tar -C /tmp -xzf /tmp/terraform-docs.tar.gz
-      - sudo chmod a+x /tmp/terraform-docs
-      - sudo mv /tmp/terraform-docs /usr/local/bin
-      - terraform-docs version
-    sources:
-      - /usr/local/bin/terraform-docs
-    silent: true
-    internal: true
 
   terraform/docs/run:
     desc: Run 'terraform docs'
@@ -409,7 +288,7 @@ tasks:
         done
     silent: true
 
-  api/docs/run:
+  api/swagger/run:
     desc: Run Swagger
     cmds:
       - echo "Running on http://localhost:18080"
@@ -420,47 +299,7 @@ tasks:
         swaggerapi/swagger-ui
     silent: true
 
-  _localstack/install:
-    desc: Install "localstack".
-    cmds:
-      - python3 -m venv {{.HOME}}/.pyenv
-      - ~/.pyenv/bin/python3 -m pip install localstack
-    sources:
-      - "{{.HOME}}/.pyenv/bin/localstack"
-    silent: true
-    internal: true
-
-  aws/update_lambda:
-    desc: Update specific Lambda function with latest image
-    vars:
-      FUNC_NAME: '{{.FUNC}}'
-    cmds:
-      - |
-        if [ -z "{{.FUNC}}" ]; then
-          echo "Error: FUNC parameter is not set. Usage: task _aws/update_lambda FUNC=function_name"
-          exit 1
-        fi
-        
-        IMAGE_URI="{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_DEFAULT_REGION}}.amazonaws.com/{{.api_image_name}}:{{.FUNC_NAME}}"
-        echo "Updating Lambda function {{.FUNC_NAME}} with image ${IMAGE_URI}"
-        
-        aws lambda update-function-code \
-          --function-name "applingo-{{.FUNC_NAME}}" \
-          --image-uri "${IMAGE_URI}" \
-          --region "{{.AWS_DEFAULT_REGION}}" \
-          --no-cli-pager
-        
-        aws lambda wait function-updated \
-          --function-name "applingo-{{.FUNC_NAME}}" \
-          --region "{{.AWS_DEFAULT_REGION}}"
-        echo "Lambda function {{.FUNC_NAME}} has been updated successfully"
-    env:
-      AWS_DEFAULT_REGION: '{{.AWS_DEFAULT_REGION}}'
-      AWS_ACCESS_KEY_ID: '{{.AWS_ACCESS_KEY_ID}}'
-      AWS_SECRET_ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
-    silent: true
-
-  env/localstack/start:
+  api/localstack/run:
     desc: Run localstack environment.
     deps:
       - _localstack/install
@@ -473,149 +312,33 @@ tasks:
       - "{{.HOME}}/.pyenv/bin/localstack start -d"
       - task: _terraform/apply
         vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/infra"
-          REGION:     us-east-1
-          LOCALSTACK: "true"
-          KEY_ID:     test
-          ACCESS_KEY: test
+          DIR: "{{.git_root}}/terraform/provisioners/infra"
+          TF_VARS: |
+            -var="aws_region=us-east-1" \
+            -var="use_localstack=true"  \
+            -var="environment=dev" 
       - task: _docker/build/all
       - task: _docker/push/all
         vars:
           REPO_URL: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566"
-      - task: _terraform/apply
+      - task: _terraform/apply 
         vars:
-          DIR:              "{{.git_root}}/terraform/provisioners/service"
-          REGION:           us-east-1
-          LOCALSTACK:       "true"
-          KEY_ID:           test
-          ACCESS_KEY:       test
-          DEVICE_API_TOKEN: "000XXX000"
-          JWT_SECRET:       'yHc8vF9xJzZP@!kU1&3aD#LmQw$rT^GnB5Xs2Ev*Ny%pC7o'
-          OPENAI_KEY:       'sk-proj-000XXX000'
+          DIR: "{{.git_root}}/terraform/provisioners/service"
+          TF_VARS: |
+            -var="aws_region=us-east-1"           \
+            -var="use_localstack=true"            \
+            -var="environment=dev"                \
+            -var="infra_backend_bucket=test"      \
+            -var="infra_backend_region=us-east-1" \
+            -var="infra_backend_key=test"         \
+            -var="device_api_token=000XXX000"     \
+            -var="jwt_secret=yHc8vF9dxJzZP@!"     \
+            -var="openai_key=sk-proj"
     silent: true
 
-  env/localstack/platform:
-    desc: Deploy platform to localstack
-    deps:
-      - _localstack/install
-    cmds:
-      - |
-        if [ -z "$LOCALSTACK_AUTH_TOKEN" ]; then
-          echo "Error: LOCALSTACK_AUTH_TOKEN is not set. Please set this environment variable before running LocalStack."
-          exit 1
-        fi
-      - "{{.HOME}}/.pyenv/bin/localstack start -d"
-      - task: _terraform/apply
-        vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/platform"
-          REGION:     us-east-1
-          LOCALSTACK: "true"
-          KEY_ID:     test
-          ACCESS_KEY: test
-    silent: true
-
-  env/localstack/stop:
+  api/localstack/stop:
     desc: Remove localstack environment.
     cmds:
       - docker stop $(docker ps -q --filter name=localstack) 
       - docker rm $(docker ps -aq --filter name=localstack) || true
-    silent: true
-
-  aws/deploy:
-    desc: Deploy to AWS
-    cmds:
-      - |
-        if [ -z "$AWS_DEFAULT_REGION" ]; then
-          echo "Error: AWS_DEFAULT_REGION is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-          echo "Error: AWS_ACCESS_KEY_ID is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-          echo "Error: AWS_SECRET_ACCESS_KEY is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_ACCOUNT_ID" ]; then
-          echo "Error: AWS_ACCOUNT_ID is not set."
-          exit 1
-        fi
-        if [ -z "$DEVICE_API_TOKEN" ]; then
-          echo "Error: DEVICE_API_TOKEN is not set."
-          exit 1
-        fi
-        if [ -z "$OPENAI_KEY" ]; then
-          echo "Error: OPENAI_KEY is not set."
-          exit 1
-        fi
-        if [ -z "$JWT_SECRET" ]; then
-          echo "Error: JWT_SECRET is not set."
-          exit 1
-        fi
-      - task: _terraform/fmt/check
-      - task: _terraform/apply
-        vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/infra"
-          LOCALSTACK: "false"
-          REGION:     '{{.AWS_DEFAULT_REGION}}'
-          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
-          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
-      - task: _docker/build/all
-      - task: _docker/push/all
-        vars:
-          REPO_URL:   '{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_DEFAULT_REGION}}.amazonaws.com'
-          REGION:     '{{.AWS_DEFAULT_REGION}}'
-          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
-          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
-      - task: _terraform/apply
-        vars:
-          DIR:              "{{.git_root}}/terraform/provisioners/service"
-          LOCALSTACK:       "false"
-          REGION:           '{{.AWS_DEFAULT_REGION}}'
-          KEY_ID:           '{{.AWS_ACCESS_KEY_ID}}'
-          ACCESS_KEY:       '{{.AWS_SECRET_ACCESS_KEY}}'
-          DEVICE_API_TOKEN: '{{.DEVICE_API_TOKEN}}'
-          JWT_SECRET:       '{{.JWT_SECRET}}'
-      - |
-        echo "Updating all Lambda functions..."
-        for dir in {{.git_root}}/cmd/*; do
-          if [ -d "$dir" ]; then
-            func=$(basename "$dir")
-            
-            echo "Updating Lambda function: $func"
-            task aws/update_lambda FUNC=$func
-          fi
-        done
-    silent: true
-
-
-  aws/deploy/monitoring:
-    desc: Deploy to AWS
-    cmds:
-      - |
-        if [ -z "$AWS_DEFAULT_REGION" ]; then
-          echo "Error: AWS_DEFAULT_REGION is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-          echo "Error: AWS_ACCESS_KEY_ID is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-          echo "Error: AWS_SECRET_ACCESS_KEY is not set."
-          exit 1
-        fi
-        if [ -z "$AWS_ACCOUNT_ID" ]; then
-          echo "Error: AWS_ACCOUNT_ID is not set."
-          exit 1
-        fi
-      - task: _terraform/fmt/check
-      - task: _terraform/apply
-        vars:
-          DIR:        "{{.git_root}}/terraform/provisioners/monitoring"
-          LOCALSTACK: "false"
-          REGION:     '{{.AWS_DEFAULT_REGION}}'
-          KEY_ID:     '{{.AWS_ACCESS_KEY_ID}}'
-          ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
     silent: true

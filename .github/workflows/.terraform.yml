@@ -113,4 +113,3 @@ jobs:
             -var jwt_secret=${{ secrets.api_web_jwt_stg }}
             -var openai_key=${{ secrets.api_openai_key_stg }}
             -var device_api_token=${{ secrets.api_device_key_stg }}
-            -var arch="arm64"
