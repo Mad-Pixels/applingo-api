@@ -1,17 +1,3 @@
-data "aws_caller_identity" "current" {}
-
-data "terraform_remote_state" "infra" {
-  backend = var.use_localstack ? "local" : "s3"
-
-  config = var.use_localstack ? {
-    path = "../infra/terraform.tfstate"
-    } : {
-    bucket = var.infra_backend_bucket
-    region = var.infra_backend_region
-    key    = var.infra_backend_key
-  }
-}
-
 module "lambda_functions" {
   source = "../../modules/lambda"
 
@@ -19,8 +5,9 @@ module "lambda_functions" {
   function_name = each.key
   project       = local.project
   image         = "${data.terraform_remote_state.infra.outputs.ecr-repository-api_url}:${each.key}"
-  log_level     = var.use_localstack ? "DEBUG" : "ERROR"
+  log_level     = var.use_localstack || var.environment ? "DEBUG" : "ERROR"
   arch          = var.arch
+  shared_tags   = local.tags
 
   environments = try(each.value.envs, {})
   timeout      = try(each.value.timeout, 3)
@@ -34,6 +21,7 @@ module "gateway" {
   api_name       = "api"
   project        = local.project
   use_localstack = var.use_localstack
+  shared_tags    = local.tags 
 
   invoke_lambdas_arns = {
     for name, lambda in module.lambda_functions : name => {
@@ -41,6 +29,7 @@ module "gateway" {
       name = lambda.function_name
     }
   }
+
   depends_on = [module.lambda_functions]
 }
 

@@ -1,24 +1,9 @@
-variable "use_localstack" {
-  description = "Whether to use LocalStack"
-  type        = bool
-  default     = false
-}
-
-variable "localstack_endpoint" {
-  description = "LocalStack endpoint"
-  type        = string
-  default     = "https://localhost.localstack.cloud:4566"
-}
-
 variable "aws_region" {
   description = "AWS region"
   type        = string
 }
 
-variable "arch" {
-  description = "Set architecture which will be use in lambda services"
-  type        = string
-}
+
 
 variable "device_api_token" {
   description = "Auth token which use for lambda request validate from device"
@@ -53,4 +38,22 @@ variable "infra_backend_region" {
 variable "infra_backend_key" {
   description = "Infra backend key"
   type        = string
+}
+
+variable "use_localstack" {
+  description = "Whether to use LocalStack"
+  type        = bool
+  default     = false
+}
+
+variable "localstack_endpoint" {
+  description = "LocalStack endpoint"
+  type        = string
+  default     = "https://localhost.localstack.cloud:4566"
+}
+
+variable "arch" {
+  description = "Set architecture which will be use in lambda services"
+  type        = string
+  default     = "arm64"
 }
