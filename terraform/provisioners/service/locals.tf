@@ -56,39 +56,3 @@ locals {
   trigger_lambdas  = [for name in local.lambda_functions : name if startswith(name, "trigger")]
   schedule_lambdas = [for name in local.lambda_functions : name if startswith(name, "scheduler")]
 }
-
-# Schedulers configs.
-locals {
-  _all_scheduler_files = flatten([
-    for fn in local.schedule_lambdas : [
-      for file in fileset("${local._root_dir}/${fn}/.infra", "scheduler*.json") : {
-        function_name = fn
-        file_name     = file
-        file_path     = "${local._root_dir}/${fn}/.infra/${file}"
-      }
-    ]
-  ])
-
-  _env_scheduler_files = [
-    for file in local._all_scheduler_files :
-    file if startswith(file.file_name, "scheduler_${var.environment}")
-  ]
-
-  _all_schedulers = [
-    for file in local._env_scheduler_files : {
-      function_name  = file.function_name
-      scheduler_name = replace(file.file_name, ".json", "")
-      short_name     = replace(replace(file.file_name, "scheduler_${var.environment}_", ""), ".json", "")
-      config = jsondecode(
-        templatefile(file.file_path,
-          merge(local.template_vars, { target_lambda_name = file.function_name })
-        )
-      )
-    }
-  ]
-
-  schedulers = {
-    for scheduler in local._all_schedulers :
-    "${scheduler.function_name}-${scheduler.short_name}" => scheduler
-  }
-}
