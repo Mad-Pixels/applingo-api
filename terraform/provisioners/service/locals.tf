@@ -1,11 +1,29 @@
-# Base constants.
-locals {
-  project = "applingo"
+data "aws_caller_identity" "current" {}
 
+data "terraform_remote_state" "infra" {
+  backend = var.use_localstack ? "local" : "s3"
+
+  config = var.use_localstack ? {
+    path = "../infra/terraform.tfstate"
+    } : {
+    bucket = var.infra_backend_bucket
+    region = var.infra_backend_region
+    key    = var.infra_backend_key
+  }
 }
 
-# Base variables.
 locals {
+  project     = "applingo"
+  provisioner = "service"
+
+  tags = {
+    "TF"          = "true",
+    "Project"     = local.project,
+    "Environment" = var.environment,
+    "Provisioner" = local.provisioner,
+    "Github"      = "github.com/Mad-Pixels/applingo-api",
+  }
+
   template_vars = {
     var_jwt_secret              = var.jwt_secret
     var_openai_key              = var.openai_key
@@ -26,11 +44,6 @@ locals {
   }
 }
 
-# Custom variables.
-locals {
-  lambda_arn_template = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.project}-%s"
-}
-
 # Lambdas configs.
 locals {
   _root_dir = "${path.module}/../../../cmd"
@@ -49,46 +62,11 @@ locals {
     ) : null
   }
 
-  lambdas          = { for func in local._lambda_functions : func => local._lambda_configs[func] }
-  lambda_functions = keys(local.lambdas)
+  lambda_arn_template = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.project}-%s"
+  lambdas             = { for func in local._lambda_functions : func => local._lambda_configs[func] }
+  lambda_functions    = keys(local.lambdas)
 
   api_lambdas      = [for name in local.lambda_functions : name if startswith(name, "api")]
   trigger_lambdas  = [for name in local.lambda_functions : name if startswith(name, "trigger")]
   schedule_lambdas = [for name in local.lambda_functions : name if startswith(name, "scheduler")]
-}
-
-# Schedulers configs.
-locals {
-  _all_scheduler_files = flatten([
-    for fn in local.schedule_lambdas : [
-      for file in fileset("${local._root_dir}/${fn}/.infra", "scheduler*.json") : {
-        function_name = fn
-        file_name     = file
-        file_path     = "${local._root_dir}/${fn}/.infra/${file}"
-      }
-    ]
-  ])
-
-  _env_scheduler_files = [
-    for file in local._all_scheduler_files :
-    file if startswith(file.file_name, "scheduler_${var.environment}")
-  ]
-
-  _all_schedulers = [
-    for file in local._env_scheduler_files : {
-      function_name  = file.function_name
-      scheduler_name = replace(file.file_name, ".json", "")
-      short_name     = replace(replace(file.file_name, "scheduler_${var.environment}_", ""), ".json", "")
-      config = jsondecode(
-        templatefile(file.file_path,
-          merge(local.template_vars, { target_lambda_name = file.function_name })
-        )
-      )
-    }
-  ]
-
-  schedulers = {
-    for scheduler in local._all_schedulers :
-    "${scheduler.function_name}-${scheduler.short_name}" => scheduler
-  }
 }
