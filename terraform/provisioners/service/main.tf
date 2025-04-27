@@ -21,7 +21,7 @@ module "gateway" {
   api_name       = "api"
   project        = local.project
   use_localstack = var.use_localstack
-  shared_tags    = local.tags 
+  shared_tags    = local.tags
 
   invoke_lambdas_arns = {
     for name, lambda in module.lambda_functions : name => {

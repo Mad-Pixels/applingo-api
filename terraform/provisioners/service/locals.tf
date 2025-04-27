@@ -5,7 +5,7 @@ data "terraform_remote_state" "infra" {
 
   config = var.use_localstack ? {
     path = "../infra/terraform.tfstate"
-  } : {
+    } : {
     bucket = var.infra_backend_bucket
     region = var.infra_backend_region
     key    = var.infra_backend_key
@@ -13,7 +13,7 @@ data "terraform_remote_state" "infra" {
 }
 
 locals {
-  project = "applingo"
+  project     = "applingo"
   provisioner = "service"
 
   tags = {
