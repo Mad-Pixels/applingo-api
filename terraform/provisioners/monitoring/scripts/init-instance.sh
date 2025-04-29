@@ -91,6 +91,7 @@ EOF
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
 mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx}
+mkdir -p /home/ec2-user/monitoring/data/prometheus
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
 cd /home/ec2-user/monitoring
@@ -309,6 +310,7 @@ fi
 EOF
 
 chmod +x /home/ec2-user/monitoring/backup.sh
+chown ec2-user:ec2-user /home/ec2-user/monitoring/backup.sh
 
 # --- CRON JOB SETUP ---
 log_block green "Setting up daily cron job for Prometheus backup..."
