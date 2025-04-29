@@ -94,12 +94,17 @@ http {
     listen 80 default_server;
     server_name _;
 
+    location = /grafana {
+      return 301 /grafana/;
+    }
+
     location / {
       proxy_pass         http://grafana:3000/;
-      proxy_set_header   Host              $host;
-      proxy_set_header   X-Real-IP         $remote_addr;
-      proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-      proxy_set_header   X-Forwarded-Proto $scheme;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
     }
   }
 }
@@ -134,8 +139,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_SERVER_ROOT_URL=/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     ports:
       - "3000:3000"
     networks: [monitoring]
