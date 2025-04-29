@@ -6,6 +6,10 @@ on:
       - main
       - release/**
 
+concurrency:
+  group: base-commit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checks:
     name: Checks

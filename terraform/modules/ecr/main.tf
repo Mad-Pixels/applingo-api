@@ -14,9 +14,7 @@ resource "aws_ecr_repository" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Name" = "${var.project}-${var.repository_name}",
     }
   )
 }
@@ -24,23 +22,21 @@ resource "aws_ecr_repository" "this" {
 resource "aws_ecr_lifecycle_policy" "this" {
   repository = aws_ecr_repository.this.name
 
-  policy = <<EOF
-{
-    "rules": [
-        {
-            "rulePriority": 1,
-            "description": "Expire overwritten images older than 1 day",
-            "selection": {
-                "tagStatus": "untagged",
-                "countType": "sinceImagePushed",
-                "countUnit": "days",
-                "countNumber": 1
-            },
-            "action": {
-                "type": "expire"
-            }
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Expire overwritten images older than 1 day"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
         }
+        action = {
+          type = "expire"
+        }
+      }
     ]
-}
-EOF
+  })
 }

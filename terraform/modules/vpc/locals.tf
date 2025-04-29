@@ -1,3 +1,7 @@
+data "aws_availability_zones" "azs" {
+  state = "available"
+}
+
 locals {
   vpc_cidr_block = "${var.vpc_addr_block}/23"
 

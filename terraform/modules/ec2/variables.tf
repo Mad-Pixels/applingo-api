@@ -1,8 +1,3 @@
-variable "project" {
-  description = "Project name"
-  type        = string
-}
-
 variable "name" {
   description = "Instance name"
   type        = string

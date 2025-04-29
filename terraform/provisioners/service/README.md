@@ -9,7 +9,7 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.65.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.65.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
@@ -36,6 +36,10 @@
 | <a name="input_arch"></a> [arch](#input\_arch) | Set architecture which will be use in lambda services | `string` | n/a | yes |
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS region | `string` | n/a | yes |
 | <a name="input_device_api_token"></a> [device\_api\_token](#input\_device\_api\_token) | Auth token which use for lambda request validate from device | `string` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | Stage environment | `string` | n/a | yes |
+| <a name="input_infra_backend_bucket"></a> [infra\_backend\_bucket](#input\_infra\_backend\_bucket) | Infra backend bucket | `string` | n/a | yes |
+| <a name="input_infra_backend_key"></a> [infra\_backend\_key](#input\_infra\_backend\_key) | Infra backend key | `string` | n/a | yes |
+| <a name="input_infra_backend_region"></a> [infra\_backend\_region](#input\_infra\_backend\_region) | Infra backend region | `string` | n/a | yes |
 | <a name="input_jwt_secret"></a> [jwt\_secret](#input\_jwt\_secret) | Auth JWT secret which use for lambda request validate from external | `string` | n/a | yes |
 | <a name="input_localstack_endpoint"></a> [localstack\_endpoint](#input\_localstack\_endpoint) | LocalStack endpoint | `string` | `"https://localhost.localstack.cloud:4566"` | no |
 | <a name="input_openai_key"></a> [openai\_key](#input\_openai\_key) | OpenAI request key | `string` | n/a | yes |

@@ -1,25 +1,3 @@
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-
-locals {
-  manifest = templatefile("../../../openapi-interface/.tmpl/openapi.yaml", {
-    project        = var.project
-    name           = var.api_name
-    use_localstack = var.use_localstack
-    region         = data.aws_region.current.name
-    account_id     = try(data.aws_caller_identity.current.account_id, "*")
-
-    api_subcategories = var.invoke_lambdas_arns["api-subcategories"].arn
-    api_dictionaries  = var.invoke_lambdas_arns["api-dictionaries"].arn
-    api_reports       = var.invoke_lambdas_arns["api-reports"].arn
-    api_profile       = var.invoke_lambdas_arns["api-profile"].arn
-    api_levels        = var.invoke_lambdas_arns["api-levels"].arn
-    api_schema        = var.invoke_lambdas_arns["api-schema"].arn
-    api_urls          = var.invoke_lambdas_arns["api-urls"].arn
-    authorizer        = var.invoke_lambdas_arns["authorizer"].arn
-  })
-}
-
 resource "aws_api_gateway_rest_api" "this" {
   name = "${var.project}-${var.api_name}"
   body = local.manifest
@@ -31,9 +9,7 @@ resource "aws_api_gateway_rest_api" "this" {
   tags = merge(
     var.shared_tags,
     {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
+      "Name" = "${var.project}-${var.api_name}",
     }
   )
 }
@@ -54,17 +30,9 @@ resource "aws_api_gateway_stage" "this" {
   deployment_id = aws_api_gateway_deployment.this.id
   rest_api_id   = aws_api_gateway_rest_api.this.id
   stage_name    = var.stage_name
+  tags          = var.shared_tags
 
   xray_tracing_enabled = false
-
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.this.arn
@@ -100,14 +68,7 @@ resource "aws_api_gateway_domain_name" "this" {
     types = ["REGIONAL"]
   }
 
-  tags = merge(
-    var.shared_tags,
-    {
-      "TF"      = "true",
-      "Project" = var.project,
-      "Github"  = "github.com/Mad-Pixels/applingo-api",
-    }
-  )
+  tags = var.shared_tags
 }
 
 resource "aws_api_gateway_base_path_mapping" "this" {

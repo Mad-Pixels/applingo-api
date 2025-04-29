@@ -6,16 +6,11 @@ on:
     branches:
       - release/**
 
-jobs:
-  build:
-    uses: ./.github/workflows/.build.yml
-    name: build
-    secrets:
-      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
-      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
-      aws_region:                 ${{ secrets.AWS_REGION }}
-      aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}
+concurrency:
+  group: release-pr-open-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
+jobs:
   plan:
     uses: ./.github/workflows/.terraform.yml
     name: Plan
@@ -37,4 +32,16 @@ jobs:
       api_web_jwt_stg:            ${{ secrets.API_WEB_JWT_STG }}
       api_openai_key_stg:         ${{ secrets.API_OPENAI_KEY_STG }}
       api_device_key_stg:         ${{ secrets.API_DEVICE_KEY_STG }}
+
+  build:
+    needs: plan
+    uses: ./.github/workflows/.build.yml
+    name: build
+    with:
+      base_ref: ${{ github.base_ref }}
+    secrets:
+      aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
+      aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}
+      aws_region:                 ${{ secrets.AWS_REGION }}
+      aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}
   

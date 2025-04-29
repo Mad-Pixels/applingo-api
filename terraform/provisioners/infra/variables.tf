@@ -1,3 +1,13 @@
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+}
+
+variable "environment" {
+  description = "Stage environment"
+  type        = string
+}
+
 variable "use_localstack" {
   description = "Whether to use LocalStack"
   type        = bool
@@ -9,18 +19,3 @@ variable "localstack_endpoint" {
   type        = string
   default     = "https://localhost.localstack.cloud:4566"
 }
-
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-}
-
-variable "environment" {
-  description = "Stage environment"
-  type        = string
-}
-
-# variable "arch" {
-#   description = "Set architecture which will be use in lambda services"
-#   type        = string
-# }
