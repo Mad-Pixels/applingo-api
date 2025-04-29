@@ -1,4 +1,6 @@
 #!/bin/bash
+# /var/log/cloud-init-output.log
+
 # Cloud-init EC2 monitoring stack installer
 set -euo pipefail
 
@@ -20,6 +22,23 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 
+# --- INSTALL BASE PACKAGES ---
+log_block green "Updating system and installing dependencies"
+yum update -y > /dev/null
+amazon-linux-extras install docker -y > /dev/null
+yum install -y amazon-cloudwatch-agent jq awslogs python3-pip unzip > /dev/null
+pip3 install --quiet urllib3==1.26.16 docker-compose
+ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+# --- UPDATE AWS CLI to v2 ---
+log_block green "Installing AWS CLI v2"
+yum remove -y awscli > /dev/null || true
+curl -s "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+sudo ./aws/install > /dev/null
+rm -rf aws awscliv2.zip
+ln -s /usr/local/bin/aws /usr/bin/aws
+
 # --- FETCH INSTANCE METADATA (IMDSv2 COMPATIBLE) ---
 log_block blue "Fetching EC2 instance metadata..."
 
@@ -40,30 +59,22 @@ log_block green "Instance ID: ${INSTANCE_ID}"
 log_block green "Region: ${REGION}"
 
 # --- FETCH EC2 INSTANCE TAGS ---
-# log_block blue "Fetching EC2 instance tags..."
+log_block blue "Fetching EC2 instance tags..."
 
-# fetch_tag() {
-#   local key="$1"
+fetch_tag() {
+  local key="$1"
 
-#   aws ec2 describe-tags \
-#     --filters "Name=resource-id,Values=${INSTANCE_ID}" "Name=key,Values=${key}" \
-#     --region "${REGION}" \
-#     --output text | awk '{print $5}'
-# }
+  aws ec2 describe-tags \
+    --filters "Name=resource-id,Values=${INSTANCE_ID}" "Name=key,Values=${key}" \
+    --region "${REGION}" \
+    --output text | awk '{print $5}'
+}
 
-# ENVIRONMENT=$(fetch_tag Environment || true)
-# NAME_TAG=$(fetch_tag Name || true)
+ENVIRONMENT=$(fetch_tag Environment || true)
+NAME_TAG=$(fetch_tag Name || true)
 
-# log_block green "Environment: ${ENVIRONMENT}"
-# log_block green "Instance Name tag: ${NAME_TAG}"
-
-# --- INSTALL BASE PACKAGES ---
-log_block green "Updating system and installing dependencies"
-yum update -y > /dev/null
-amazon-linux-extras install docker -y > /dev/null
-yum install -y amazon-cloudwatch-agent jq awslogs python3-pip > /dev/null
-pip3 install --quiet urllib3==1.26.16 docker-compose
-ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+log_block green "Environment: ${ENVIRONMENT}"
+log_block green "Instance Name tag: ${NAME_TAG}"
 
 # --- ENABLE DOCKER ---
 log_block green "Starting Docker service"
