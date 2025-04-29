@@ -5,6 +5,7 @@ resource "aws_instance" "this" {
   ipv6_address_count     = 1
 
   associate_public_ip_address = var.associate_public_ip_address
+  iam_instance_profile        = var.instance_profile
   instance_type               = "t4g.${var.graviton_size}"
 
   user_data = var.user_data != "" ? var.user_data : null

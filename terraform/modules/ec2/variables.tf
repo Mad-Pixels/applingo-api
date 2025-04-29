@@ -60,3 +60,9 @@ variable "associate_public_ip_address" {
   type        = bool
   default     = false
 }
+
+variable "instance_profile" {
+  description = "Instance profile for the EC2 instance"
+  type        = string
+  default     = null
+}

@@ -62,6 +62,70 @@ resource "aws_security_group" "ingress_sg" {
   depends_on = [module.vpc]
 }
 
+resource "aws_iam_role" "monitoring_instance_role" {
+  name = "${local.project}-${local.provisioner}-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = local.tags
+}
+
+resource "aws_iam_policy" "monitoring_instance_policy" {
+  name = "${local.project}-${local.provisioner}-ec2-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:DescribeTags"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket"
+        ],
+        Resource = module.s3-monitoring-bucket.s3_arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Resource = "${module.s3-monitoring-bucket.s3_arn}/*"
+      }
+    ]
+  })
+
+  tags = local.tags
+
+  depends_on = [module.s3-monitoring-bucket]
+}
+
+resource "aws_iam_role_policy_attachment" "monitoring_instance_attach" {
+  role       = aws_iam_role.monitoring_instance_role.name
+  policy_arn = aws_iam_policy.monitoring_instance_policy.arn
+}
+
+resource "aws_iam_instance_profile" "monitoring_instance_profile" {
+  name = "${local.project}-${local.provisioner}-ec2-profile"
+  role = aws_iam_role.monitoring_instance_role.name
+}
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -70,6 +134,14 @@ module "vpc" {
 
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
+}
+
+module "s3-monitoring-bucket" {
+  source = "../../modules/s3"
+
+  project = local.project
+  shared_tags = local.tags
+  bucket_name = "${local.provisioner}-${var.environment}"
 }
 
 module "instance" {
@@ -90,5 +162,8 @@ module "instance" {
     var.environment != "prd" ? [aws_security_group.ssh_sg[0].id] : []
   )
 
-  user_data = file("${path.module}/scripts/init-instance.sh")
+  instance_profile = aws_iam_instance_profile.monitoring_instance_profile.name
+  user_data        = file("${path.module}/scripts/init-instance.sh")
+
+  depends_on = [module.s3-monitoring-bucket]
 }
