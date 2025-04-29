@@ -129,11 +129,13 @@ resource "aws_iam_instance_profile" "monitoring_instance_profile" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  name        = "${local.project}-${local.provisioner}"
-  shared_tags = local.tags
-
+  name           = "${local.project}-${local.provisioner}"
+  region         = var.aws_region
+  shared_tags    = local.tags
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
+
+  enable_s3_endpoint = true
 }
 
 module "s3-monitoring-bucket" {
