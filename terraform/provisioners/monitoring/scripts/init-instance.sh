@@ -30,15 +30,6 @@ yum install -y amazon-cloudwatch-agent jq awslogs python3-pip unzip > /dev/null
 pip3 install --quiet urllib3==1.26.16 docker-compose
 ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-# --- UPDATE AWS CLI to v2 ---
-log_block green "Installing AWS CLI v2"
-yum remove -y awscli > /dev/null || true
-curl -s "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
-unzip -q awscliv2.zip
-sudo ./aws/install > /dev/null
-rm -rf aws awscliv2.zip
-ln -s /usr/local/bin/aws /usr/bin/aws
-
 # --- FETCH INSTANCE METADATA (IMDSv2 COMPATIBLE) ---
 log_block blue "Fetching EC2 instance metadata..."
 
@@ -52,29 +43,22 @@ fetch_metadata() {
   curl -H "X-aws-ec2-metadata-token: $token" -s "http://169.254.169.254/latest/$path"
 }
 
-INSTANCE_ID=$(fetch_metadata meta-data/instance-id)
-REGION=$(fetch_metadata dynamic/instance-identity/document | jq -r .region)
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" -s)
 
-log_block green "Instance ID: ${INSTANCE_ID}"
-log_block green "Region: ${REGION}"
+INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s "http://169.254.169.254/latest/meta-data/instance-id")
+REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s "http://169.254.169.254/latest/dynamic/instance-identity/document" | jq -r .region)
 
 # --- FETCH EC2 INSTANCE TAGS ---
 log_block blue "Fetching EC2 instance tags..."
 
 fetch_tag() {
-  local key="$1"
-
-  aws ec2 describe-tags \
-    --filters "Name=resource-id,Values=${INSTANCE_ID}" "Name=key,Values=${key}" \
-    --region "${REGION}" \
-    --output text | awk '{print $5}'
+  local tag_key="$1"
+  curl -H "X-aws-ec2-metadata-token: $TOKEN" -s "http://169.254.169.254/latest/meta-data/tags/instance/$tag_key" || true
 }
 
-ENVIRONMENT=$(fetch_tag Environment || true)
-NAME_TAG=$(fetch_tag Name || true)
-
-log_block green "Environment: ${ENVIRONMENT}"
-log_block green "Instance Name tag: ${NAME_TAG}"
+ENVIRONMENT=$(fetch_tag Environment)
+NAME_TAG=$(fetch_tag Name)
 
 # --- ENABLE DOCKER ---
 log_block green "Starting Docker service"
