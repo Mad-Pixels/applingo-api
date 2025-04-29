@@ -315,6 +315,8 @@ chown ec2-user:ec2-user /home/ec2-user/monitoring/backup.sh
 # --- CRON JOB SETUP ---
 log_block green "Setting up daily cron job for Prometheus backup..."
 cat > /etc/cron.d/prometheus-backup <<'EOF'
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 0 3 * * * ec2-user /home/ec2-user/monitoring/backup.sh >> /var/log/prometheus-backup.log 2>&1
 EOF
 
