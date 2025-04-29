@@ -20,6 +20,43 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 
+# --- FETCH INSTANCE METADATA (IMDSv2 COMPATIBLE) ---
+log_block blue "Fetching EC2 instance metadata..."
+
+fetch_metadata() {
+  local path="$1"
+  local token
+
+  token=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" -s)
+
+  curl -H "X-aws-ec2-metadata-token: $token" -s "http://169.254.169.254/latest/$path"
+}
+
+INSTANCE_ID=$(fetch_metadata meta-data/instance-id)
+REGION=$(fetch_metadata dynamic/instance-identity/document | jq -r .region)
+
+log_block green "Instance ID: ${INSTANCE_ID}"
+log_block green "Region: ${REGION}"
+
+# --- FETCH EC2 INSTANCE TAGS ---
+# log_block blue "Fetching EC2 instance tags..."
+
+# fetch_tag() {
+#   local key="$1"
+
+#   aws ec2 describe-tags \
+#     --filters "Name=resource-id,Values=${INSTANCE_ID}" "Name=key,Values=${key}" \
+#     --region "${REGION}" \
+#     --output text | awk '{print $5}'
+# }
+
+# ENVIRONMENT=$(fetch_tag Environment || true)
+# NAME_TAG=$(fetch_tag Name || true)
+
+# log_block green "Environment: ${ENVIRONMENT}"
+# log_block green "Instance Name tag: ${NAME_TAG}"
+
 # --- INSTALL BASE PACKAGES ---
 log_block green "Updating system and installing dependencies"
 yum update -y > /dev/null
@@ -210,4 +247,63 @@ EOF
 
 systemctl enable monitoring.service > /dev/null
 
-log_block green "EC2 monitoring stack setup completed successfully."
+# --- RESTORE PROMETHEUS DATA FROM S3 ---
+# log_block blue "Checking Prometheus data availability..."
+# if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
+#   log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
+
+#   if aws s3 ls "s3://applingo-monitoring/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+#     mkdir -p /home/ec2-user/monitoring/data
+#     aws s3 cp s3://applingo-monitoring/prometheus-backup.tar.gz /tmp/prometheus-backup.tar.gz
+#     tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
+#     rm /tmp/prometheus-backup.tar.gz
+#     log_block green "Prometheus data restored from S3 backup."
+#   else
+#     log_block blue "No backup found in S3, continuing with empty data."
+#   fi
+# else 
+#   log_block green "Prometheus data directory is not empty, skipping restore."
+# fi
+
+# --- BACKUP SCRIPT ---
+# log_block green "Creating Prometheus backup script..."
+# cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
+# #!/bin/bash
+# set -euo pipefail
+
+# BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
+# DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
+# S3_BUCKET="applingo-monitoring"
+
+# # Check if bucket exists
+# if aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
+#   echo ">>> Creating backup..."
+#   tar czf "$BACKUP_FILE" -C "$DATA_DIR" .
+
+#   echo ">>> Removing previous backup if exists..."
+#   aws s3 rm "s3://${S3_BUCKET}/prometheus-backup.tar.gz" || true
+
+#   echo ">>> Uploading new backup..."
+#   aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/prometheus-backup.tar.gz" --storage-class STANDARD_IA
+
+#   echo ">>> Cleaning up local backup file..."
+#   rm -f "$BACKUP_FILE"
+# else
+#   echo ">>> [INFO] S3 bucket ${S3_BUCKET} does not exist, skipping backup."
+# fi
+# EOF
+
+# chmod +x /home/ec2-user/monitoring/backup.sh
+
+# # --- CRON JOB SETUP ---
+# log_block green "Setting up daily cron job for Prometheus backup..."
+# cat > /etc/cron.d/prometheus-backup <<'EOF'
+# 0 3 * * * ec2-user /home/ec2-user/monitoring/backup.sh >> /var/log/prometheus-backup.log 2>&1
+# EOF
+
+# chmod 644 /etc/cron.d/prometheus-backup
+# systemctl restart crond
+
+# log_block green "Backup system configured successfully."
+
+# log_block green "EC2 monitoring stack setup completed successfully."
