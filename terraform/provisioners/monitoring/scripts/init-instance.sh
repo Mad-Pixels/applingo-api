@@ -1,24 +1,50 @@
 #!/bin/bash
-# /var/log/cloud-init-output.log
-set -euxo pipefail
+# Cloud-init EC2 monitoring stack installer
+set -euo pipefail
 
-# -------- common setup --------
-yum update -y
-amazon-linux-extras install docker -y
-systemctl enable docker
-systemctl start docker
-usermod -aG docker ec2-user
-yum install -y amazon-cloudwatch-agent jq awslogs
-systemctl enable docker.service
-yum install -y python3-pip
-pip3 install urllib3==1.26.16 docker-compose
+# --- LOG UI BLOCKS ---
+log_block() {
+  COLOR="$1"
+  MSG="$2"
+  case "$COLOR" in
+    green)  echo -e "\033[1;32m>>> [ OK ] $MSG\033[0m" ;;
+    blue)   echo -e "\033[1;34m>>> [INFO] $MSG\033[0m" ;;
+    red)    echo -e "\033[1;31m>>> [FAIL] $MSG\033[0m" ;;
+    *)      echo -e ">>> $MSG" ;;
+  esac
+}
+
+# --- FIX LOCALE ---
+log_block blue "Configuring locale"
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+
+# --- INSTALL BASE PACKAGES ---
+log_block green "Updating system and installing dependencies"
+yum update -y > /dev/null
+amazon-linux-extras install docker -y > /dev/null
+yum install -y amazon-cloudwatch-agent jq awslogs python3-pip > /dev/null
+pip3 install --quiet urllib3==1.26.16 docker-compose
 ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-echo "vm.swappiness=10"    >> /etc/sysctl.conf
-echo "vm.max_map_count=262144" >> /etc/sysctl.conf
-sysctl -p
+# --- ENABLE DOCKER ---
+log_block green "Starting Docker service"
+systemctl enable docker > /dev/null
+systemctl start docker
+usermod -aG docker ec2-user
 
-cat > /etc/logrotate.d/docker << 'EOF'
+# --- SYSCTL TUNING ---
+log_block green "Applying sysctl limits"
+{
+  echo "vm.swappiness=10"
+  echo "vm.max_map_count=262144"
+} >> /etc/sysctl.conf
+sysctl -p > /dev/null
+
+# --- LOGROTATE FOR DOCKER ---
+log_block green "Configuring Docker log rotation"
+cat > /etc/logrotate.d/docker <<'EOF'
 /var/lib/docker/containers/*/*.log {
     rotate 7
     daily
@@ -30,12 +56,22 @@ cat > /etc/logrotate.d/docker << 'EOF'
 }
 EOF
 
-# -------- monitoring dirs --------
+# --- CREATE DIRECTORIES ---
+log_block green "Preparing monitoring folders"
 mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx}
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
-# -------- prometheus.yml --------
-cat > /home/ec2-user/monitoring/prometheus/prometheus.yml << 'EOF'
+cd /home/ec2-user/monitoring
+
+# --- SHUTDOWN OLD STACK ---
+log_block blue "Stopping previous monitoring stack (if any)"
+if [ -f docker-compose.yml ]; then
+  docker-compose down --remove-orphans > /dev/null || true
+fi
+
+# --- WRITE PROMETHEUS CONFIG ---
+log_block green "Writing Prometheus config"
+cat > prometheus/prometheus.yml <<'EOF'
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -49,8 +85,9 @@ scrape_configs:
       - targets: ['node-exporter:9100']
 EOF
 
-# -------- nginx.conf --------
-cat > /home/ec2-user/monitoring/nginx/nginx.conf << 'EOF'
+# --- WRITE NGINX CONFIG ---
+log_block green "Writing Nginx config"
+cat > nginx/nginx.conf <<'EOF'
 events {}
 http {
   server {
@@ -68,8 +105,9 @@ http {
 }
 EOF
 
-# -------- docker-compose.yml --------
-cat > /home/ec2-user/monitoring/docker-compose.yml << 'EOF'
+# --- WRITE DOCKER COMPOSE STACK ---
+log_block green "Writing docker-compose.yml"
+cat > docker-compose.yml <<'EOF'
 version: '3'
 services:
   prometheus:
@@ -142,11 +180,13 @@ volumes:
   grafana_data:
 EOF
 
-# -------- start stack & systemd unit --------
-cd /home/ec2-user/monitoring
-/usr/bin/docker-compose up -d
+# --- START STACK ---
+log_block blue "Starting monitoring stack"
+docker-compose up -d > /dev/null
 
-cat > /etc/systemd/system/monitoring.service << 'EOF'
+# --- SYSTEMD UNIT ---
+log_block green "Creating systemd unit"
+cat > /etc/systemd/system/monitoring.service <<'EOF'
 [Unit]
 Description=Docker Compose Monitoring Stack
 Requires=docker.service
@@ -163,6 +203,6 @@ ExecStop=/usr/bin/docker-compose down
 WantedBy=multi-user.target
 EOF
 
-systemctl enable monitoring.service
+systemctl enable monitoring.service > /dev/null
 
-echo "EC2 instance setup completed successfully with monitoring stack"
+log_block green "EC2 monitoring stack setup completed successfully."
