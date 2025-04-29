@@ -120,6 +120,6 @@ resource "aws_network_acl_rule" "public_outbound_allow_metadata" {
 resource "aws_network_acl_association" "public" {
   count = var.use_public_subnets ? length(aws_subnet.public) : 0
 
-  subnet_id       = aws_subnet.public[count.index].id
-  network_acl_id  = aws_network_acl.public.id
+  subnet_id      = aws_subnet.public[count.index].id
+  network_acl_id = aws_network_acl.public.id
 }
