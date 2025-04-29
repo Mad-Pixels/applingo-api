@@ -58,7 +58,7 @@ fetch_tag() {
 }
 
 ENVIRONMENT=$(fetch_tag Environment)
-NAME_TAG=$(fetch_tag Name)
+NAME=$(fetch_tag Name)
 
 # --- ENABLE DOCKER ---
 log_block green "Starting Docker service"
@@ -242,23 +242,29 @@ EOF
 
 systemctl enable monitoring.service > /dev/null
 
-# --- RESTORE PROMETHEUS DATA FROM S3 ---
-# log_block blue "Checking Prometheus data availability..."
-# if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
-#   log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
+# --- CHECK AND RESTORE PROMETHEUS DATA ---
+log_block blue "Checking Prometheus data availability..."
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  BUCKET_NAME="${NAME}-${ENVIRONMENT}"
 
-#   if aws s3 ls "s3://applingo-monitoring/prometheus-backup.tar.gz" > /dev/null 2>&1; then
-#     mkdir -p /home/ec2-user/monitoring/data
-#     aws s3 cp s3://applingo-monitoring/prometheus-backup.tar.gz /tmp/prometheus-backup.tar.gz
-#     tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
-#     rm /tmp/prometheus-backup.tar.gz
-#     log_block green "Prometheus data restored from S3 backup."
-#   else
-#     log_block blue "No backup found in S3, continuing with empty data."
-#   fi
-# else 
-#   log_block green "Prometheus data directory is not empty, skipping restore."
-# fi
+  if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
+    log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
+
+    if aws s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+      mkdir -p /home/ec2-user/monitoring/data
+      aws s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
+      rm /tmp/prometheus-backup.tar.gz
+      log_block green "Prometheus data restored from S3 backup."
+    else
+      log_block blue "No backup found in S3, continuing with empty data."
+    fi
+  else 
+    log_block green "Prometheus data directory is not empty, skipping restore."
+  fi
+else
+  log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
+fi
 
 # --- BACKUP SCRIPT ---
 # log_block green "Creating Prometheus backup script..."
