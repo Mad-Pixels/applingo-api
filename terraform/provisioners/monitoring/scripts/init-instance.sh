@@ -245,14 +245,15 @@ systemctl enable monitoring.service > /dev/null
 # --- CHECK AND RESTORE PROMETHEUS DATA ---
 log_block blue "Checking Prometheus data availability..."
 if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  ENDPOINT="applingo-monitoring-s3-endpoint"
   BUCKET_NAME="${NAME}-${ENVIRONMENT}"
 
   if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
     log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
 
-    if aws s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+    if aws --endpoint-url ${ENDPOINT} s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
       mkdir -p /home/ec2-user/monitoring/data
-      aws s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      aws --endpoint-url ${ENDPOINT} s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
       tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
       rm /tmp/prometheus-backup.tar.gz
       log_block green "Prometheus data restored from S3 backup."
@@ -267,44 +268,57 @@ else
 fi
 
 # --- BACKUP SCRIPT ---
-# log_block green "Creating Prometheus backup script..."
-# cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
-# #!/bin/bash
-# set -euo pipefail
+log_block green "Creating Prometheus backup script..."
+cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
 
-# BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
-# DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
-# S3_BUCKET="applingo-monitoring"
+ENDPOINT_URL="http://s3.us-east-2.amazonaws.com"
+BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
+DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
 
-# # Check if bucket exists
-# if aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
-#   echo ">>> Creating backup..."
-#   tar czf "$BACKUP_FILE" -C "$DATA_DIR" .
+# --- Fetch metadata token ---
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
-#   echo ">>> Removing previous backup if exists..."
-#   aws s3 rm "s3://${S3_BUCKET}/prometheus-backup.tar.gz" || true
+# --- Get tags directly from IMDS ---
+NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name || echo "")
+ENVIRONMENT=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Environment || echo "")
 
-#   echo ">>> Uploading new backup..."
-#   aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/prometheus-backup.tar.gz" --storage-class STANDARD_IA
+if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
-#   echo ">>> Cleaning up local backup file..."
-#   rm -f "$BACKUP_FILE"
-# else
-#   echo ">>> [INFO] S3 bucket ${S3_BUCKET} does not exist, skipping backup."
-# fi
-# EOF
+  # Check if bucket exists
+  if aws --endpoint-url "$ENDPOINT_URL" s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
+    echo ">>> Creating backup..."
+    tar czf "$BACKUP_FILE" -C "$DATA_DIR" .
 
-# chmod +x /home/ec2-user/monitoring/backup.sh
+    echo ">>> Removing previous backup if exists..."
+    aws --endpoint-url "$ENDPOINT_URL" s3 rm "s3://${S3_BUCKET}/prometheus-backup.tar.gz" || true
 
-# # --- CRON JOB SETUP ---
-# log_block green "Setting up daily cron job for Prometheus backup..."
-# cat > /etc/cron.d/prometheus-backup <<'EOF'
-# 0 3 * * * ec2-user /home/ec2-user/monitoring/backup.sh >> /var/log/prometheus-backup.log 2>&1
-# EOF
+    echo ">>> Uploading new backup..."
+    aws --endpoint-url "$ENDPOINT_URL" s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/prometheus-backup.tar.gz" --storage-class STANDARD_IA
 
-# chmod 644 /etc/cron.d/prometheus-backup
-# systemctl restart crond
+    echo ">>> Cleaning up local backup file..."
+    rm -f "$BACKUP_FILE"
+  else
+    echo ">>> [INFO] S3 bucket ${S3_BUCKET} does not exist, skipping backup."
+  fi
+else
+  echo ">>> [INFO] Missing NAME or ENVIRONMENT, skipping backup."
+fi
+EOF
 
-# log_block green "Backup system configured successfully."
+chmod +x /home/ec2-user/monitoring/backup.sh
 
-# log_block green "EC2 monitoring stack setup completed successfully."
+# --- CRON JOB SETUP ---
+log_block green "Setting up daily cron job for Prometheus backup..."
+cat > /etc/cron.d/prometheus-backup <<'EOF'
+0 3 * * * ec2-user /home/ec2-user/monitoring/backup.sh >> /var/log/prometheus-backup.log 2>&1
+EOF
+
+chmod 644 /etc/cron.d/prometheus-backup
+systemctl restart crond
+
+log_block green "Backup system configured successfully."
+
+log_block green "EC2 monitoring stack setup completed successfully."
