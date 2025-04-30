@@ -115,6 +115,9 @@ mkdir -p /home/ec2-user/monitoring/provisioning/datasources
 mkdir -p /home/ec2-user/monitoring/data/prometheus
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
+mkdir -p /home/ec2-user/.aws
+chown -R ec2-user:ec2-user /home/ec2-user/.aws
+
 cd /home/ec2-user/monitoring
 
 # --- SHUTDOWN OLD STACK ---
@@ -122,6 +125,14 @@ log_block blue "Stopping previous monitoring stack (if any)"
 if [ -f docker-compose.yml ]; then
   docker-compose down --remove-orphans > /dev/null || true
 fi
+
+# --- WRITE AWS CONFIG ---
+log_block green "Writing AWS config"
+cat > /home/ec2-user/.aws/config <<EOF
+[default]
+region = ${REGION}
+sts_regional_endpoints = regional
+EOF
 
 # --- WRITE PROMETHEUS CONFIG ---
 log_block green "Writing Prometheus config"
@@ -205,6 +216,19 @@ log_block green "Writing docker-compose.yml"
 cat > docker-compose.yml <<EOF
 version: '3'
 services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - grafana
+    networks:
+      - monitoring
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -220,20 +244,6 @@ services:
     ports:
       - "9090:9090"
     networks: [monitoring]
-
-  cloudwatch-exporter:
-    image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
-    container_name: cloudwatch-exporter
-    restart: unless-stopped
-    volumes:
-      - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
-    environment:
-      - AWS_STS_REGIONAL_ENDPOINTS=regional
-      - AWS_REGION=${REGION}
-    ports:
-      - "9106:9106"
-    networks: [monitoring]
-    command: ["--config.file=/tmp/config.yml"]
 
   grafana:
     image: grafana/grafana:latest
@@ -268,19 +278,22 @@ services:
     ports:
       - "9100:9100"
     networks: [monitoring]
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: nginx
+  
+  cloudwatch-exporter:
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
+    container_name: cloudwatch-exporter
     restart: unless-stopped
-    ports:
-      - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - grafana
-    networks:
-      - monitoring
+      - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
+      - ~/.aws/config:/root/.aws/config:ro
+    environment:
+      - AWS_STS_REGIONAL_ENDPOINTS=regional
+      - AWS_SDK_LOAD_CONFIG=true
+      - AWS_REGION=${REGION}
+    ports:
+      - "9106:9106"
+    networks: [monitoring]
+    command: ["--config.file=/tmp/config.yml", "--listen-address=:9106"]
 
 networks:
   monitoring:
