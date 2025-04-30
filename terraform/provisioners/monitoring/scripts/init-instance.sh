@@ -149,7 +149,7 @@ EOF
 
 # --- WRITE CLOUDWATCH EXPORTER CONFIG ---
 log_block green "Writing CloudWatch Exporter config"
-cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<'EOF'
+cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
 region: ${REGION}
 metrics:
   - aws_namespace: AWS/Lambda
