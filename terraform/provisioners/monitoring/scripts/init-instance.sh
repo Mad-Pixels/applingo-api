@@ -91,7 +91,7 @@ EOF
 
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
-mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx}
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch}
 mkdir -p /home/ec2-user/monitoring/data/prometheus
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
@@ -117,6 +117,9 @@ scrape_configs:
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
+  - job_name: 'cloudwatch'
+    static_configs:
+      - targets: ['cloudwatch-exporter:9106']
 EOF
 
 # --- WRITE NGINX CONFIG ---
@@ -144,6 +147,33 @@ http {
 }
 EOF
 
+# --- WRITE CLOUDWATCH EXPORTER CONFIG ---
+log_block green "Writing CloudWatch Exporter config"
+cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<'EOF'
+region: ${REGION}
+metrics:
+  - aws_namespace: AWS/Lambda
+    aws_metric_name: Invocations
+    dimensions: [FunctionName]
+    statistics: [Sum]
+    period_seconds: 60
+    range_seconds: 600
+
+  - aws_namespace: AWS/Lambda
+    aws_metric_name: Duration
+    dimensions: [FunctionName]
+    statistics: [Average]
+    period_seconds: 60
+    range_seconds: 600
+
+  - aws_namespace: AWS/Lambda
+    aws_metric_name: Errors
+    dimensions: [FunctionName]
+    statistics: [Sum]
+    period_seconds: 60
+    range_seconds: 600
+EOF
+
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
 cat > docker-compose.yml <<'EOF'
@@ -159,9 +189,21 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=60d'
       - '--web.enable-lifecycle'
     ports:
       - "9090:9090"
+    networks: [monitoring]
+
+  cloudwatch-exporter:
+    image: prom/cloudwatch-exporter
+    container_name: cloudwatch-exporter
+    restart: unless-stopped
+    volumes:
+      - ./cloudwatch/cloudwatch-exporter.yml:/config/config.yml:ro
+    command: '--config.file=/config/config.yml'
+    ports:
+      - "9106:9106"
     networks: [monitoring]
 
   grafana:
