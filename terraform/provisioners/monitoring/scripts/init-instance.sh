@@ -225,12 +225,14 @@ services:
     image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
     container_name: cloudwatch-exporter
     restart: unless-stopped
-    network_mode: "host"
     volumes:
       - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
     environment:
       - AWS_STS_REGIONAL_ENDPOINTS=regional
       - AWS_REGION=${REGION}
+    ports:
+      - "9106:9106"
+    networks: [monitoring]
     command: ["--config.file=/tmp/config.yml"]
 
   grafana:
