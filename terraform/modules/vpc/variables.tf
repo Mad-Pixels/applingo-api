@@ -76,3 +76,9 @@ variable "enable_cloudwatch_endpoint" {
   type        = bool
   default     = false
 }
+
+variable "enable_sts_endpoint" {
+  description = "Enable STS VPC endpoint"
+  type        = bool
+  default     = false
+}
