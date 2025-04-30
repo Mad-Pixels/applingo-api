@@ -46,8 +46,25 @@ resource "aws_vpc_endpoint" "sts" {
   tags = merge(var.shared_tags, { Name = "${var.name}-sts-endpoint" })
 }
 
+resource "aws_vpc_endpoint" "iam" {
+  count             = var.enable_iam_endpoint ? 1 : 0
+  vpc_id            = aws_vpc.this.id
+  service_name      = "com.amazonaws.${var.region}.iam"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = var.use_private_subnets ? aws_subnet.private[*].id : aws_subnet.public[*].id
+
+  security_group_ids = [
+    aws_security_group.vpc_endpoints[0].id
+  ]
+
+  private_dns_enabled = true
+
+  tags = merge(var.shared_tags, { Name = "${var.name}-iam-endpoint" })
+}
+
 resource "aws_security_group" "vpc_endpoints" {
-  count       = (var.enable_cloudwatch_endpoint || var.enable_sts_endpoint) ? 1 : 0
+  count       = (var.enable_cloudwatch_endpoint || var.enable_sts_endpoint || var.enable_iam_endpoint) ? 1 : 0
   name        = "${var.name}-vpc-endpoints-sg"
   description = "Security group for VPC endpoints"
   vpc_id      = aws_vpc.this.id

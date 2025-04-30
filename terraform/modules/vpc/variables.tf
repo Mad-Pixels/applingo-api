@@ -82,3 +82,9 @@ variable "enable_sts_endpoint" {
   type        = bool
   default     = false
 }
+
+variable "enable_iam_endpoint" {
+  description = "Enable VPC interface endpoint for IAM"
+  type        = bool
+  default     = false
+}

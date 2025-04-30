@@ -113,7 +113,9 @@ resource "aws_iam_policy" "monitoring_instance_policy" {
         Action = [
           "cloudwatch:GetMetricData",
           "cloudwatch:ListMetrics",
-          "cloudwatch:GetMetricStatistics"
+          "cloudwatch:GetMetricStatistics",
+          "tag:GetResources",
+          "cloudwatch:ListTagsForResource"
         ],
         Resource = "*"
       }
