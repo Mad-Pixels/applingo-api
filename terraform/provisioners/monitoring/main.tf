@@ -144,7 +144,8 @@ module "vpc" {
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
 
-  enable_s3_endpoint = true
+  enable_s3_endpoint         = true
+  enable_cloudwatch_endpoint = true
 }
 
 module "s3-monitoring-bucket" {
