@@ -107,6 +107,15 @@ resource "aws_iam_policy" "monitoring_instance_policy" {
           "s3:DeleteObject"
         ],
         Resource = "${module.s3-monitoring-bucket.s3_arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "cloudwatch:GetMetricData",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:GetMetricStatistics"
+        ],
+        Resource = "*"
       }
     ]
   })
