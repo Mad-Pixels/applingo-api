@@ -147,7 +147,6 @@ module "vpc" {
   vpc_zones      = 1
 
   enable_s3_endpoint         = true
-  enable_iam_endpoint        = true
   enable_sts_endpoint        = true
   enable_cloudwatch_endpoint = true
 }
