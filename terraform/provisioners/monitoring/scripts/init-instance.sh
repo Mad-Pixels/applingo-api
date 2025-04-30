@@ -75,6 +75,25 @@ log_block green "Applying sysctl limits"
 } >> /etc/sysctl.conf
 sysctl -p > /dev/null
 
+# --- SWAP SETUP ---
+log_block green "Creating swap file"
+
+if ! grep -q '/swapfile' /etc/fstab; then
+  if ! swapon --show | grep -q '/swapfile'; then
+    rm -f /swapfile
+    dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
+    chmod 600 /swapfile
+    mkswap /swapfile > /dev/null
+    swapon /swapfile
+    echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+    log_block green "Swap file created and activated"
+  else
+    log_block blue "Swap file already active, skipping creation"
+  fi
+else
+  log_block blue "Swap file already configured in fstab"
+fi
+
 # --- LOGROTATE FOR DOCKER ---
 log_block green "Configuring Docker log rotation"
 cat > /etc/logrotate.d/docker <<'EOF'
@@ -151,28 +170,18 @@ EOF
 # --- WRITE CLOUDWATCH EXPORTER CONFIG ---
 log_block green "Writing CloudWatch Exporter config"
 cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
-region: ${REGION}
-metrics:
-  - aws_namespace: AWS/Lambda
-    aws_metric_name: Invocations
-    dimensions: [FunctionName]
-    statistics: [Sum]
-    period_seconds: 60
-    range_seconds: 600
-
-  - aws_namespace: AWS/Lambda
-    aws_metric_name: Duration
-    dimensions: [FunctionName]
-    statistics: [Average]
-    period_seconds: 60
-    range_seconds: 600
-
-  - aws_namespace: AWS/Lambda
-    aws_metric_name: Errors
-    dimensions: [FunctionName]
-    statistics: [Sum]
-    period_seconds: 60
-    range_seconds: 600
+apiVersion: v1alpha1
+discovery:
+  jobs:
+  - type: AWS/Lambda
+    regions:
+      - ${REGION}
+    metrics:
+      - name: Invocations
+        statistics:
+          - Sum
+        period: 300
+        length: 600
 EOF
 
 # --- WRITE GRAFANA PROVISIONING CONFIG ---
@@ -211,15 +220,16 @@ services:
     networks: [monitoring]
 
   cloudwatch-exporter:
-    image: prom/cloudwatch-exporter
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
     container_name: cloudwatch-exporter
     restart: unless-stopped
+    network_mode: "host"
     volumes:
-      - ./cloudwatch/cloudwatch-exporter.yml:/config/config.yml:ro
-    command: --config.file=/config/config.yml
-    ports:
-      - "9106:9106"
-    networks: [monitoring]
+      - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
+    environment:
+      - AWS_REGION=us-east-2
+      - AWS_STS_REGIONAL_ENDPOINTS=regional
+    command: ["--config.file=/tmp/config.yml"]
 
   grafana:
     image: grafana/grafana:latest
