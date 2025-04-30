@@ -216,7 +216,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./cloudwatch/cloudwatch-exporter.yml:/config/config.yml:ro
-    command: '--config.file=/config/config.yml'
+    command: --config.file=/config/config.yml
     ports:
       - "9106:9106"
     networks: [monitoring]
