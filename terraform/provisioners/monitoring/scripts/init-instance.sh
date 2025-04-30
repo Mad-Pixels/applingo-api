@@ -91,7 +91,8 @@ EOF
 
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
-mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch}
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch,provisioning}
+mkdir -p /home/ec2-user/monitoring/provisioning/datasources
 mkdir -p /home/ec2-user/monitoring/data/prometheus
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
@@ -174,6 +175,20 @@ metrics:
     range_seconds: 600
 EOF
 
+# --- WRITE GRAFANA PROVISIONING CONFIG ---
+log_block green "Writing Grafana provisioning config"
+cat > /home/ec2-user/monitoring/provisioning/datasources/prometheus.yml <<EOF
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+EOF
+
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
 cat > docker-compose.yml <<'EOF'
@@ -212,6 +227,7 @@ services:
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
