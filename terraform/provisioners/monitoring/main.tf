@@ -148,6 +148,7 @@ module "vpc" {
 
   enable_s3_endpoint         = true
   enable_sts_endpoint        = true
+  enable_tagging_endpoint    = true
   enable_cloudwatch_endpoint = true
 }
 
