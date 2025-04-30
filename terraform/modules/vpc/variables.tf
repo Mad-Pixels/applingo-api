@@ -82,3 +82,9 @@ variable "enable_sts_endpoint" {
   type        = bool
   default     = false
 }
+
+variable "enable_tagging_endpoint" {
+  description = "Enable Tagging VPC endpoint"
+  type        = bool
+  default     = false
+}
