@@ -139,7 +139,7 @@ scrape_configs:
       - targets: ['node-exporter:9100']
   - job_name: 'cloudwatch'
     static_configs:
-      - targets: ['cloudwatch-exporter:9106']
+      - targets: ['localhost:9106']
 EOF
 
 # --- WRITE NGINX CONFIG ---
@@ -172,6 +172,8 @@ log_block green "Writing CloudWatch Exporter config"
 cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
 apiVersion: v1alpha1
 discovery:
+  exportedTagsOnMetrics:
+    AWS/Lambda: ["FunctionName"]
   jobs:
   - type: AWS/Lambda
     regions:
@@ -200,7 +202,7 @@ EOF
 
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
-cat > docker-compose.yml <<'EOF'
+cat > docker-compose.yml <<EOF
 version: '3'
 services:
   prometheus:
@@ -227,8 +229,8 @@ services:
     volumes:
       - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
     environment:
-      - AWS_REGION=us-east-2
       - AWS_STS_REGIONAL_ENDPOINTS=regional
+      - AWS_REGION=${REGION}
     command: ["--config.file=/tmp/config.yml"]
 
   grafana:
