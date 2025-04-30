@@ -1,5 +1,6 @@
 #!/bin/bash
 # /var/log/cloud-init-output.log
+# /var/log/prometheus-backup.log
 
 # Cloud-init EC2 monitoring stack installer
 set -euo pipefail
@@ -314,15 +315,17 @@ chown ec2-user:ec2-user /home/ec2-user/monitoring/backup.sh
 
 # --- CRON JOB SETUP ---
 log_block green "Setting up daily cron job for Prometheus backup..."
+touch /var/log/prometheus-backup.log
+chown ec2-user:ec2-user /var/log/prometheus-backup.log
+chmod 644 /var/log/prometheus-backup.log
+
 cat > /etc/cron.d/prometheus-backup <<'EOF'
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 0 3 * * * ec2-user /home/ec2-user/monitoring/backup.sh >> /var/log/prometheus-backup.log 2>&1
 EOF
-
 chmod 644 /etc/cron.d/prometheus-backup
 systemctl restart crond
-
 log_block green "Backup system configured successfully."
 
 log_block green "EC2 monitoring stack setup completed successfully."
