@@ -267,6 +267,48 @@ providers:
       path: /var/lib/grafana/dashboards
 EOF
 
+# --- CHECK AND RESTORE PROMETHEUS DATA ---
+log_block blue "Checking Prometheus data availability..."
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
+    log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
+
+    if aws s3 ls "s3://${S3_BUCKET}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+      mkdir -p /home/ec2-user/monitoring/data
+      aws s3 cp "s3://${S3_BUCKET}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
+      rm /tmp/prometheus-backup.tar.gz
+      log_block green "Prometheus data restored from S3 backup."
+    else
+      log_block blue "No backup found in S3, continuing with empty data."
+    fi
+  else 
+    log_block green "Prometheus data directory is not empty, skipping restore."
+  fi
+else
+  log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
+fi
+
+# --- CHECK AND RESTORE GRAFANA DASHBOARDS ---
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  log_block blue "Attempting to download Grafana dashboards from S3..."
+  if aws s3 ls "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
+    aws s3 sync \
+      "s3://${S3_BUCKET}/dashboards/" \
+      /home/ec2-user/monitoring/grafana/dashboards/ \
+      --delete
+    log_block green "Grafana dashboards restored from S3."
+  else
+    log_block blue "No dashboards found in S3, skipping Grafana restore."
+  fi
+else
+  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
+fi
+
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
 cat > docker-compose.yml <<EOF
@@ -385,48 +427,6 @@ WantedBy=multi-user.target
 EOF
 
 systemctl enable monitoring.service > /dev/null
-
-# --- CHECK AND RESTORE PROMETHEUS DATA ---
-log_block blue "Checking Prometheus data availability..."
-if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  S3_BUCKET="${NAME}-${ENVIRONMENT}"
-
-  if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
-    log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
-
-    if aws s3 ls "s3://${S3_BUCKET}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
-      mkdir -p /home/ec2-user/monitoring/data
-      aws s3 cp "s3://${S3_BUCKET}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
-      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
-      rm /tmp/prometheus-backup.tar.gz
-      log_block green "Prometheus data restored from S3 backup."
-    else
-      log_block blue "No backup found in S3, continuing with empty data."
-    fi
-  else 
-    log_block green "Prometheus data directory is not empty, skipping restore."
-  fi
-else
-  log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
-fi
-
-# --- CHECK AND RESTORE GRAFANA DASHBOARDS ---
-if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  S3_BUCKET="${NAME}-${ENVIRONMENT}"
-
-  log_block blue "Attempting to download Grafana dashboards from S3..."
-  if aws s3 ls "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
-    aws s3 sync \
-      "s3://${S3_BUCKET}/dashboards/" \
-      /home/ec2-user/monitoring/grafana/dashboards/ \
-      --delete
-    log_block green "Grafana dashboards restored from S3."
-  else
-    log_block blue "No dashboards found in S3, skipping Grafana restore."
-  fi
-else
-  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
-fi
 
 # --- BACKUP SCRIPT ---
 log_block green "Creating Prometheus backup script..."
