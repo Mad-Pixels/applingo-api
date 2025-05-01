@@ -111,6 +111,7 @@ EOF
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
 mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch,provisioning}
+mkdir -p /home/ec2-user/monitoring/grafana/dashboards
 mkdir -p /home/ec2-user/monitoring/provisioning/datasources
 mkdir -p /home/ec2-user/monitoring/data/prometheus
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
@@ -392,13 +393,30 @@ else
   log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
 fi
 
+# --- RESTORE GRAFANA DASHBOARDS FROM S3 ---
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  log_block blue "Attempting to download Grafana dashboards from S3..."
+  if aws s3 ls "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
+    aws s3 sync \
+      "s3://${S3_BUCKET}/dashboards/" \
+      /home/ec2-user/monitoring/grafana/dashboards/ \
+      --delete
+    log_block green "Grafana dashboards restored from S3."
+  else
+    log_block blue "No dashboards found in S3, skipping Grafana restore."
+  fi
+else
+  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
+fi
+
 # --- BACKUP SCRIPT ---
 log_block green "Creating Prometheus backup script..."
 cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
 #!/bin/bash
 set -euo pipefail
 
-ENDPOINT_URL="http://s3.us-east-2.amazonaws.com"
 BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
 DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
 
@@ -413,15 +431,15 @@ if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
   # Check if bucket exists
-  if aws --endpoint-url "$ENDPOINT_URL" s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
+  if aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
     echo ">>> Creating backup..."
     tar czf "$BACKUP_FILE" -C "$DATA_DIR" .
 
     echo ">>> Removing previous backup if exists..."
-    aws --endpoint-url "$ENDPOINT_URL" s3 rm "s3://${S3_BUCKET}/prometheus-backup.tar.gz" || true
+    aws s3 rm "s3://${S3_BUCKET}/prometheus-backup.tar.gz" || true
 
     echo ">>> Uploading new backup..."
-    aws --endpoint-url "$ENDPOINT_URL" s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/prometheus-backup.tar.gz" --storage-class STANDARD_IA
+    aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/prometheus-backup.tar.gz" --storage-class STANDARD_IA
 
     echo ">>> Cleaning up local backup file..."
     rm -f "$BACKUP_FILE"
