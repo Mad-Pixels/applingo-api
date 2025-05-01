@@ -389,14 +389,14 @@ systemctl enable monitoring.service > /dev/null
 # --- CHECK AND RESTORE PROMETHEUS DATA ---
 log_block blue "Checking Prometheus data availability..."
 if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  BUCKET_NAME="${NAME}-${ENVIRONMENT}"
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
   if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
     log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
 
-    if aws s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+    if aws s3 ls "s3://${S3_BUCKET}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
       mkdir -p /home/ec2-user/monitoring/data
-      aws s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      aws s3 cp "s3://${S3_BUCKET}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
       tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
       rm /tmp/prometheus-backup.tar.gz
       log_block green "Prometheus data restored from S3 backup."
