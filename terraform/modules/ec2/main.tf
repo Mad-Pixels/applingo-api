@@ -5,6 +5,7 @@ resource "aws_instance" "this" {
   ipv6_address_count     = 1
 
   associate_public_ip_address = var.associate_public_ip_address
+  iam_instance_profile        = var.instance_profile
   instance_type               = "t4g.${var.graviton_size}"
 
   user_data = var.user_data != "" ? var.user_data : null
@@ -17,7 +18,7 @@ resource "aws_instance" "this" {
       http_endpoint               = "enabled"
       http_tokens                 = "required"
       instance_metadata_tags      = "enabled"
-      http_put_response_hop_limit = 1
+      http_put_response_hop_limit = 2
     }
   }
 

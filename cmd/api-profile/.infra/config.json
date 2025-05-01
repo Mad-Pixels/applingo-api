@@ -22,5 +22,8 @@
   },
   "memory_size": 128,
   "timeout": 2,
-  "envs": {}
+  "envs": {},
+  "tags": {
+    "Target": "api"
+  }
 }

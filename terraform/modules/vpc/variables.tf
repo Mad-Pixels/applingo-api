@@ -3,6 +3,11 @@ variable "name" {
   type        = string
 }
 
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
 variable "vpc_addr_block" {
   description = "Base address block for the VPC (e.g., 10.100.100.0), use cidr: /23 (512 addrs)"
   type        = string
@@ -58,4 +63,28 @@ variable "shared_tags" {
   description = "Tags to add to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "enable_s3_endpoint" {
+  description = "Add S3 endpoint"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cloudwatch_endpoint" {
+  description = "Enable CloudWatch VPC endpoint"
+  type        = bool
+  default     = false
+}
+
+variable "enable_sts_endpoint" {
+  description = "Enable STS VPC endpoint"
+  type        = bool
+  default     = false
+}
+
+variable "enable_tagging_endpoint" {
+  description = "Enable Tagging VPC endpoint"
+  type        = bool
+  default     = false
 }

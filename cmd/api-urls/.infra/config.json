@@ -18,5 +18,8 @@
     "timeout": 2,
     "envs": {
       "SERVICE_DICTIONARY_BUCKET": "${dictionary_bucket_name}"
-    }
+    },
+    "tags": {
+    "Target": "api"
   }
+}
