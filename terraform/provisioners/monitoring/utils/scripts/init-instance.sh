@@ -110,8 +110,8 @@ EOF
 
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
-mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,exporters,provisioning}
-mkdir -p /home/ec2-user/monitoring/grafana/provisioning/{datasources, dashboards}
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,exporters}
+mkdir -p /home/ec2-user/monitoring/grafana/provisioning/{datasources,dashboards}
 mkdir -p /home/ec2-user/monitoring/grafana/dashboards
 mkdir -p /home/ec2-user/monitoring/prometheus/data
 mkdir -p /home/ec2-user/monitoring/exporters/cloudwatch
@@ -119,6 +119,7 @@ chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
 mkdir -p /home/ec2-user/.aws
 chown -R ec2-user:ec2-user /home/ec2-user/.aws
+chown -R 65534:65534 /home/ec2-user/monitoring/prometheus/data
 
 cd /home/ec2-user/monitoring
 
@@ -171,10 +172,10 @@ http {
     location / {
       proxy_pass         http://grafana:3000/;
       proxy_http_version 1.1;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header   Host $host;
+      proxy_set_header   X-Real-IP $remote_addr;
+      proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header   X-Forwarded-Proto $scheme;
     }
   }
 }
@@ -182,7 +183,7 @@ EOF
 
 # --- WRITE CLOUDWATCH EXPORTER CONFIG ---
 log_block green "Writing CloudWatch Exporter config"
-cat > /home/ec2-user/monitoring/exorters/cloudwatch/cloudwatch-exporter.yml <<EOF
+cat > exporters/cloudwatch/cloudwatch-exporter.yml <<EOF
 apiVersion: v1alpha1
 sts-region: ${REGION}
 discovery:
@@ -239,11 +240,12 @@ EOF
 
 # --- WRITE GRAFANA PROVISIONING CONFIG ---
 log_block green "Writing Grafana provisioning config"
-cat > /home/ec2-user/monitoring/grafana/provisioning/datasources/prometheus.yml <<EOF
+cat > grafana/provisioning/datasources/prometheus.yml <<EOF
 apiVersion: 1
 
 datasources:
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
