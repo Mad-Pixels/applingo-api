@@ -110,11 +110,11 @@ EOF
 
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
-mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch,provisioning}
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,exporters,provisioning}
+mkdir -p /home/ec2-user/monitoring/grafana/provisioning/{datasources, dashboards}
 mkdir -p /home/ec2-user/monitoring/grafana/dashboards
-mkdir -p /home/ec2-user/monitoring/provisioning/datasources
-mkdir -p /home/ec2-user/monitoring/data/prometheus
-mkdir -p /home/ec2-user/monitoring/provisioning/dashboards
+mkdir -p /home/ec2-user/monitoring/prometheus/data
+mkdir -p /home/ec2-user/monitoring/exporters/cloudwatch
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
 mkdir -p /home/ec2-user/.aws
@@ -182,7 +182,7 @@ EOF
 
 # --- WRITE CLOUDWATCH EXPORTER CONFIG ---
 log_block green "Writing CloudWatch Exporter config"
-cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
+cat > /home/ec2-user/monitoring/exorters/cloudwatch/cloudwatch-exporter.yml <<EOF
 apiVersion: v1alpha1
 sts-region: ${REGION}
 discovery:
@@ -239,7 +239,7 @@ EOF
 
 # --- WRITE GRAFANA PROVISIONING CONFIG ---
 log_block green "Writing Grafana provisioning config"
-cat > /home/ec2-user/monitoring/provisioning/datasources/prometheus.yml <<EOF
+cat > /home/ec2-user/monitoring/grafana/provisioning/datasources/prometheus.yml <<EOF
 apiVersion: 1
 
 datasources:
@@ -253,7 +253,7 @@ EOF
 
 # --- WRITE GRAFANA DASHBOARDS CONFIG ---
 log_block green "Writing Grafana dashboards provisioning config"
-cat > /home/ec2-user/monitoring/provisioning/dashboards/dashboards.yml <<EOF
+cat > /home/ec2-user/monitoring/grafana/provisioning/dashboards/dashboards.yml <<EOF
 apiVersion: 1
 
 providers:
@@ -272,13 +272,12 @@ log_block blue "Checking Prometheus data availability..."
 if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
-  if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
+  if [ ! -d "/home/ec2-user/monitoring/prometheus/data" ] || [ -z "$(ls -A /home/ec2-user/monitoring/prometheus/data 2>/dev/null)" ]; then
     log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
 
     if aws s3 ls "s3://${S3_BUCKET}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
-      mkdir -p /home/ec2-user/monitoring/data
       aws s3 cp "s3://${S3_BUCKET}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
-      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
+      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/prometheus/data
       rm /tmp/prometheus-backup.tar.gz
       log_block green "Prometheus data restored from S3 backup."
     else
@@ -333,7 +332,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
+      - ./prometheus/data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -349,7 +348,7 @@ services:
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -383,7 +382,7 @@ services:
     container_name: cloudwatch-exporter
     restart: unless-stopped
     volumes:
-      - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
+      - ./exporters/cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
       - ~/.aws/config:/root/.aws/config:ro
     environment:
       - AWS_STS_REGIONAL_ENDPOINTS=regional
@@ -435,7 +434,7 @@ cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
 set -euo pipefail
 
 BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
-DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
+DATA_DIR="/home/ec2-user/monitoring/prometheus/data"
 
 # --- Fetch metadata token ---
 TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
