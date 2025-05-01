@@ -150,7 +150,7 @@ scrape_configs:
       - targets: ['node-exporter:9100']
   - job_name: 'cloudwatch'
     static_configs:
-      - targets: ['localhost:9106']
+      - targets: ['cloudwatch-exporter:9106']
 EOF
 
 # --- WRITE NGINX CONFIG ---
@@ -182,19 +182,57 @@ EOF
 log_block green "Writing CloudWatch Exporter config"
 cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
 apiVersion: v1alpha1
+sts-region: ${REGION}
 discovery:
   exportedTagsOnMetrics:
-    AWS/Lambda: ["FunctionName"]
+    AWS/Lambda: 
+      - "FunctionName"
+      - "Environment"
+      - "Project"
+      - "Target"
   jobs:
   - type: AWS/Lambda
     regions:
       - ${REGION}
+    searchTags:
+      - key: Project
+        value: applingo
     metrics:
       - name: Invocations
         statistics:
           - Sum
         period: 300
-        length: 600
+        length: 300
+      
+      - name: Errors
+        statistics:
+          - Sum
+        period: 300
+        length: 300
+      
+      - name: Duration
+        statistics:
+          - Average
+          - Maximum
+          - Minimum
+          - p50
+          - p90
+          - p95
+          - p99
+        period: 300
+        length: 300
+      
+      - name: Throttles
+        statistics:
+          - Sum
+        period: 300
+        length: 300
+      
+      - name: ConcurrentExecutions
+        statistics:
+          - Maximum
+        period: 300
+        length: 300
 EOF
 
 # --- WRITE GRAFANA PROVISIONING CONFIG ---
