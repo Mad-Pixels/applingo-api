@@ -15,6 +15,9 @@ on:
       aws_region: 
         required: true
 
+      aws_monitoring_bucket:
+        required: true
+
       aws_backend_bucket:
         required: true
       aws_backend_region:
@@ -35,6 +38,17 @@ on:
         required: true
 
 jobs:
+  s3-monitoring:
+    name: S3 Monitoring
+    uses: Mad-Pixels/github-workflows/.github/workflows/aws-s3-sync.yml@main
+    with:
+      source_dir: "./terraform/provisioners/monitoring/utils"
+    secrets:
+      aws_access_key: ${{ secrets.aws_access_key }}
+      aws_secret_key: ${{ secrets.aws_secret_key }}
+      aws_region:     ${{ secrets.aws_region }}
+      bucket_name:    ${{ secrets.aws_monitoring_bucket }}
+
   tf-infra:
     name: Tf Infra
     runs-on: ubuntu-latest
@@ -60,6 +74,7 @@ jobs:
             -var environment=${{ inputs.environment }}
 
   tf-monitoring:
+    needs: s3-monitoring
     name: Tf Monitoring
     runs-on: ubuntu-latest
 

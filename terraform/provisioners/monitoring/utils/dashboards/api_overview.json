@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -868,7 +868,7 @@
     }
   ],
   "preload": false,
-  "refresh": "30s",
+  "refresh": "5m",
   "schemaVersion": 41,
   "tags": [
     "lambda",
