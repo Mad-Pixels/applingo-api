@@ -393,7 +393,7 @@ else
   log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
 fi
 
-# --- RESTORE GRAFANA DASHBOARDS FROM S3 ---
+# --- CHECK AND RESTORE GRAFANA DASHBOARDS ---
 if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
