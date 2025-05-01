@@ -110,14 +110,16 @@ EOF
 
 # --- CREATE DIRECTORIES ---
 log_block green "Preparing monitoring folders"
-mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch,provisioning}
+mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,exporters}
+mkdir -p /home/ec2-user/monitoring/grafana/provisioning/{datasources,dashboards}
 mkdir -p /home/ec2-user/monitoring/grafana/dashboards
-mkdir -p /home/ec2-user/monitoring/provisioning/datasources
-mkdir -p /home/ec2-user/monitoring/data/prometheus
+mkdir -p /home/ec2-user/monitoring/prometheus/data
+mkdir -p /home/ec2-user/monitoring/exporters/cloudwatch
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
 mkdir -p /home/ec2-user/.aws
 chown -R ec2-user:ec2-user /home/ec2-user/.aws
+chown -R 65534:65534 /home/ec2-user/monitoring/prometheus/data
 
 cd /home/ec2-user/monitoring
 
@@ -170,10 +172,10 @@ http {
     location / {
       proxy_pass         http://grafana:3000/;
       proxy_http_version 1.1;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header   Host $host;
+      proxy_set_header   X-Real-IP $remote_addr;
+      proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header   X-Forwarded-Proto $scheme;
     }
   }
 }
@@ -181,7 +183,7 @@ EOF
 
 # --- WRITE CLOUDWATCH EXPORTER CONFIG ---
 log_block green "Writing CloudWatch Exporter config"
-cat > /home/ec2-user/monitoring/cloudwatch/cloudwatch-exporter.yml <<EOF
+cat > exporters/cloudwatch/cloudwatch-exporter.yml <<EOF
 apiVersion: v1alpha1
 sts-region: ${REGION}
 discovery:
@@ -238,17 +240,75 @@ EOF
 
 # --- WRITE GRAFANA PROVISIONING CONFIG ---
 log_block green "Writing Grafana provisioning config"
-cat > /home/ec2-user/monitoring/provisioning/datasources/prometheus.yml <<EOF
+cat > grafana/provisioning/datasources/prometheus.yml <<EOF
 apiVersion: 1
 
 datasources:
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
     editable: true
 EOF
+
+# --- WRITE GRAFANA DASHBOARDS CONFIG ---
+log_block green "Writing Grafana dashboards provisioning config"
+cat > /home/ec2-user/monitoring/grafana/provisioning/dashboards/dashboards.yml <<EOF
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+EOF
+
+# --- CHECK AND RESTORE PROMETHEUS DATA ---
+log_block blue "Checking Prometheus data availability..."
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  if [ ! -d "/home/ec2-user/monitoring/prometheus/data" ] || [ -z "$(ls -A /home/ec2-user/monitoring/prometheus/data 2>/dev/null)" ]; then
+    log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
+
+    if aws s3 ls "s3://${S3_BUCKET}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+      aws s3 cp "s3://${S3_BUCKET}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/prometheus/data
+      rm /tmp/prometheus-backup.tar.gz
+      log_block green "Prometheus data restored from S3 backup."
+    else
+      log_block blue "No backup found in S3, continuing with empty data."
+    fi
+  else 
+    log_block green "Prometheus data directory is not empty, skipping restore."
+  fi
+else
+  log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
+fi
+
+# --- CHECK AND RESTORE GRAFANA DASHBOARDS ---
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  log_block blue "Attempting to download Grafana dashboards from S3..."
+  if aws s3 ls "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
+    aws s3 sync \
+      "s3://${S3_BUCKET}/dashboards/" \
+      /home/ec2-user/monitoring/grafana/dashboards/ \
+      --delete
+    log_block green "Grafana dashboards restored from S3."
+  else
+    log_block blue "No dashboards found in S3, skipping Grafana restore."
+  fi
+else
+  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
+fi
 
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
@@ -274,7 +334,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
+      - ./prometheus/data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -290,7 +350,8 @@ services:
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -323,7 +384,7 @@ services:
     container_name: cloudwatch-exporter
     restart: unless-stopped
     volumes:
-      - ./cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
+      - ./exporters/cloudwatch/cloudwatch-exporter.yml:/tmp/config.yml
       - ~/.aws/config:/root/.aws/config:ro
     environment:
       - AWS_STS_REGIONAL_ENDPOINTS=regional
@@ -368,49 +429,6 @@ EOF
 
 systemctl enable monitoring.service > /dev/null
 
-# --- CHECK AND RESTORE PROMETHEUS DATA ---
-log_block blue "Checking Prometheus data availability..."
-if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  ENDPOINT="applingo-monitoring-s3-endpoint"
-  BUCKET_NAME="${NAME}-${ENVIRONMENT}"
-
-  if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
-    log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
-
-    if aws --endpoint-url ${ENDPOINT} s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
-      mkdir -p /home/ec2-user/monitoring/data
-      aws --endpoint-url ${ENDPOINT} s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
-      tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
-      rm /tmp/prometheus-backup.tar.gz
-      log_block green "Prometheus data restored from S3 backup."
-    else
-      log_block blue "No backup found in S3, continuing with empty data."
-    fi
-  else 
-    log_block green "Prometheus data directory is not empty, skipping restore."
-  fi
-else
-  log_block blue "Skipping Prometheus restore because NAME or ENVIRONMENT is empty."
-fi
-
-# --- CHECK AND RESTORE GRAFANA DASHBOARDS ---
-if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  S3_BUCKET="${NAME}-${ENVIRONMENT}"
-
-  log_block blue "Attempting to download Grafana dashboards from S3..."
-  if aws s3 ls "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
-    aws s3 sync \
-      "s3://${S3_BUCKET}/dashboards/" \
-      /home/ec2-user/monitoring/grafana/dashboards/ \
-      --delete
-    log_block green "Grafana dashboards restored from S3."
-  else
-    log_block blue "No dashboards found in S3, skipping Grafana restore."
-  fi
-else
-  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
-fi
-
 # --- BACKUP SCRIPT ---
 log_block green "Creating Prometheus backup script..."
 cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
@@ -418,7 +436,7 @@ cat > /home/ec2-user/monitoring/backup.sh <<'EOF'
 set -euo pipefail
 
 BACKUP_FILE="/tmp/prometheus-backup.tar.gz"
-DATA_DIR="/home/ec2-user/monitoring/data/prometheus"
+DATA_DIR="/home/ec2-user/monitoring/prometheus/data"
 
 # --- Fetch metadata token ---
 TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
