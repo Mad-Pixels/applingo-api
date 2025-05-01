@@ -1,4 +1,7 @@
 {
     "memory_size": 128,
-    "timeout": 2
+    "timeout": 2,
+    "tags": {
+        "Target": "api"
+    }
 }

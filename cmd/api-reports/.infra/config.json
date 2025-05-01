@@ -20,5 +20,8 @@
   "timeout": 2,
   "envs": {
     "SERVICE_ERRORS_BUCKET": "${log_errors_bucket_name}"
+  },
+  "tags": {
+    "Target": "api"
   }
 }

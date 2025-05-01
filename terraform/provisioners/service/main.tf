@@ -7,7 +7,11 @@ module "lambda_functions" {
   image         = "${data.terraform_remote_state.infra.outputs.ecr-repository-api_url}:${each.key}"
   log_level     = (var.use_localstack || var.environment != "prd") ? "DEBUG" : "ERROR"
   arch          = var.arch
-  shared_tags   = local.tags
+
+  shared_tags = merge(
+    local.tags,
+    try(each.value.tags, {})
+  )
 
   environments = try(each.value.envs, {})
   timeout      = try(each.value.timeout, 3)
