@@ -114,6 +114,7 @@ mkdir -p /home/ec2-user/monitoring/{grafana,prometheus,nginx,cloudwatch,provisio
 mkdir -p /home/ec2-user/monitoring/grafana/dashboards
 mkdir -p /home/ec2-user/monitoring/provisioning/datasources
 mkdir -p /home/ec2-user/monitoring/data/prometheus
+mkdir -p /home/ec2-user/monitoring/provisioning/dashboards
 chown -R ec2-user:ec2-user /home/ec2-user/monitoring
 
 mkdir -p /home/ec2-user/.aws
@@ -250,6 +251,22 @@ datasources:
     editable: true
 EOF
 
+# --- WRITE GRAFANA DASHBOARDS CONFIG ---
+log_block green "Writing Grafana dashboards provisioning config"
+cat > /home/ec2-user/monitoring/provisioning/dashboards/dashboards.yml <<EOF
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+EOF
+
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
 cat > docker-compose.yml <<EOF
@@ -291,6 +308,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -371,15 +389,14 @@ systemctl enable monitoring.service > /dev/null
 # --- CHECK AND RESTORE PROMETHEUS DATA ---
 log_block blue "Checking Prometheus data availability..."
 if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
-  ENDPOINT="applingo-monitoring-s3-endpoint"
   BUCKET_NAME="${NAME}-${ENVIRONMENT}"
 
   if [ ! -d "/home/ec2-user/monitoring/data/prometheus" ] || [ -z "$(ls -A /home/ec2-user/monitoring/data/prometheus 2>/dev/null)" ]; then
     log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
 
-    if aws --endpoint-url ${ENDPOINT} s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
+    if aws s3 ls "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" > /dev/null 2>&1; then
       mkdir -p /home/ec2-user/monitoring/data
-      aws --endpoint-url ${ENDPOINT} s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
+      aws s3 cp "s3://${BUCKET_NAME}/prometheus-backup.tar.gz" /tmp/prometheus-backup.tar.gz
       tar -xzf /tmp/prometheus-backup.tar.gz -C /home/ec2-user/monitoring/data
       rm /tmp/prometheus-backup.tar.gz
       log_block green "Prometheus data restored from S3 backup."
