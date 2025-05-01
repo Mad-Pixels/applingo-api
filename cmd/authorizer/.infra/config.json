@@ -4,5 +4,8 @@
   "envs": {
     "DEVICE_API_TOKEN": "${var_device_api_token}",
     "JWT_SECRET": "${var_jwt_secret}"
+  },
+  "tags": {
+    "Target": "auth"
   }
 }
