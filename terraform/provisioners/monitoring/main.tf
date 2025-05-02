@@ -145,8 +145,6 @@ module "vpc" {
   shared_tags    = local.tags
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
-
-  enable_s3_endpoint = true
 }
 
 module "s3-monitoring-bucket" {
@@ -165,7 +163,7 @@ module "instance" {
 
   key_name      = local.provisioner
   subnet_id     = element(module.vpc.public_subnets, 0)
-  graviton_size = var.environment == "nano"
+  graviton_size = "nano"
 
   associate_public_ip_address = true
 
