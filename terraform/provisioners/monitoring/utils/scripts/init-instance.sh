@@ -76,7 +76,7 @@ export LANG=en_US.UTF-8
 log_block green "Updating system and installing dependencies"
 yum update -y > /dev/null
 amazon-linux-extras install docker -y > /dev/null
-yum install -y amazon-cloudwatch-agent jq awslogs python3-pip unzip > /dev/null
+yum install -y amazon-cloudwatch-agent jq awslogs python3-pip unzip sqlite3 > /dev/null
 pip3 install --quiet urllib3==1.26.16 docker-compose
 ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
@@ -133,7 +133,14 @@ EOF
 # ----------------- SHUTDOWN -------------------- #
 # =============================================== #
 
-# --- BACKUP DATA ---
+# --- SHUTDOWN OLD STACK ---
+log_block blue "Stopping previous monitoring stack (if any)"
+cd ${MONITORING_DIR}
+if [ -f docker-compose.yml ]; then
+  docker-compose down --remove-orphans > /dev/null || true
+fi
+
+# --- BACKUP PROMETHEUS DATA ---
 log_block green "Backup prometheus data"
 if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ] && [ -d "${PROMETHEUS_DIR}/data" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
@@ -159,10 +166,30 @@ else
   echo ">>> [INFO] Missing NAME or ENVIRONMENT, skipping backup."
 fi
 
-# --- SHUTDOWN OLD STACK ---
-log_block blue "Stopping previous monitoring stack (if any)"
-if [ -f docker-compose.yml ]; then
-  docker-compose down --remove-orphans > /dev/null || true
+# --- BACKUP GRAFANA DATA ---
+log_block green "Backup grafana data"
+if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ] && [ -f "${GRAFANA_DIR}/data/grafana.db" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  if aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
+    echo ">>> Deleting current dashboards"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard;"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_provisioning;"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_version;"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_public;"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_acl;"
+    sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_snapshot;"
+
+    echo ">>> Removing previous backup if exists..."
+    aws s3 rm "s3://${S3_BUCKET}/grafana.db" || true
+
+    echo ">>> Uploading new backup..."
+    aws s3 cp "${GRAFANA_DIR}/data/grafana.db" "s3://${S3_BUCKET}/grafana.db" --storage-class STANDARD_IA 
+  else
+    echo ">>> [INFO] S3 bucket ${S3_BUCKET} does not exist, skipping backup."
+  fi
+else 
+  echo ">>> [INFO] Missing NAME or ENVIRONMENT, skipping backup."
 fi
 
 # --- CLEANUP INSTANCE ---
@@ -193,6 +220,9 @@ chown -R ${USER}:${USER} /home/${USER}/.aws
 
 mkdir -p ${PROMETHEUS_DIR}/data
 chown -R 65534:65534 ${PROMETHEUS_DIR}/data
+
+mkdir -p ${GRAFANA_DIR}/data/
+chown -R 472:472 ${GRAFANA_DIR}/data
 
 cd ${MONITORING_DIR}
 
@@ -367,7 +397,7 @@ if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
 
   log_block blue "Attempting to download Grafana dashboards from S3..."
   if aws s3 ls  "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
-    aws s3 sync "s3://${S3_BUCKET}/dashboards/" ${GRAFANA_DIR}/dashboards --delete
+    aws s3 sync "s3://${S3_BUCKET}/dashboards/" ${GRAFANA_DIR}/data/dashboards --delete
     log_block green "Grafana dashboards restored from S3."
   else 
     log_block blue "No dashboards found in S3, skipping Grafana restore."
@@ -375,6 +405,25 @@ if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
 else 
   log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
 fi
+
+# --- CHECK AND RESTORE GRAFANA DATA ---
+if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
+
+  log_block blue "Attempting to download Grafana data from S3..."
+  if aws s3 ls  "s3://${S3_BUCKET}/grafana.db" > /dev/null 2>&1; then 
+    aws s3 cp "s3://${S3_BUCKET}/grafana.db" "${GRAFANA_DIR}/data/grafana.db"
+    chown 472:472 ${GRAFANA_DIR}/data/grafana.db
+    chmod 660 ${GRAFANA_DIR}/data/grafana.db
+    log_block green "Grafana data restored from S3."
+  else 
+    log_block blue "No data found in S3, skipping Grafana restore."
+  fi
+else 
+  log_block blue "Skipping Grafana restore because NAME or ENVIRONMENT is empty."
+fi
+
+chown -R 472:472 ${GRAFANA_DIR}/data
 
 # --- WRITE DOCKER COMPOSE STACK ---
 log_block green "Writing docker-compose.yml"
@@ -416,7 +465,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${GRAFANA_DIR}/provisioning:/etc/grafana/provisioning:ro
-      - ${GRAFANA_DIR}/dashboards:/var/lib/grafana/dashboards:ro
+      - ${GRAFANA_DIR}/data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -557,7 +606,7 @@ chmod 644 /var/log/prometheus-backup.log
 cat > /etc/cron.d/prometheus-backup <<EOF
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-0 3 * * * ec2-user ${MONITORING_DIR}/backup.sh >> /var/log/prometheus-backup.log 2>&1
+0 3 * * * ${USER} ${MONITORING_DIR}/backup.sh >> /var/log/prometheus-backup.log 2>&1
 EOF
 
 chmod 644 /etc/cron.d/prometheus-backup
