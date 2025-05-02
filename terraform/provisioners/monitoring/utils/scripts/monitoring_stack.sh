@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# =============================================== #
-# Setup log:      /var/log/cloud-init-output.log  #
-# Cron backuplog: /var/log/prometheus-backup.log  #
-# =============================================== #
-
 set -euo pipefail
 
 log_block() {
@@ -85,10 +80,10 @@ if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ] && [ -d "${PROMETHEUS_DIR}/data" ]; t
     tar czf "/tmp/${BACKUP_FILE}" -C "${PROMETHEUS_DIR}/data" .
 
     echo ">>> Removing previous backup if exists..."
-    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_FILE}" || true
+    aws s3 rm "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" || true
 
     echo ">>> Uploading new backup..."
-    aws s3 cp "/tmp/${BACKUP_FILE}" "s3://${S3_BUCKET}/${BACKUP_FILE}" --storage-class STANDARD_IA
+    aws s3 cp "/tmp/${BACKUP_FILE}" "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" --storage-class STANDARD_IA
 
     echo ">>> Cleaning up local backup file..."
     rm -f "/tmp/${BACKUP_FILE}"
@@ -114,10 +109,10 @@ if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ] && [ -f "${GRAFANA_DIR}/data/grafana.
     sqlite3 ${GRAFANA_DIR}/data/grafana.db "DELETE FROM dashboard_snapshot;"
 
     echo ">>> Removing previous backup if exists..."
-    aws s3 rm "s3://${S3_BUCKET}/grafana.db" || true
+    aws s3 rm "s3://${S3_BUCKET}/backups/grafana.db" || true
 
     echo ">>> Uploading new backup..."
-    aws s3 cp "${GRAFANA_DIR}/data/grafana.db" "s3://${S3_BUCKET}/grafana.db" --storage-class STANDARD_IA 
+    aws s3 cp "${GRAFANA_DIR}/data/grafana.db" "s3://${S3_BUCKET}/backups/grafana.db" --storage-class STANDARD_IA 
   else
     echo ">>> [INFO] S3 bucket ${S3_BUCKET} does not exist, skipping backup."
   fi
@@ -195,8 +190,8 @@ if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
     log_block blue "Prometheus data directory is empty, attempting to restore from S3..."
     BACKUP_FILE="prometheus-backup.tar.gz"
 
-    if aws s3 ls "s3://${S3_BUCKET}/${BACKUP_FILE}" > /dev/null 2>&1; then
-      aws s3 cp  "s3://${S3_BUCKET}/${BACKUP_FILE}" /tmp/${BACKUP_FILE}
+    if aws s3 ls "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" > /dev/null 2>&1; then
+      aws s3 cp "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" /tmp/${BACKUP_FILE}
       tar -xzf /tmp/${BACKUP_FILE} -C ${PROMETHEUS_DIR}/data
       rm /tmp/${BACKUP_FILE}
       log_block green "Prometheus data restored from S3 backup."
@@ -329,8 +324,8 @@ if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
   log_block blue "Attempting to download Grafana dashboards from S3..."
-  if aws s3 ls  "s3://${S3_BUCKET}/dashboards/" > /dev/null 2>&1; then
-    aws s3 sync "s3://${S3_BUCKET}/dashboards/" ${GRAFANA_DIR}/data/dashboards --delete
+  if aws s3 ls "s3://${S3_BUCKET}/backups/dashboards/" > /dev/null 2>&1; then
+    aws s3 sync "s3://${S3_BUCKET}/backups/dashboards/" ${GRAFANA_DIR}/data/dashboards --delete
     log_block green "Grafana dashboards restored from S3."
   else 
     log_block blue "No dashboards found in S3, skipping Grafana restore."
@@ -344,8 +339,8 @@ if [ -n "${NAME:-}" ] && [ -n "${ENVIRONMENT:-}" ]; then
   S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
   log_block blue "Attempting to download Grafana data from S3..."
-  if aws s3 ls  "s3://${S3_BUCKET}/grafana.db" > /dev/null 2>&1; then 
-    aws s3 cp "s3://${S3_BUCKET}/grafana.db" "${GRAFANA_DIR}/data/grafana.db"
+  if aws s3 ls  "s3://${S3_BUCKET}/backups/grafana.db" > /dev/null 2>&1; then 
+    aws s3 cp "s3://${S3_BUCKET}/backups/grafana.db" "${GRAFANA_DIR}/data/grafana.db"
     chown 472:472 ${GRAFANA_DIR}/data/grafana.db
     chmod 660 ${GRAFANA_DIR}/data/grafana.db
     log_block green "Grafana data restored from S3."
@@ -505,10 +500,10 @@ if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ]; then
     tar czf "/tmp/${BACKUP_FILE}" -C "${DATA_DIR}" .
 
     echo ">>> Removing previous backup if exists..."
-    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_FILE}" || true
+    aws s3 rm "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" || true
 
     echo ">>> Uploading new backup..."
-    aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${BACKUP_FILE}" --storage-class STANDARD_IA
+    aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" --storage-class STANDARD_IA
 
     echo ">>> Cleaning up local backup file..."
     rm -f "$BACKUP_FILE"

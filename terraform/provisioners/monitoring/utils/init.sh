@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# =============================================== #
+# Setup log:      /var/log/cloud-init-output.log  #
+# =============================================== #
+
+
+
 set -euo pipefail
 
 log_block() {
@@ -27,6 +33,8 @@ fetch_tag() {
   local tag_key="$1"
   curl -H "X-aws-ec2-metadata-token: $TOKEN" -s "http://169.254.169.254/latest/meta-data/tags/instance/$tag_key" || true
 }
+
+
 
 # =============================================== #
 # ------------------- INIT ---------------------- #
@@ -100,24 +108,38 @@ cat > /etc/logrotate.d/docker <<'EOF'
 }
 EOF
 
+
+
 # =============================================== #
-# ----------------- MONITORING ------------------ #
+# -------------------- COMMON ------------------- #
 # =============================================== #
 
-SCRIPT="monitoring_stack.sh"
-
-log_block blue "MONITORING part"
-rm -rf /home/${USER}/${SCRIPT}
 if [ -n "$NAME" ] && [ -n "$ENVIRONMENT" ]; then
-    S3_BUCKET="${NAME}-${ENVIRONMENT}"
+  S3_BUCKET="${NAME}-${ENVIRONMENT}"
 
-    if aws s3 ls "s3://${S3_BUCKET}/scriptis/${SCRIPT}" > /dev/null 2>&1; then
-        aws s3 cp "s3://${S3_BUCKET}/scriptis/${SCRIPT}" "/home/${USER}/${SCRIPT}"
-        chmod +x /home/${USER}/${SCRIPT}
+  rm -rf /home/${USER}/scripts
+  aws s3 sync s3://${S3_BUCKET}/repository/scripts /home/${USER}/scripts
+  chown -R ${USER}:${USER} /home/${USER}/scripts
 
-        log_block green "Invoke monitoring stack"
-        /home/${USER}/${SCRIPT}
-    else
-        log_block red "Monitoring action not found in bucket"
-    fi
+  if [ -d "/home/${USER}/scripts" ]; then
+    log_block green "Running all scripts from the directory"
+
+    find /home/${USER}/scripts -type f -name "*.sh" -exec chmod +x {} \;
+    for script in /home/${USER}/scripts/*.sh; do
+      if [ -f "$script" ]; then
+        log_block blue "Running script: $(basename "$script")"
+        bash "$script"
+
+        if [ $? -eq 0 ]; then
+          log_block green "Script $(basename "$script") completed successfully"
+        else 
+          log_block red "Script $(basename "$script") failed with exit code $?"
+        fi 
+      fi 
+    done 
+  else 
+    log_block red "Scripts directory was not created properly"
+  fi
+else 
+  log_block blue "Skipping additional script process because NAME or ENVIRONMENT is empty."
 fi
