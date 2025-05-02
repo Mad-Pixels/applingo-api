@@ -179,7 +179,7 @@ module "instance" {
   )
 
   instance_profile = aws_iam_instance_profile.monitoring_instance_profile.name
-  user_data        = file("${path.module}/utils/scripts/init-instance.sh")
+  user_data        = file("${path.module}/utils/init.sh")
 
   depends_on = [module.s3-monitoring-bucket]
 }
