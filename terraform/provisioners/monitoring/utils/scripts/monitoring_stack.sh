@@ -154,14 +154,6 @@ chown -R 472:472 ${GRAFANA_DIR}/data
 
 cd ${MONITORING_DIR}
 
-# --- WRITE AWS CONFIG ---
-log_block green "Writing AWS config"
-cat > /home/${USER}/.aws/config <<EOF
-[default]
-region = ${REGION}
-sts_regional_endpoints = regional
-EOF
-
 # --- WRITE PROMETHEUS CONFIG ---
 log_block green "Writing Prometheus config"
 cat > ${PROMETHEUS_DIR}/prometheus.yml <<'EOF'
@@ -429,8 +421,6 @@ services:
       - ${EXPORTER_CLOUDWATCH_DIR}/exporter.yml:/tmp/config.yml
       - /home/${USER}/.aws/config:/root/.aws/config:ro
     environment:
-      - AWS_STS_REGIONAL_ENDPOINTS=regional
-      - AWS_SDK_LOAD_CONFIG=true
       - AWS_REGION=${REGION}
     ports:
       - "9106:9106"

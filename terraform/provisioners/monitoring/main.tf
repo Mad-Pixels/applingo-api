@@ -146,10 +146,7 @@ module "vpc" {
   vpc_addr_block = "10.100.100.0"
   vpc_zones      = 1
 
-  enable_s3_endpoint         = true
-  enable_sts_endpoint        = true
-  enable_tagging_endpoint    = true
-  enable_cloudwatch_endpoint = true
+  enable_s3_endpoint = true
 }
 
 module "s3-monitoring-bucket" {
@@ -168,9 +165,9 @@ module "instance" {
 
   key_name      = local.provisioner
   subnet_id     = element(module.vpc.public_subnets, 0)
-  graviton_size = var.environment == "prd" ? "micro" : "nano"
+  graviton_size = var.environment == "nano"
 
-  associate_public_ip_address = false
+  associate_public_ip_address = true
 
   security_group_ids = concat(
     [aws_security_group.ingress_sg.id],
