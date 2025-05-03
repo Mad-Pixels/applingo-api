@@ -63,7 +63,7 @@ EXPORTER_CLOUDWATCH_DIR=${EXPORTERS_DIR}/cloudwatch
 
 # --- SHUTDOWN OLD STACK ---
 log_block blue "Stopping previous monitoring stack (if any)"
-cd ${MONITORING_DIR}
+mkdir ${MONITORING_DIR} && cd ${MONITORING_DIR}
 if [ -f docker-compose.yml ]; then
   docker-compose down --remove-orphans > /dev/null || true
 fi

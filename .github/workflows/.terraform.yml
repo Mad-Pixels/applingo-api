@@ -38,18 +38,6 @@ on:
         required: true
 
 jobs:
-  s3-monitoring:
-    name: S3 Monitoring
-    uses: Mad-Pixels/github-workflows/.github/workflows/aws-s3-sync.yml@main
-    with:
-      source_dir: "./terraform/provisioners/monitoring/utils"
-      bucket_prefix: "repository"
-    secrets:
-      aws_access_key: ${{ secrets.aws_access_key }}
-      aws_secret_key: ${{ secrets.aws_secret_key }}
-      aws_region:     ${{ secrets.aws_region }}
-      bucket_name:    ${{ secrets.aws_monitoring_bucket }}
-
   tf-infra:
     name: Tf Infra
     runs-on: ubuntu-latest
@@ -75,7 +63,6 @@ jobs:
             -var environment=${{ inputs.environment }}
 
   tf-monitoring:
-    needs: s3-monitoring
     name: Tf Monitoring
     runs-on: ubuntu-latest
 
@@ -95,7 +82,7 @@ jobs:
           backend_region:        ${{ secrets.aws_backend_region }}
 
           tf_dir:                terraform/provisioners/monitoring
-          tf_command:            ${{ inputs.tf_command }}
+          tf_command:            destroy
           tf_vars: >-
             -var environment=${{ inputs.environment }}
 
