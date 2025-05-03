@@ -19,6 +19,8 @@ jobs:
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_PRD }}
       aws_region:                 ${{ secrets.AWS_REGION }}
 
+      aws_monitoring_bucket:      ${{ secrets.AWS_MONITORING_BUCKET }}-prd
+
       aws_backend_bucket:         ${{ secrets.AWS_BACKEND_BUCKET }}
       aws_backend_region:         ${{ secrets.AWS_BACKEND_REGION }}
 

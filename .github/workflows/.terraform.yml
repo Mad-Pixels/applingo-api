@@ -15,6 +15,9 @@ on:
       aws_region: 
         required: true
 
+      aws_monitoring_bucket:
+        required: true
+
       aws_backend_bucket:
         required: true
       aws_backend_region:
@@ -79,7 +82,7 @@ jobs:
           backend_region:        ${{ secrets.aws_backend_region }}
 
           tf_dir:                terraform/provisioners/monitoring
-          tf_command:            ${{ inputs.tf_command }}
+          tf_command:            destroy
           tf_vars: >-
             -var environment=${{ inputs.environment }}
 
