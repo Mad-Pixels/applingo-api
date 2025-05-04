@@ -13,5 +13,5 @@ concurrency:
 
 jobs:
   checks:
-    name: Checks
+    name: (Base) Pr Checks
     uses: ./.github/workflows/.checks.yml

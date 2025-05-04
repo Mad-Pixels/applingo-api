@@ -10,7 +10,7 @@ jobs:
   apply:
     if: github.event.pull_request.merged == true
     uses: ./.github/workflows/.terraform.yml
-    name: Apply 
+    name: (STG) Apply 
     with:
       environment: "stg"
       tf_command: "apply"
@@ -36,7 +36,7 @@ jobs:
     needs: apply
     if: github.event.pull_request.merged == true
     uses: ./.github/workflows/.rollout.yml
-    name: Rollout 
+    name: (STG) Rollout 
     secrets:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}

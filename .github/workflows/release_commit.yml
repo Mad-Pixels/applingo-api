@@ -25,7 +25,7 @@ jobs:
   terraform:
     needs: check-commit
     if: needs.check-commit.outputs.proceed == 'true'
-    name: Tf
+    name: TfFmt
     uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
     with:
       tf_dir: ./terraform
@@ -56,7 +56,7 @@ jobs:
     needs: [terraform, golang, tests]
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.build.yml
-    name: build
+    name: (STG) Build
     with:
       base_ref: ${{ github.ref_name }}
     secrets:
@@ -69,7 +69,7 @@ jobs:
     needs: [terraform, golang, tests]
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.terraform.yml
-    name: Apply
+    name: (STG) Apply
     with:
       environment: "stg"
       tf_command: "apply"
@@ -94,7 +94,7 @@ jobs:
     needs: [apply, build]
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.rollout.yml
-    name: Rollout
+    name: (STG) Rollout
     secrets:
       aws_secret_key:             ${{ secrets.AWS_SECRET_KEY_STG }}
       aws_access_key:             ${{ secrets.AWS_ACCESS_KEY_STG }}

@@ -13,7 +13,7 @@ concurrency:
 jobs:
   plan:
     uses: ./.github/workflows/.terraform.yml
-    name: Plan
+    name: (PRD) Plan
     with:
       environment: "prd"
       tf_command: "plan"
@@ -38,7 +38,7 @@ jobs:
   build:
     needs: plan
     uses: ./.github/workflows/.build.yml
-    name: build
+    name: (PRD) Build
     with:
       base_ref: ${{ github.base_ref }}
     secrets:

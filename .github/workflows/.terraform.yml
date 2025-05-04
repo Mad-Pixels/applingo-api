@@ -39,7 +39,7 @@ on:
 
 jobs:
   tf-infra:
-    name: Tf Infra
+    name: TfInfra
     runs-on: ubuntu-latest
 
     steps:
@@ -62,33 +62,9 @@ jobs:
           tf_vars: >-
             -var environment=${{ inputs.environment }}
 
-  tf-monitoring:
-    name: Tf Monitoring
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Invoke
-        uses: Mad-Pixels/github-workflows/.github/actions/terraform@main
-        with:
-          aws_access_key_id:     ${{ secrets.aws_access_key }}
-          aws_secret_access_key: ${{ secrets.aws_secret_key }}
-          aws_region:            ${{ secrets.aws_region }}
-
-          backend_bucket:        ${{ secrets.aws_backend_bucket }}-${{ inputs.environment }}
-          backend_key:           ${{ secrets.aws_backend_monitoring_key }}
-          backend_region:        ${{ secrets.aws_backend_region }}
-
-          tf_dir:                terraform/provisioners/monitoring
-          tf_command:            destroy
-          tf_vars: >-
-            -var environment=${{ inputs.environment }}
-
   tf-service:
     needs: tf-infra
-    name: Tf Service
+    name: TfService
     runs-on: ubuntu-latest
 
     steps:

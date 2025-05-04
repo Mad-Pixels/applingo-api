@@ -5,7 +5,7 @@ on:
 
 jobs:
   terraform:
-    name: Tf
+    name: TfFmt
     uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
     with:
       tf_dir: ./terraform
