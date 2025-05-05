@@ -133,7 +133,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error saving report: %v", err)
 	}
-
 	fmt.Printf("Report successfully saved to file: %s\n", reportFileName)
 }
 
