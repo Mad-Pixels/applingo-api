@@ -16,6 +16,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+const (
+	defaultDaysWatchdog = 7
+)
+
 // ReportData stores all necessary data for the report
 type ReportData struct {
 	Date          string                          `json:"date"`
@@ -89,9 +93,6 @@ type LanguageCount struct {
 }
 
 func main() {
-	// Default to weekly report
-	days := 7
-
 	ctx := context.Background()
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -109,7 +110,7 @@ func main() {
 
 	// Filter items for specified period
 	now := time.Now()
-	startDate := now.AddDate(0, 0, -days)
+	startDate := now.AddDate(0, 0, -defaultDaysWatchdog)
 
 	var periodItems []applingoprocessing.SchemaItem
 	for _, item := range items {
@@ -120,7 +121,7 @@ func main() {
 	}
 
 	// Generate report data
-	period := fmt.Sprintf("Last %d days", days)
+	period := fmt.Sprintf("Last %d days", defaultDaysWatchdog)
 	reportData := generateReportData(periodItems, now, period)
 
 	// Generate HTML report
