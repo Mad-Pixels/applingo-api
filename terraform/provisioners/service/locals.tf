@@ -51,7 +51,7 @@ locals {
 
   _lambda_functions = distinct([
     for v in local._entries : split("/", v)[0]
-    if length(split("/", v)) > 1
+    if length(split("/", v)) > 1 && !startswith(split("/", v)[0], "tool-")
   ])
 
   _lambda_configs = {

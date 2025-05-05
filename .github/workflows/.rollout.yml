@@ -25,7 +25,7 @@ jobs:
       - name: Find functions to build
         id: get_functions
         run: |
-          FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | grep -v '^tool-' | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "functions=${FUNCTIONS}" >> $GITHUB_OUTPUT
 
   rollout:
