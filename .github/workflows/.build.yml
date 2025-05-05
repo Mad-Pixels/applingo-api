@@ -49,7 +49,7 @@ jobs:
       - name: Find functions to build
         id: set_functions
         run: |
-          ALL_FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+          ALL_FUNCTIONS=$(find ./cmd -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | grep -v '^tool-' | sort)
           CHANGED_FILES=$(cat changed_files.txt)
           SHOULD_BUILD_ALL=false
 
