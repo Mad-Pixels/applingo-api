@@ -243,7 +243,9 @@ tasks:
   go/run/tests:
     desc: Tests 
     dir: "{{ .git_root }}" 
-    cmd: echo "Hello"
+    deps:
+      - go/mod/vendor 
+    cmd: go test ./...
     silent: true
 
   docker/build/func:
