@@ -1,3 +1,4 @@
+// Package utils provides utility functions for randomness and list handling.
 package utils
 
 import (
@@ -7,20 +8,24 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ErrInvalidRange is returned when min is greater than max in a random range function.
 var ErrInvalidRange = errors.New("invalid range for random number")
 
-// RandomInt returns a random integer between min and max (inclusive)
-func RandomInt(min, max int) (int, error) {
-	if min > max {
-		return 0, fmt.Errorf("%w: min(%d) > max(%d)", ErrInvalidRange, min, max)
+// RandomInt returns a random integer between min and max (inclusive).
+// Returns an error if min > max.
+func RandomInt(minVal, maxVal int) (int, error) {
+	if minVal > maxVal {
+		return 0, fmt.Errorf("%w: min(%d) > max(%d)", ErrInvalidRange, minVal, maxVal)
 	}
-	if min == max {
-		return min, nil
+	if minVal == maxVal {
+		return minVal, nil
 	}
-	return min + rand.Intn(max-min+1), nil
+	return minVal + rand.Intn(maxVal-minVal+1), nil
 }
 
-// RandomFromList takes a function that returns a list and returns a random element from that list.
+// RandomFromList takes a function that returns a list of strings
+// and returns a random element from the list.
+// Returns an error if the list is empty or retrieval fails.
 func RandomFromList(listFn ListFunc) (string, error) {
 	items, err := listFn()
 	if err != nil {

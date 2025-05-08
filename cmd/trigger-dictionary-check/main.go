@@ -1,3 +1,5 @@
+// Package main implements a Lambda function to handle DynamoDB REMOVE events
+// and delete associated files from the S3 dictionary bucket.
 package main
 
 import (
@@ -38,19 +40,19 @@ func init() {
 	s3Bucket = cloud.NewBucket(cfg)
 }
 
-func handler(ctx context.Context, log zerolog.Logger, record json.RawMessage) error {
+// handler processes DynamoDB REMOVE events and deletes corresponding files from S3.
+func handler(ctx context.Context, _ zerolog.Logger, record json.RawMessage) error {
 	var dynamoDBEvent events.DynamoDBEventRecord
 	if err := serializer.UnmarshalJSON(record, &dynamoDBEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal request record: %w", err)
 	}
 
-	switch dynamoDBEvent.EventName {
-	case "REMOVE":
+	if dynamoDBEvent.EventName == "REMOVE" {
 		if err := remove(ctx, dynamoDBEvent); err != nil {
 			return fmt.Errorf("failed to delete file from bucket: %w", err)
 		}
-	default:
 	}
+
 	return nil
 }
 

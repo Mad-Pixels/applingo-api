@@ -1,3 +1,7 @@
+// Package main implements a Lambda-based API handler for managing secure
+// upload and download URLs for dictionary files via AWS S3. It provides
+// access control using JWT or HMAC authentication and enforces role-based
+// permissions for different operations.
 package main
 
 import (
@@ -51,7 +55,7 @@ func generatePolicy(principalID string, effect string, resource string, context 
 	return authResponse, nil
 }
 
-func handler(ctx context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func handler(_ context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	authHeader, ok := req.Headers["x-api-auth"]
 	if !ok || authHeader == "" {
 		log.Error().Msg("x-api-auth header missing")

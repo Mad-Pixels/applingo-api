@@ -11,8 +11,8 @@ import (
 	"github.com/Mad-Pixels/applingo-api/pkg/chatgpt"
 	"github.com/Mad-Pixels/applingo-api/pkg/cloud"
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
+
 	"github.com/google/uuid"
 )
 
@@ -66,7 +66,7 @@ func NewDictionaryCraftData() DictionaryCraftData {
 	}
 }
 
-// GetDicionaryName return the name crafted by openAI.
+// GetDictionaryName returns the dictionary name crafted by OpenAI.
 func (r *DictionaryCraftData) GetDictionaryName() string {
 	if r.response != nil {
 		return r.response.Meta.Name
@@ -90,7 +90,7 @@ func (r *DictionaryCraftData) GetDictionaryAuthor() string {
 	return ""
 }
 
-// GetWords return the dictionary words crafted by openAI.
+// GetWordsContainer returns the dictionary words crafted by OpenAI.
 func (r *DictionaryCraftData) GetWordsContainer() WordsContainer {
 	if r.response == nil {
 		return WordsContainer{Words: []DictionaryWordFromAI{}}
@@ -154,177 +154,63 @@ func (r *DictionaryCraftData) getPromptBody() io.Reader {
 }
 
 // ToPromptTemplate converts the DictionaryCraftData into a promptTemplate.
-func (d *DictionaryCraftData) toPromptTemplate() craftDictionaryPromptTemplate {
+func (r *DictionaryCraftData) toPromptTemplate() craftDictionaryPromptTemplate {
 	return craftDictionaryPromptTemplate{
-		DictionaryDescription: d.dictionaryDescription,
-		DictionaryTopic:       d.dictionaryTopic,
-		LanguageLevel:         d.languageLevel.String(),
-		LanguageFrom:          d.languageFrom.Name,
-		LanguageTo:            d.languageTo.Name,
-		WordsCount:            d.words,
+		DictionaryDescription: r.dictionaryDescription,
+		DictionaryTopic:       r.dictionaryTopic,
+		LanguageLevel:         r.languageLevel.String(),
+		LanguageFrom:          r.languageFrom.Name,
+		LanguageTo:            r.languageTo.Name,
+		WordsCount:            r.words,
 	}
 }
 
 // Setup initializes the DictionaryCraftData with the provided request parameters.
-func (r *DictionaryCraftData) Setup(ctx context.Context, req *RequestDictionaryCraft, s3cli *cloud.Bucket, promptBucketName string) error {
+func (r *DictionaryCraftData) Setup(
+	ctx context.Context,
+	req *RequestDictionaryCraft,
+	s3cli *cloud.Bucket,
+	promptBucketName string,
+) error {
+	r.request = req.Clone()
+	r.filename = uuid.New().String()
+
 	var (
+		wg       sync.WaitGroup
 		results  = make(chan workerResult, 3)
 		setupErr error
-		wg       sync.WaitGroup
 	)
-	r.request = req.Clone()
 
-	// OpenAI model data defenition worker.
-	runWorker(ctx, &wg, results, "openai", func() (err error) {
-		// prompt.
-		if req.PromptName == nil {
-			prompt, err := s3cli.GetRandomKey(ctx, promptBucketName, craftPromptPrefix)
-			if err != nil {
-				return errors.Join(ErrorGetKeyFromBucket(craftPromptPrefix, promptBucketName), err)
-			}
-			r.prompt = prompt
-		} else {
-			r.prompt = aws.ToString(req.PromptName)
-		}
-		// model.
-		if req.OpenaiModel == nil {
-			r.model = defaultModel
-		} else {
-			model, err := chatgpt.ParseModel(aws.ToString(req.OpenaiModel))
-			if err != nil {
-				return errors.Join(ErrorOpenAIModelNotSupported(aws.ToString(req.OpenaiModel)), err)
-			}
-			r.model = model
-		}
-		// temperature.
-		if req.Temperature != nil {
-			if aws.ToFloat64(req.Temperature) < 0 || aws.ToFloat64(req.Temperature) > 1 {
-				return ErrorGetTemperature(aws.ToFloat64(req.Temperature), 0, 1)
-			}
-			r.temperature = aws.ToFloat64(req.Temperature)
-		} else {
-			r.temperature = defaultTemperature
-		}
-		// Max concurrent execution.
-		if req.MaxConcurrent != nil {
-			if aws.ToInt(req.MaxConcurrent) < 1 {
-				r.maxConcurrent = defaultConcurrent
-			}
-			r.maxConcurrent = aws.ToInt(req.MaxConcurrent)
-		} else {
-			r.maxConcurrent = defaultConcurrent
-		}
-		return nil
+	runWorker(ctx, &wg, results, "openai", func() error {
+		return r.setupOpenAI(ctx, req, s3cli, promptBucketName)
 	})
-
-	// Dictionary data defenition worker.
-	runWorker(ctx, &wg, results, "dictionary", func() (err error) {
-		// Filename.
-		r.filename = uuid.New().String()
-		// Dictionary topic.
-		if req.DictionaryTopic != nil {
-			r.dictionaryTopic = aws.ToString(req.DictionaryTopic)
-		} else {
-			topic, err := types.GetRandomDictionaryTopic()
-			if err != nil {
-				return errors.Join(ErrorGenerateDictionaryTopic, err)
-			}
-			r.dictionaryTopic = topic.String()
-		}
-		// Dictionary description.
-		if req.DictionaryDescription != nil {
-			r.dictionaryDescription = aws.ToString(req.DictionaryDescription)
-		} else {
-			description, err := types.GetRandomDictionaryDescription()
-			if err != nil {
-				return errors.Join(ErrorGenerateDictionaryDescription, err)
-			}
-			r.dictionaryDescription = description.String()
-		}
-		// Words count.
-		if req.WordsCount != nil {
-			if aws.ToInt(req.WordsCount) < 1 || aws.ToInt(req.WordsCount) > dictionaryMaxLength {
-				return ErrorGetWordsCount(aws.ToInt(req.WordsCount), 1, dictionaryMaxLength)
-			}
-			r.words = aws.ToInt(req.WordsCount)
-		} else {
-			words, err := utils.RandomInt(dictionaryMinLength, dictionaryMaxLength)
-			if err != nil {
-				return errors.Join(ErrorGenerateRandomInt(dictionaryMinLength, dictionaryMaxLength), err)
-			}
-			r.words = words
-		}
-		// Dictionaries count.
-		if req.DictionariesCount != nil {
-			if aws.ToInt(req.DictionariesCount) < 1 {
-				r.dictionaries = 1
-			}
-			r.dictionaries = aws.ToInt(req.DictionariesCount)
-		} else {
-			r.dictionaries = 1
-		}
-		return nil
+	runWorker(ctx, &wg, results, "dictionary", func() error {
+		return r.setupDictionaryMeta(req)
 	})
-
-	// Languages data defenition worker.
-	runWorker(ctx, &wg, results, "languages", func() (err error) {
-		// Language level.
-		r.languageLevel, err = func() (types.LanguageLevel, error) {
-			if req.LanguageLevel != nil {
-				if level, err := types.ParseLanguageLevel(aws.ToString(req.LanguageLevel)); err == nil {
-					return level, nil
-				}
-			}
-			return types.GetRandomLanguageLevel()
-		}()
-		if err != nil {
-			return errors.Join(ErrorGenerateLanguage("level"), err)
-		}
-		// Language from.
-		r.languageFrom, err = func() (types.Language, error) {
-			if req.LanguageFrom != nil {
-				if language, err := types.ParseLanguageString(aws.ToString(req.LanguageFrom)); err == nil {
-					return language, nil
-				}
-			}
-			return types.GetRandomLanguage()
-		}()
-		if err != nil {
-			return errors.Join(ErrorGenerateLanguage("from"), err)
-		}
-		// Language to.
-		r.languageTo, err = func() (types.Language, error) {
-			if req.LanguageTo != nil {
-				if language, err := types.ParseLanguageString(aws.ToString(req.LanguageTo)); err == nil && language.Code != r.languageFrom.Code {
-					return language, nil
-				}
-			}
-			return types.GetRandomLanguageExcept(r.languageFrom)
-		}()
-		if err != nil {
-			return errors.Join(ErrorGenerateLanguage("to"), err)
-		}
-		return nil
+	runWorker(ctx, &wg, results, "languages", func() error {
+		return r.setupLanguages(req)
 	})
 
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
+
 	for res := range results {
 		if res.error != nil {
-			workerErr := errors.Join(ErrorWorkerProcess(res.key), res.error)
 			if setupErr == nil {
-				setupErr = workerErr
+				setupErr = errors.Join(ErrorWorkerProcess(res.key), res.error)
 			} else {
-				setupErr = errors.Join(setupErr, workerErr)
+				setupErr = errors.Join(setupErr, ErrorWorkerProcess(res.key), res.error)
 			}
 		}
 	}
+
 	if setupErr != nil {
 		return errors.Join(ErrorSetupProcess, setupErr)
 	}
 
+	// fetch prompt content
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -334,11 +220,126 @@ func (r *DictionaryCraftData) Setup(ctx context.Context, req *RequestDictionaryC
 			return errors.Join(ErrorGetBucketFileContent(r.prompt, promptBucketName), err)
 		}
 		defer s3Response.Close()
-
 		r.promptBuf.Reset()
-		if err = utils.TemplateFromReaderToWriter(r.promptBuf, s3Response, r.toPromptTemplate()); err != nil {
-			return errors.Join(ErrorParseTemplate(r.prompt), err)
-		}
-		return nil
+		return utils.TemplateFromReaderToWriter(r.promptBuf, s3Response, r.toPromptTemplate())
 	}
+}
+
+func (r *DictionaryCraftData) setupOpenAI(ctx context.Context, req *RequestDictionaryCraft, s3cli *cloud.Bucket, bucket string) error {
+	if req.PromptName == nil {
+		prompt, err := s3cli.GetRandomKey(ctx, bucket, craftPromptPrefix)
+		if err != nil {
+			return errors.Join(ErrorGetKeyFromBucket(craftPromptPrefix, bucket), err)
+		}
+		r.prompt = prompt
+	} else {
+		r.prompt = aws.ToString(req.PromptName)
+	}
+
+	if req.OpenaiModel == nil {
+		r.model = defaultModel
+	} else {
+		model, err := chatgpt.ParseModel(aws.ToString(req.OpenaiModel))
+		if err != nil {
+			return errors.Join(ErrorOpenAIModelNotSupported(aws.ToString(req.OpenaiModel)), err)
+		}
+		r.model = model
+	}
+
+	if req.Temperature != nil {
+		val := aws.ToFloat64(req.Temperature)
+		if val < 0 || val > 1 {
+			return ErrorGetTemperature(val, 0, 1)
+		}
+		r.temperature = val
+	} else {
+		r.temperature = defaultTemperature
+	}
+
+	if req.MaxConcurrent != nil && aws.ToInt(req.MaxConcurrent) >= 1 {
+		r.maxConcurrent = aws.ToInt(req.MaxConcurrent)
+	} else {
+		r.maxConcurrent = defaultConcurrent
+	}
+
+	return nil
+}
+
+func (r *DictionaryCraftData) setupDictionaryMeta(req *RequestDictionaryCraft) error {
+	if req.DictionaryTopic != nil {
+		r.dictionaryTopic = aws.ToString(req.DictionaryTopic)
+	} else {
+		topic, err := types.GetRandomDictionaryTopic()
+		if err != nil {
+			return errors.Join(ErrorGenerateDictionaryTopic, err)
+		}
+		r.dictionaryTopic = topic.String()
+	}
+
+	if req.DictionaryDescription != nil {
+		r.dictionaryDescription = aws.ToString(req.DictionaryDescription)
+	} else {
+		description, err := types.GetRandomDictionaryDescription()
+		if err != nil {
+			return errors.Join(ErrorGenerateDictionaryDescription, err)
+		}
+		r.dictionaryDescription = description.String()
+	}
+
+	if req.WordsCount != nil {
+		val := aws.ToInt(req.WordsCount)
+		if val < 1 || val > dictionaryMaxLength {
+			return ErrorGetWordsCount(val, 1, dictionaryMaxLength)
+		}
+		r.words = val
+	} else {
+		val, err := utils.RandomInt(dictionaryMinLength, dictionaryMaxLength)
+		if err != nil {
+			return errors.Join(ErrorGenerateRandomInt(dictionaryMinLength, dictionaryMaxLength), err)
+		}
+		r.words = val
+	}
+
+	if req.DictionariesCount != nil && aws.ToInt(req.DictionariesCount) >= 1 {
+		r.dictionaries = aws.ToInt(req.DictionariesCount)
+	} else {
+		r.dictionaries = 1
+	}
+
+	return nil
+}
+
+func (r *DictionaryCraftData) setupLanguages(req *RequestDictionaryCraft) error {
+	var err error
+
+	if req.LanguageLevel != nil {
+		r.languageLevel, err = types.ParseLanguageLevel(aws.ToString(req.LanguageLevel))
+	} else {
+		r.languageLevel, err = types.GetRandomLanguageLevel()
+	}
+	if err != nil {
+		return errors.Join(ErrorGenerateLanguage("level"), err)
+	}
+
+	if req.LanguageFrom != nil {
+		r.languageFrom, err = types.ParseLanguageString(aws.ToString(req.LanguageFrom))
+	} else {
+		r.languageFrom, err = types.GetRandomLanguage()
+	}
+	if err != nil {
+		return errors.Join(ErrorGenerateLanguage("from"), err)
+	}
+
+	if req.LanguageTo != nil {
+		langTo, err := types.ParseLanguageString(aws.ToString(req.LanguageTo))
+		if err == nil && langTo.Code != r.languageFrom.Code {
+			r.languageTo = langTo
+			return nil
+		}
+	}
+	r.languageTo, err = types.GetRandomLanguageExcept(r.languageFrom)
+	if err != nil {
+		return errors.Join(ErrorGenerateLanguage("to"), err)
+	}
+	return nil
 }

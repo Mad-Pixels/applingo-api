@@ -95,26 +95,53 @@ func GetRandomLanguageExcept(except Language) (Language, error) {
 type LanguageCode int
 
 const (
-	LangEN LanguageCode = iota // English
-	LangES                     // Spanish
-	// LangFR                     // French
-	LangDE // German
-	LangIT // Italian
-	LangPT // Portuguese
-	LangRU // Russian
-	// LangNL                     // Dutch
-	// LangPL                     // Polish
-	// LangCS                     // Czech
-	// LangSV                     // Swedish
-	// LangDA                     // Danish
-	// LangFI                     // Finnish
-	// LangNO                     // Norwegian
-	// LangHI                     // Hindi
-	// LangBN                     // Bengali
-	// LangID                     // Indonesian
-	// LangAR                     // Arabic
-	LangHE // Hebrew
-	// LangFA                     // Persian
+	// LangEN represents English ("en").
+	LangEN LanguageCode = iota
+
+	// LangES represents Spanish ("es").
+	LangES
+
+	// LangFR represents French ("fr").
+	// LangFR LanguageCode
+	// LangNL represents Dutch ("nl").
+	// LangNL LanguageCode
+	// LangPL represents Polish ("pl").
+	// LangPL LanguageCode
+	// LangCS represents Czech ("cs").
+	// LangCS LanguageCode
+	// LangSV represents Swedish ("sv").
+	// LangSV LanguageCode
+	// LangDA represents Danish ("da").
+	// LangDA LanguageCode
+	// LangFI represents Finnish ("fi").
+	// LangFI LanguageCode
+	// LangNO represents Norwegian ("no").
+	// LangNO LanguageCode
+	// LangHI represents Hindi ("hi").
+	// LangHI LanguageCode
+	// LangBN represents Bengali ("bn").
+	// LangBN LanguageCode
+	// LangID represents Indonesian ("id").
+	// LangID LanguageCode
+	// LangAR represents Arabic ("ar").
+	// LangAR LanguageCode
+	// LangFA represents Persian ("fa").
+	// LangFA LanguageCode
+
+	// LangDE represents German ("de").
+	LangDE
+
+	// LangIT represents Italian ("it").
+	LangIT
+
+	// LangPT represents Portuguese ("pt").
+	LangPT
+
+	// LangRU represents Russian ("ru").
+	LangRU
+
+	// LangHE represents Hebrew ("he").
+	LangHE
 )
 
 // String returns the ISO 639-1 code

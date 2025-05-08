@@ -15,9 +15,14 @@ import (
 )
 
 var (
+	// ErrBucketObjectNotFound is returned when an object is not found in the specified S3 bucket.
 	ErrBucketObjectNotFound = errors.New("object not found in bucket")
-	ErrBucketEmptyKey       = errors.New("empty object key")
-	ErrBucketEmptyBucket    = errors.New("empty bucket name")
+
+	// ErrBucketEmptyKey is returned when an empty object key is provided.
+	ErrBucketEmptyKey = errors.New("empty object key")
+
+	// ErrBucketEmptyBucket is returned when an empty bucket name is provided.
+	ErrBucketEmptyBucket = errors.New("empty bucket name")
 )
 
 const (
@@ -29,12 +34,25 @@ const (
 )
 
 const (
-	ContentTypeJSON  = "application/json"
-	ContentTypeText  = "text/plain"
-	ContentTypeHTML  = "text/html"
-	ContentTypeCSV   = "text/csv"
-	ContentTypePDF   = "application/pdf"
-	ContentTypeZIP   = "application/zip"
+	// ContentTypeJSON represents "application/json".
+	ContentTypeJSON = "application/json"
+
+	// ContentTypeText represents "text/plain".
+	ContentTypeText = "text/plain"
+
+	// ContentTypeHTML represents "text/html".
+	ContentTypeHTML = "text/html"
+
+	// ContentTypeCSV represents "text/csv".
+	ContentTypeCSV = "text/csv"
+
+	// ContentTypePDF represents "application/pdf".
+	ContentTypePDF = "application/pdf"
+
+	// ContentTypeZIP represents "application/zip".
+	ContentTypeZIP = "application/zip"
+
+	// ContentTypeImage represents "image/jpeg".
 	ContentTypeImage = "image/jpeg"
 )
 
@@ -209,7 +227,8 @@ func (b *Bucket) Exists(ctx context.Context, key, bucket string) (bool, error) {
 	return true, nil
 }
 
-// WaitOrError trying to check file in bucket muliple times, if not exist it return error.
+// WaitOrError tries to check if a file exists in the bucket multiple times.
+// Returns an error if the object does not appear after the given number of attempts.
 func (b *Bucket) WaitOrError(ctx context.Context, key, bucket string, maxAttempts int, delay time.Duration) error {
 	if err := validateInput(key, bucket); err != nil {
 		return err
@@ -302,8 +321,10 @@ func (b *Bucket) GetRandomKey(ctx context.Context, bucket, prefix string) (strin
 		listInput.Prefix = aws.String(prefix)
 	}
 
-	var currentIndex int64 = 0
-	var randomKey string
+	var (
+		currentIndex int64
+		randomKey    string
+	)
 	for {
 		output, err := b.client.ListObjectsV2(ctx, listInput)
 		if err != nil {
