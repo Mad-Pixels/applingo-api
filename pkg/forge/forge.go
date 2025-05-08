@@ -1,3 +1,5 @@
+// Package forge contains logic for crafting and validating language dictionaries,
+// including support for prompt templating and AI-based generation via OpenAI models.
 package forge
 
 import (

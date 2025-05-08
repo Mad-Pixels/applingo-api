@@ -1,3 +1,5 @@
+// Package serializer provides optimized JSON serialization and deserialization utilities
+// using json-iterator with buffer pooling to reduce memory allocations.
 package serializer
 
 import (
@@ -30,6 +32,7 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 		buf.Reset()
 		bufPool.Put(buf)
 	}()
+
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(v); err != nil {
 		return nil, err

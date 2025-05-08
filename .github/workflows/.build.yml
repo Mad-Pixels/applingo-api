@@ -61,25 +61,25 @@ jobs:
           done
 
           if [[ "$SHOULD_BUILD_ALL" == "true" ]]; then
-            echo "Detected global changes, will build all functions."
-            echo "functions=$(echo $ALL_FUNCTIONS | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+            JSON=$(printf '%s\n' $ALL_FUNCTIONS | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "functions=$JSON" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           CHANGED_FUNCTIONS=()
           for func in $ALL_FUNCTIONS; do
-            if echo "$CHANGED_FILES" | grep -q "^cmd/$func/"; then
+            if grep -q "^cmd/$func/" changed_files.txt; then
               CHANGED_FUNCTIONS+=("$func")
             fi
           done
 
           if [[ ${#CHANGED_FUNCTIONS[@]} -eq 0 ]]; then
-            echo "No functions changed, skipping build."
             echo "functions=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "functions=$(printf '%s\n' "${CHANGED_FUNCTIONS[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+          JSON=$(printf '%s\n' "${CHANGED_FUNCTIONS[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "functions=$JSON" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare

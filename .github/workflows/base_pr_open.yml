@@ -15,3 +15,5 @@ jobs:
   checks:
     name: (Base) Pr Checks
     uses: ./.github/workflows/.checks.yml
+    secrets:
+      gitleaks: ${{ secrets.GITLEAKS_LICENSE }}

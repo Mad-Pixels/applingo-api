@@ -1,3 +1,6 @@
+// Package main provides a Lambda function that handles processing of dictionary records,
+// including insertion, modification, and deletion. It integrates with AWS DynamoDB and S3
+// and uses OpenAI for validating dictionary content.
 package main
 
 import (
@@ -51,7 +54,7 @@ func init() {
 		httpclient.New().
 			WithTimeout(timeout).
 			WithMaxRetries(defaultRetries, defaultBackoff).
-			WithRetryCondition(func(statusCode int, responseBody string) bool {
+			WithRetryCondition(func(statusCode int, _ string) bool {
 				return statusCode >= 500 && statusCode < 600
 			}),
 		openaiToken,

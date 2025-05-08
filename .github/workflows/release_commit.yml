@@ -22,38 +22,14 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
-  terraform:
-    needs: check-commit
-    if: needs.check-commit.outputs.proceed == 'true'
-    name: TfFmt
-    uses: Mad-Pixels/github-workflows/.github/workflows/terraform-fmt.yml@main
-    with:
-      tf_dir: ./terraform
-
-  golang:
-    needs: check-commit
-    if: needs.check-commit.outputs.proceed == 'true'
-    name: GoLint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run GoLint
-        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
-        with:
-          command: go/run/lint
-
-  tests:
-    needs: check-commit
-    if: needs.check-commit.outputs.proceed == 'true'
-    name: GoTest
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Go Tests
-        uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
-        with:
-          command: go/run/tests
+  checks:
+    name: (STG) Commit Checks
+    uses: ./.github/workflows/.checks.yml
+    secrets:
+      gitleaks: ${{ secrets.GITLEAKS_LICENSE }}
 
   build:
-    needs: [terraform, golang, tests]
+    needs: [checks]
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.build.yml
     name: (STG) Build
@@ -66,7 +42,7 @@ jobs:
       aws_account:                ${{ secrets.AWS_ACCOUNT_ID_STG }}
 
   apply:
-    needs: [terraform, golang, tests]
+    needs: [checks]
     if: always() && needs.check-commit.outputs.proceed == 'true'
     uses: ./.github/workflows/.terraform.yml
     name: (STG) Apply

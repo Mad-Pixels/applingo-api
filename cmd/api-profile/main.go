@@ -1,3 +1,6 @@
+// Package main implements the Lambda API for managing user profiles.
+// It handles creating and updating profile records in DynamoDB,
+// with appropriate permission checks and validation.
 package main
 
 import (

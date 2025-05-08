@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handleProfilePost(ctx context.Context, logger zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handleProfilePost(ctx context.Context, _ zerolog.Logger, body json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).IsDevice() {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}

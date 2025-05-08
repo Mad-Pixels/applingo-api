@@ -1,3 +1,5 @@
+// Package main implements the Lambda handler for retrieving available language learning levels.
+// It exposes the levels endpoint and returns a predefined list of CEFR levels.
 package main
 
 import (

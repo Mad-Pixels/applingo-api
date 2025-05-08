@@ -26,30 +26,30 @@ type changes struct {
 	newItem *applingoprocessing.SchemaItem
 }
 
-func detectChanges(old, new *applingoprocessing.SchemaItem) changes {
+func detectChanges(old, newItem *applingoprocessing.SchemaItem) changes {
 	c := changes{
-		score:  old.Score != new.Score,
-		upload: old.Upload != new.Upload,
+		score:  old.Score != newItem.Score,
+		upload: old.Upload != newItem.Upload,
 
 		oldItem: old,
-		newItem: new,
+		newItem: newItem,
 	}
 
-	if c.upload && new.Upload == 1 {
+	if c.upload && newItem.Upload == 1 {
 		c.needProcess = true
 	}
-	if c.score && new.Score >= autoUploadScoreThreshold {
+	if c.score && newItem.Score >= autoUploadScoreThreshold {
 		c.needProcess = true
 	}
 	return c
 }
 
 func modify(ctx context.Context, e events.DynamoDBEventRecord) error {
-	new, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(e)
+	newItem, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(e)
 	if err != nil {
 		return fmt.Errorf("failed extract new data: %w", err)
 	}
-	old, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(events.DynamoDBEventRecord{
+	oldItem, err := applingoprocessing.ExtractFromDynamoDBStreamEvent(events.DynamoDBEventRecord{
 		Change: events.DynamoDBStreamRecord{
 			NewImage: e.Change.OldImage,
 		},
@@ -57,7 +57,7 @@ func modify(ctx context.Context, e events.DynamoDBEventRecord) error {
 	if err != nil {
 		return fmt.Errorf("failed extract old data: %w", err)
 	}
-	c := detectChanges(old, new)
+	c := detectChanges(oldItem, newItem)
 
 	if c.needProcess {
 		if err := processRecordToDictionary(ctx, &c); err != nil {

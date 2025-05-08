@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handleSubcategoriesGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
+func handleSubcategoriesGet(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, baseParams openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{Status: http.StatusForbidden, Err: errors.New("insufficient permissions")}
 	}

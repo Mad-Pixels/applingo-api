@@ -1,3 +1,5 @@
+// Package httpclient provides a simple HTTP client wrapper with retry logic,
+// customizable retry conditions, and request timeout support.
 package httpclient
 
 import (

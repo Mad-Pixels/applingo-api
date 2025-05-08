@@ -1,3 +1,5 @@
+// Package trigger provides a generic concurrent record processor for AWS Lambda events,
+// supporting event types such as SQS and DynamoDB.
 package trigger
 
 import (

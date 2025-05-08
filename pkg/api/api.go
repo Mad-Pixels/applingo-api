@@ -1,3 +1,5 @@
+// Package api provides the core HTTP routing and Lambda handler logic
+// for dispatching requests to registered handler functions.
 package api
 
 import (
@@ -15,14 +17,20 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// HandleFunc defines the function signature for API route handlers.
+// It receives context, logger, raw request body, and parsed query parameters.
 type HandleFunc func(context.Context, zerolog.Logger, json.RawMessage, openapi.QueryParams) (any, *HandleError)
 
+// API is the main router for handling Lambda-based HTTP API Gateway requests.
+// It maps HTTP method + path combinations to corresponding handlers.
 type API struct {
 	cfg      Config
 	log      zerolog.Logger
 	handlers map[string]HandleFunc
 }
 
+// NewLambda creates and returns a new API instance that routes
+// Lambda API Gateway requests using the provided configuration and handlers map.
 func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 	if handlers == nil {
 		panic("handlers map cannot be nil")
@@ -34,6 +42,9 @@ func NewLambda(cfg Config, handlers map[string]HandleFunc) *API {
 	}
 }
 
+// Handle is the entrypoint method for Lambda to process API Gateway requests.
+// It performs authentication, logs requests, dispatches to the appropriate handler,
+// and constructs a response with the appropriate HTTP status code.
 func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	opKey := fmt.Sprintf("%s:%s", req.RequestContext.HTTPMethod, req.RequestContext.ResourcePath)
 
@@ -55,7 +66,7 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 	handler, ok := a.handlers[opKey]
 	if !ok {
 		if a.cfg.EnableRequestLogging {
-			a.logError(req, opKey, errors.New("Unknown operation"))
+			a.logError(req, opKey, errors.New("unknown operation"))
 		}
 		return gatewayResponse(
 			http.StatusNotFound,
@@ -82,10 +93,10 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 	}
 
 	var status int
-	switch {
-	case req.HTTPMethod == "POST":
+	switch req.HTTPMethod {
+	case "POST":
 		status = http.StatusCreated
-	case req.HTTPMethod == "DELETE":
+	case "DELETE":
 		status = http.StatusNoContent
 	default:
 		status = http.StatusOK
@@ -93,6 +104,7 @@ func (a *API) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (ev
 	return gatewayResponse(status, result, nil)
 }
 
+// logRequest logs metadata about an incoming API Gateway request.
 func (a *API) logRequest(ctx context.Context, req events.APIGatewayProxyRequest) {
 	meta := MustGetMetaData(ctx)
 
@@ -110,6 +122,7 @@ func (a *API) logRequest(ctx context.Context, req events.APIGatewayProxyRequest)
 	event.Msg("Received API Gateway event")
 }
 
+// logError logs an error that occurred while handling a request.
 func (a *API) logError(req events.APIGatewayProxyRequest, opKey string, err error) {
 	a.log.Error().
 		Str("httpMethod", req.HTTPMethod).
