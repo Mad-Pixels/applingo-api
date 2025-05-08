@@ -1,3 +1,8 @@
+// Package main implements an AWS Lambda handler for generating
+// secure pre-signed URLs for uploading and downloading dictionary
+// files to and from S3. It validates incoming requests, enforces
+// permission checks, and supports role-based access via JWT or HMAC
+// authentication mechanisms.
 package main
 
 import (

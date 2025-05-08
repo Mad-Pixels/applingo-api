@@ -5,34 +5,83 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DictionaryDescription represents predefined dictionary descriptions
+// DictionaryDescription represents predefined dictionary descriptions.
 type DictionaryDescription int
 
 const (
+	// DescEssentialCollection is a collection of essential words and expressions.
 	DescEssentialCollection DictionaryDescription = iota
+
+	// DescPracticalTerms includes practical terminology for real-world use.
 	DescPracticalTerms
+
+	// DescComprehensiveGuide provides a wide-ranging vocabulary guide.
 	DescComprehensiveGuide
+
+	// DescLanguageToolkit offers a toolkit of diverse expressions.
 	DescLanguageToolkit
+
+	// DescVocabularyEssentials focuses on core vocabulary for fluency.
 	DescVocabularyEssentials
+
+	// DescExpressionIndex is an index of frequently used expressions.
 	DescExpressionIndex
+
+	// DescLanguageResource is a general resource for language learning.
 	DescLanguageResource
+
+	// DescWordCollection is a thoughtfully assembled set of words.
 	DescWordCollection
+
+	// DescLinguisticCompendium provides a variety of linguistic elements.
 	DescLinguisticCompendium
+
+	// DescCommunicationEssentials includes key phrases for conversations.
 	DescCommunicationEssentials
+
+	// DescPhraseRepository contains many useful and practical phrases.
 	DescPhraseRepository
+
+	// DescVocabularyCompilation is a compiled list of valuable vocabulary.
 	DescVocabularyCompilation
+
+	// DescLearningCompanion acts as a helper in the learning process.
 	DescLearningCompanion
+
+	// DescExpressionCatalog provides categorized expressions.
 	DescExpressionCatalog
+
+	// DescWordInventory lists a range of commonly used words.
 	DescWordInventory
+
+	// DescLanguageElements contains the building blocks of communication.
 	DescLanguageElements
+
+	// DescPhraseDirectory is a structured list of phrases.
 	DescPhraseDirectory
+
+	// DescTerminologyGuide guides through specialized terms.
 	DescTerminologyGuide
+
+	// DescVocabularySpectrum spans a broad range of vocabulary.
 	DescVocabularySpectrum
+
+	// DescExpressiveToolbox is a collection of expressive language tools.
 	DescExpressiveToolbox
+
+	// DescLanguageFoundation focuses on foundational language units.
 	DescLanguageFoundation
+
+	// DescWordPortfolio is a rich portfolio of useful words.
 	DescWordPortfolio
+
+	// DescConversationalTools includes tools for fluent conversation.
 	DescConversationalTools
+
+	// DescLinguisticSelection is a selected group of linguistic elements.
 	DescLinguisticSelection
+
+	// DescVocabularyPanorama offers a panoramic view of vocabulary.
 	DescVocabularyPanorama
 )
 

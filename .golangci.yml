@@ -1,0 +1,46 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+linters:
+  default: standard
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - ineffassign
+    - gocritic
+    - revive
+    - dupl
+    - misspell
+  exclusions:
+    presets:
+      - common-false-positives
+      - std-error-handling
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  dupl:
+    threshold: 100
+  revive:
+    rules:
+      - name: exported
+        disabled: false
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - "vendor"
+    - "testdata"
+  skip-files:
+    - ".*\\.gen\\.go"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
