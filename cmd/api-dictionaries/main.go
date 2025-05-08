@@ -1,3 +1,4 @@
+// Package main implements the Lambda API for managing user dictionaries.
 package main
 
 import (

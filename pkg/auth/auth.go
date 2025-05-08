@@ -1,15 +1,24 @@
+// Package auth defines user roles and permissions used for access control.
 package auth
 
 import "time"
 
 const (
-	TimestampDelay  = 15
+	// TimestampDelay defines the allowed time difference (in seconds) for validating request timestamps.
+	TimestampDelay = 15
+
+	// HeaderTimestamp is the HTTP header name used to send a request timestamp.
 	HeaderTimestamp = "x-timestamp"
+
+	// HeaderSignature is the HTTP header name used to send the HMAC signature.
 	HeaderSignature = "x-signature"
-	HeaderAuth      = "Authorization"
+
+	// HeaderAuth is the HTTP header name used to send the JWT token.
+	HeaderAuth = "Authorization"
 )
 
 // Authenticator provides the main authentication functionality
+// combining HMAC and JWT-based mechanisms.
 type Authenticator struct {
 	deviceToken string
 	jwtSecret   []byte
@@ -17,7 +26,7 @@ type Authenticator struct {
 	jwt         *JWTAuth
 }
 
-// NewAuthenticator creates a new instance of Authenticator
+// NewAuthenticator creates a new instance of Authenticator.
 func NewAuthenticator(deviceToken string, jwtSecret string) *Authenticator {
 	auth := &Authenticator{
 		deviceToken: deviceToken,
@@ -28,17 +37,17 @@ func NewAuthenticator(deviceToken string, jwtSecret string) *Authenticator {
 	return auth
 }
 
-// ValidateDeviceRequest validates device authentication request
+// ValidateDeviceRequest validates device authentication request using timestamp and signature.
 func (a *Authenticator) ValidateDeviceRequest(timestamp, signature string) error {
 	return a.hmac.ValidateRequest(timestamp, signature)
 }
 
-// ValidateJWTToken validates JWT token and returns claims
+// ValidateJWTToken validates a JWT token and returns the parsed claims.
 func (a *Authenticator) ValidateJWTToken(tokenString string) (*Claims, error) {
 	return a.jwt.ValidateToken(tokenString)
 }
 
-// GenerateToken generates new JWT token
+// GenerateToken generates a new JWT token with the given user ID, role, and expiration time.
 func (a *Authenticator) GenerateToken(userID int, role Role, expiresIn time.Duration) (string, error) {
 	return a.jwt.GenerateToken(userID, role, expiresIn)
 }

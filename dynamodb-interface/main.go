@@ -1,3 +1,4 @@
+//nolint:gocritic
 package main
 
 import (
@@ -971,6 +972,7 @@ func isAttribute(name string, attributes []Attribute) bool {
 	return false
 }
 
+//nolint:gocritic
 func toCamelCase(s string) string {
 	var result string
 	capitalizeNext := true

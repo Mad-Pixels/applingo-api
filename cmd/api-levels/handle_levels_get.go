@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func handleLevelsGet(ctx context.Context, logger zerolog.Logger, _ json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
+func handleLevelsGet(ctx context.Context, _ zerolog.Logger, _ json.RawMessage, _ openapi.QueryParams) (any, *api.HandleError) {
 	if !api.MustGetMetaData(ctx).HasPermissions(auth.Device) {
 		return nil, &api.HandleError{
 			Status: http.StatusForbidden,
