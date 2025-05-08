@@ -1,0 +1,6 @@
+title = "Gitleaks"
+
+[config]
+  version = 2
+
+[rules]

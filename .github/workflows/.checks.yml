@@ -27,3 +27,17 @@ jobs:
         uses: Mad-Pixels/github-workflows/.github/actions/taskfile@main
         with:
           command: go/run/tests
+  
+  leaks:
+    name: GitLeaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: ./gitleaks.toml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
