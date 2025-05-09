@@ -11,7 +11,7 @@ type DictionaryDescription int
 
 const (
 	// ----------------------------- >
-	// Group: Universal Descriptions
+	// Group: Universal descriptions
 	// ----------------------------- >
 
 	// DescPracticalUsage emphasizes practical usage and clarity.
