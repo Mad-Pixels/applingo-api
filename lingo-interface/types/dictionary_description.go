@@ -2,140 +2,224 @@ package types
 
 import (
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/pkg/errors"
 )
 
-// DictionaryDescription represents predefined dictionary descriptions
+// DictionaryDescription represents predefined dictionary descriptions.
 type DictionaryDescription int
 
 const (
-	DescEssentialCollection DictionaryDescription = iota
-	DescPracticalTerms
-	DescComprehensiveGuide
-	DescLanguageToolkit
-	DescVocabularyEssentials
-	DescExpressionIndex
-	DescLanguageResource
-	DescWordCollection
-	DescLinguisticCompendium
-	DescCommunicationEssentials
-	DescPhraseRepository
-	DescVocabularyCompilation
-	DescLearningCompanion
-	DescExpressionCatalog
-	DescWordInventory
-	DescLanguageElements
-	DescPhraseDirectory
-	DescTerminologyGuide
-	DescVocabularySpectrum
-	DescExpressiveToolbox
-	DescLanguageFoundation
-	DescWordPortfolio
-	DescConversationalTools
-	DescLinguisticSelection
-	DescVocabularyPanorama
+	// ----------------------------- >
+	// Group: Universal Descriptions
+	// ----------------------------- >
+
+	// DescPracticalUsage emphasizes practical usage and clarity.
+	DescPracticalUsage DictionaryDescription = iota
+
+	// DescEssentialPatterns focuses on essential communication patterns.
+	DescEssentialPatterns
+
+	// DescContextualExamples provides varied examples and contextual clarity.
+	DescContextualExamples
+
+	// DescRetentionFriendly structured for easier retention and recall.
+	DescRetentionFriendly
+
+	// DescRealWorldUsage organized to reflect real-world usage.
+	DescRealWorldUsage
+
+	// DescActivePassive designed to improve both active and passive vocabulary.
+	DescActivePassive
+
+	// DescFunctionalFocus highlights functionally important words.
+	DescFunctionalFocus
+
+	// DescContextUnderstanding promotes better understanding through context.
+	DescContextUnderstanding
+
+	// DescRegisterBalance balanced between formal and informal registers.
+	DescRegisterBalance
+
+	// DescDailyComprehension optimized for everyday comprehension and use.
+	DescDailyComprehension
+
+	// DescClearDefinitions with clear definitions and everyday contexts.
+	DescClearDefinitions
+
+	// DescConsistentAcquisition intended to support consistent vocabulary acquisition.
+	DescConsistentAcquisition
+
+	// DescFrequencyClarity prioritizes frequency and clarity over complexity.
+	DescFrequencyClarity
+
+	// DescMeaningfulAssociations curated for meaningful word associations.
+	DescMeaningfulAssociations
+
+	// DescContextLearning organized to encourage contextual learning.
+	DescContextLearning
+
+	// DescMemorabilityFocus built around usage relevance and memorability.
+	DescMemorabilityFocus
+
+	// DescFamiliarExamples encouraging word usage through familiar examples.
+	DescFamiliarExamples
+
+	// DescNaturalAbsorption optimized for natural language absorption.
+	DescNaturalAbsorption
+
+	// DescRetentionBoost aimed at reinforcing thematic vocabulary retention.
+	DescRetentionBoost
+
+	// DescGeneralCommunication tailored to general real-life communication.
+	DescGeneralCommunication
+
+	// DescCommunicativeValue featuring language with high communicative value.
+	DescCommunicativeValue
+
+	// DescWellRounded understanding of each word.
+	DescWellRounded
+
+	// DescRepetitionVariation strengthen comprehension through repetition and variation.
+	DescRepetitionVariation
+
+	// DescRelatableContexts framed around clear and relatable contexts.
+	DescRelatableContexts
+
+	// DescUniversalApplicability designed for universal applicability across situations.
+	DescUniversalApplicability
+
+	// DescEngagementRetention intended to maximize engagement and memory retention.
+	DescEngagementRetention
+
+	// DescFunctionBalance with focus on word function and usage balance.
+	DescFunctionBalance
+
+	// DescFluencyDevelopment supporting development of fluency through exposure.
+	DescFluencyDevelopment
+
+	// DescUsageScenarios with attention to common usage scenarios.
+	DescUsageScenarios
+
+	// DescReliableReference curated to serve as a reliable vocabulary reference.
+	DescReliableReference
 )
 
-// String returns the description text
+// String returns the description text.
 func (d DictionaryDescription) String() string {
 	switch d {
-	case DescEssentialCollection:
-		return "A carefully curated collection of essential words and expressions for effective communication"
-	case DescPracticalTerms:
-		return "Practical terminology and phrases for real-world conversations and situations"
-	case DescComprehensiveGuide:
-		return "A comprehensive guide to important vocabulary and meaningful expressions"
-	case DescLanguageToolkit:
-		return "A versatile toolkit of words and phrases for diverse communication needs"
-	case DescVocabularyEssentials:
-		return "Essential vocabulary selections to enhance language fluency and understanding"
-	case DescExpressionIndex:
-		return "An index of useful expressions and terminology for natural communication"
-	case DescLanguageResource:
-		return "A valuable resource of words and phrases for language development"
-	case DescWordCollection:
-		return "A thoughtfully assembled collection of words and expressions for daily use"
-	case DescLinguisticCompendium:
-		return "A compendium of linguistic elements to enrich your language skills"
-	case DescCommunicationEssentials:
-		return "Communication essentials for meaningful interactions and conversations"
-	case DescPhraseRepository:
-		return "A repository of phrases and vocabulary for effective self-expression"
-	case DescVocabularyCompilation:
-		return "A compilation of vocabulary designed to enhance communication abilities"
-	case DescLearningCompanion:
-		return "A companion of words and expressions to support language learning journey"
-	case DescExpressionCatalog:
-		return "A catalog of expressions and terminology for authentic communication"
-	case DescWordInventory:
-		return "An inventory of words and phrases to build confidence in language use"
-	case DescLanguageElements:
-		return "Fundamental language elements for clear and precise communication"
-	case DescPhraseDirectory:
-		return "A directory of phrases and terminology for expanding language capabilities"
-	case DescTerminologyGuide:
-		return "A guide to terminology and expressions for versatile language application"
-	case DescVocabularySpectrum:
-		return "A spectrum of vocabulary to enhance expression and comprehension"
-	case DescExpressiveToolbox:
-		return "A toolbox of expressive words and phrases for diverse communication contexts"
-	case DescLanguageFoundation:
-		return "Foundational language components for building strong communication skills"
-	case DescWordPortfolio:
-		return "A portfolio of words and expressions to enrich your language repertoire"
-	case DescConversationalTools:
-		return "Essential conversational tools for natural and fluid communication"
-	case DescLinguisticSelection:
-		return "A carefully selected linguistic collection for effective language use"
-	case DescVocabularyPanorama:
-		return "A panorama of vocabulary to broaden language horizons and abilities"
+	case DescPracticalUsage:
+		return "Emphasizing practical usage and clarity"
+	case DescEssentialPatterns:
+		return "Focusing on essential communication patterns"
+	case DescContextualExamples:
+		return "Providing varied examples and contextual clarity"
+	case DescRetentionFriendly:
+		return "Structured for easier retention and recall"
+	case DescRealWorldUsage:
+		return "Organized to reflect real-world usage"
+	case DescActivePassive:
+		return "Designed to improve both active and passive vocabulary"
+	case DescFunctionalFocus:
+		return "Highlighting functionally important words"
+	case DescContextUnderstanding:
+		return "Promoting better understanding through context"
+	case DescRegisterBalance:
+		return "Balanced between formal and informal registers"
+	case DescDailyComprehension:
+		return "Optimized for everyday comprehension and use"
+	case DescClearDefinitions:
+		return "With clear definitions and everyday contexts"
+	case DescConsistentAcquisition:
+		return "Intended to support consistent vocabulary acquisition"
+	case DescFrequencyClarity:
+		return "Prioritizing frequency and clarity over complexity"
+	case DescMeaningfulAssociations:
+		return "Curated for meaningful word associations"
+	case DescContextLearning:
+		return "Organized to encourage contextual learning"
+	case DescMemorabilityFocus:
+		return "Built around usage relevance and memorability"
+	case DescFamiliarExamples:
+		return "Encouraging word usage through familiar examples"
+	case DescNaturalAbsorption:
+		return "Optimized for natural language absorption"
+	case DescRetentionBoost:
+		return "Aimed at reinforcing thematic vocabulary retention"
+	case DescGeneralCommunication:
+		return "Tailored to general real-life communication"
+	case DescCommunicativeValue:
+		return "Featuring language with high communicative value"
+	case DescWellRounded:
+		return "Providing well-rounded understanding of each word"
+	case DescRepetitionVariation:
+		return "Built to strengthen comprehension through repetition and variation"
+	case DescRelatableContexts:
+		return "Framed around clear and relatable contexts"
+	case DescUniversalApplicability:
+		return "Designed for universal applicability across situations"
+	case DescEngagementRetention:
+		return "Intended to maximize engagement and memory retention"
+	case DescFunctionBalance:
+		return "With focus on word function and usage balance"
+	case DescFluencyDevelopment:
+		return "Supporting development of fluency through exposure"
+	case DescUsageScenarios:
+		return "With attention to common usage scenarios"
+	case DescReliableReference:
+		return "Curated to serve as a reliable vocabulary reference"
 	default:
-		return "A valuable collection of words and expressions for language learning"
+		return "General-purpose vocabulary description"
 	}
 }
 
-// AllDictionaryDescriptions returns a slice of all available descriptions
+// AllDictionaryDescriptions returns a slice of all available dictionary descriptions.
 func AllDictionaryDescriptions() []DictionaryDescription {
 	return []DictionaryDescription{
-		DescEssentialCollection,
-		DescPracticalTerms,
-		DescComprehensiveGuide,
-		DescLanguageToolkit,
-		DescVocabularyEssentials,
-		DescExpressionIndex,
-		DescLanguageResource,
-		DescWordCollection,
-		DescLinguisticCompendium,
-		DescCommunicationEssentials,
-		DescPhraseRepository,
-		DescVocabularyCompilation,
-		DescLearningCompanion,
-		DescExpressionCatalog,
-		DescWordInventory,
-		DescLanguageElements,
-		DescPhraseDirectory,
-		DescTerminologyGuide,
-		DescVocabularySpectrum,
-		DescExpressiveToolbox,
-		DescLanguageFoundation,
-		DescWordPortfolio,
-		DescConversationalTools,
-		DescLinguisticSelection,
-		DescVocabularyPanorama,
+		DescPracticalUsage,
+		DescEssentialPatterns,
+		DescContextualExamples,
+		DescRetentionFriendly,
+		DescRealWorldUsage,
+		DescActivePassive,
+		DescFunctionalFocus,
+		DescContextUnderstanding,
+		DescRegisterBalance,
+		DescDailyComprehension,
+		DescClearDefinitions,
+		DescConsistentAcquisition,
+		DescFrequencyClarity,
+		DescMeaningfulAssociations,
+		DescContextLearning,
+		DescMemorabilityFocus,
+		DescFamiliarExamples,
+		DescNaturalAbsorption,
+		DescRetentionBoost,
+		DescGeneralCommunication,
+		DescCommunicativeValue,
+		DescWellRounded,
+		DescRepetitionVariation,
+		DescRelatableContexts,
+		DescUniversalApplicability,
+		DescEngagementRetention,
+		DescFunctionBalance,
+		DescFluencyDevelopment,
+		DescUsageScenarios,
+		DescReliableReference,
 	}
 }
 
-// GetRandomDictionaryDescription returns a random dictionary description
+// GetRandomDictionaryDescription returns a random dictionary description.
 func GetRandomDictionaryDescription() (DictionaryDescription, error) {
-	descriptions := AllDictionaryDescriptions()
-	idx, err := utils.RandomInt(0, len(descriptions)-1)
+	descs := AllDictionaryDescriptions()
+	idx, err := utils.RandomInt(0, len(descs)-1)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get random description")
 	}
-	return descriptions[idx], nil
+	return descs[idx], nil
 }
 
-// ParseDictionaryDescription converts string to DictionaryDescription
+// ParseDictionaryDescription converts a string to DictionaryDescription.
 func ParseDictionaryDescription(s string) (DictionaryDescription, error) {
 	for _, desc := range AllDictionaryDescriptions() {
 		if desc.String() == s {

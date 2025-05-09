@@ -1,3 +1,4 @@
+// Package validator provides a wrapper around go-playground/validator with custom validation tags.
 package validator
 
 import (
@@ -9,10 +10,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Validator wraps the validator.Validate instance and exposes custom validation logic.
 type Validator struct {
 	validate *validator.Validate
 }
 
+// New returns a new Validator instance with registered custom validation tags.
 func New() *Validator {
 	v := validator.New()
 	registerCustomTags(v)
@@ -20,14 +23,17 @@ func New() *Validator {
 	return &Validator{validate: v}
 }
 
+// ValidateStruct validates a struct based on its tags.
 func (v *Validator) ValidateStruct(s any) error {
 	return v.validate.Struct(s)
 }
 
+// ValidateField validates a single field against the specified tag.
 func (v *Validator) ValidateField(field any, tag string) error {
 	return v.validate.Var(field, tag)
 }
 
+// StructErrorToString converts validation errors into a human-readable string.
 func (v *Validator) StructErrorToString(err error) string {
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		var sb strings.Builder
@@ -39,18 +45,19 @@ func (v *Validator) StructErrorToString(err error) string {
 	return err.Error()
 }
 
+// registerCustomTags registers project-specific custom validation tags.
 func registerCustomTags(v *validator.Validate) {
-	v.RegisterValidation("base_str", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("base_str", func(fl validator.FieldLevel) bool {
 		invalidChars := "^*%$#@!~`\\/<>?"
 		return validateStringWithoutInvalidChars(fl.Field().String(), invalidChars)
 	})
 
-	v.RegisterValidation("ext_str", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("ext_str", func(fl validator.FieldLevel) bool {
 		invalidChars := "^*%$@!~`\\/<>?"
 		return validateStringWithoutInvalidChars(fl.Field().String(), invalidChars)
 	})
 
-	v.RegisterValidation("lang_code", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("lang_code", func(fl validator.FieldLevel) bool {
 		s := fl.Field().String()
 		if len(s) != 2 {
 			return false
@@ -58,11 +65,12 @@ func registerCustomTags(v *validator.Validate) {
 		return unicode.IsUpper(rune(s[0])) && unicode.IsDigit(rune(s[1]))
 	})
 
-	v.RegisterValidation("file", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("file", func(fl validator.FieldLevel) bool {
 		return utils.IsFileID(fl.Field().String())
 	})
 }
 
+// validateStringWithoutInvalidChars checks if the string contains any disallowed characters.
 func validateStringWithoutInvalidChars(s string, invalidChars string) bool {
 	for _, r := range s {
 		if strings.ContainsRune(invalidChars, r) {

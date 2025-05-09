@@ -18,7 +18,12 @@ func insert(ctx context.Context, e events.DynamoDBEventRecord) error {
 		return fmt.Errorf("failed to extract item from DynamoDB event: %w", err)
 	}
 
-	req := forge.NewRequestDictionaryCheck()
+	var (
+		req  = forge.NewRequestDictionaryCheck()
+		temp = 0.1
+	)
+
+	req.Temperature = &temp
 	result, err := forge.Check(ctx, req, item, serviceForgeBucket, serviceProcessingBucket, gptClient, s3Bucket)
 	if err != nil {
 		return fmt.Errorf("failed to check dictionary: %w", err)

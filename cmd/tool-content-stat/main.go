@@ -1,3 +1,6 @@
+// Package main implements tools for show dictionaries reports.
+//
+//nolint:gocritic
 package main
 
 import (

@@ -1,3 +1,5 @@
+// Package main implements the AWS Lambda handler for the subcategories endpoint.
+// It sets up routing and logging configuration using the API framework.
 package main
 
 import (

@@ -4,28 +4,33 @@ import (
 	"strings"
 
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
-
 	"github.com/pkg/errors"
 )
 
-// LanguageLevel represents CEFR language proficiency level
+// LanguageLevel represents a CEFR language proficiency level.
 type LanguageLevel int
 
 const (
-	// Beginner levels
-	LevelA1 LanguageLevel = iota // Basic
-	LevelA2                      // Elementary
+	// LevelA1 represents the A1 (Beginner) language level.
+	LevelA1 LanguageLevel = iota
 
-	// Intermediate levels
-	LevelB1 // Intermediate
-	LevelB2 // Upper Intermediate
+	// LevelA2 represents the A2 (Elementary) language level.
+	LevelA2
 
-	// Advanced levels
-	LevelC1 // Advanced
-	LevelC2 // Mastery
+	// LevelB1 represents the B1 (Intermediate) language level.
+	LevelB1
+
+	// LevelB2 represents the B2 (Upper Intermediate) language level.
+	LevelB2
+
+	// LevelC1 represents the C1 (Advanced) language level.
+	LevelC1
+
+	// LevelC2 represents the C2 (Mastery) language level.
+	LevelC2
 )
 
-// String returns the string representation of the language level
+// String returns the string representation of the LanguageLevel.
 func (l LanguageLevel) String() string {
 	switch l {
 	case LevelA1:
@@ -45,7 +50,7 @@ func (l LanguageLevel) String() string {
 	}
 }
 
-// AllLanguageLevels returns a slice of all available language levels
+// AllLanguageLevels returns all supported CEFR language levels.
 func AllLanguageLevels() []LanguageLevel {
 	return []LanguageLevel{
 		LevelA1,
@@ -57,7 +62,7 @@ func AllLanguageLevels() []LanguageLevel {
 	}
 }
 
-// GetRandomLanguageLevel returns a random language level
+// GetRandomLanguageLevel returns a randomly selected CEFR language level.
 func GetRandomLanguageLevel() (LanguageLevel, error) {
 	levels := AllLanguageLevels()
 	idx, err := utils.RandomInt(0, len(levels)-1)
@@ -67,7 +72,7 @@ func GetRandomLanguageLevel() (LanguageLevel, error) {
 	return levels[idx], nil
 }
 
-// ParseLanguageLevel converts string to LanguageLevel
+// ParseLanguageLevel parses a string (e.g., "A2") into a LanguageLevel value.
 func ParseLanguageLevel(s string) (LanguageLevel, error) {
 	s = strings.ToUpper(s)
 	switch s {

@@ -230,7 +230,7 @@ tasks:
       - _go/install/lint
       - go/mod/vendor 
     cmds: 
-      - "{{.go_root}}/bin/golangci-lint run cmd/... -v --timeout=15m"
+      - "{{.go_root}}/bin/golangci-lint run"
   
   go/run/fumpt:
     desc: Run 'gofumpt'.
@@ -243,7 +243,9 @@ tasks:
   go/run/tests:
     desc: Tests 
     dir: "{{ .git_root }}" 
-    cmd: echo "Hello"
+    deps:
+      - go/mod/vendor 
+    cmd: go test ./...
     silent: true
 
   docker/build/func:

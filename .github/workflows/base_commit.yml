@@ -14,3 +14,5 @@ jobs:
   checks:
     name: (Base) Commit Checks
     uses: ./.github/workflows/.checks.yml
+    secrets:
+      gitleaks: ${{ secrets.GITLEAKS_LICENSE }}

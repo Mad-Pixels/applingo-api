@@ -41,7 +41,7 @@ func handleReportPost(ctx context.Context, _ zerolog.Logger, raw json.RawMessage
 		}
 		logs = make([]applingoapi.RequestPostReportV1, 0)
 	} else {
-		defer reader.Close() //nolint:errcheck
+		defer reader.Close()
 		if err = json.NewDecoder(reader).Decode(&logs); err != nil {
 			return nil, &api.HandleError{Status: http.StatusInternalServerError, Err: err}
 		}

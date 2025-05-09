@@ -25,16 +25,16 @@ var (
 		return fmt.Errorf("failed to read file '%s' from bucket '%s'", key, bucket)
 	}
 	// ErrorGenerateRandomInt indicates a failure to generate a random integer within the provided bounds.
-	ErrorGenerateRandomInt = func(min, max int) error {
-		return fmt.Errorf("failed to get random int between %d and %d", min, max)
+	ErrorGenerateRandomInt = func(minVal, maxVal int) error {
+		return fmt.Errorf("failed to get random int between %d and %d", minVal, maxVal)
 	}
 	// ErrorGetTemperature indicates that the provided temperature is out of the allowed range.
-	ErrorGetTemperature = func(temperature float64, min, max float64) error {
-		return fmt.Errorf("temperature must be between %f and %f, got %f", min, max, temperature)
+	ErrorGetTemperature = func(temp float64, minVal, maxVal float64) error {
+		return fmt.Errorf("temperature must be between %f and %f, got %f", minVal, maxVal, temp)
 	}
 	// ErrorGetWordsCount indicates that the provided word count is not within the allowed range.
-	ErrorGetWordsCount = func(words int, min, max int) error {
-		return fmt.Errorf("words count must be between %d and %d, got %d", min, max, words)
+	ErrorGetWordsCount = func(words int, minVal, maxVal int) error {
+		return fmt.Errorf("words count must be between %d and %d, got %d", minVal, maxVal, words)
 	}
 	// ErrorGetKeyFromBucket indicates a failure to retrieve a specific key from an S3 bucket.
 	ErrorGetKeyFromBucket = func(key, bucket string) error {

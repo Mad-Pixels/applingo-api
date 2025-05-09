@@ -1,3 +1,5 @@
+// Package main provides a Lambda function that schedules and initiates dictionary crafting
+// using OpenAI. It uploads crafted dictionaries to S3 and inserts metadata into DynamoDB.
 package main
 
 import (
@@ -66,7 +68,7 @@ func init() {
 		httpclient.New().
 			WithTimeout(timeout).
 			WithMaxRetries(retriesOpenAIRequest, backoffOpenAIRequest).
-			WithRetryCondition(func(statusCode int, responseBody string) bool {
+			WithRetryCondition(func(statusCode int, _ string) bool {
 				return statusCode >= 500 && statusCode < 600
 			}),
 		openaiToken,

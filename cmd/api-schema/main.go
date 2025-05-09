@@ -1,3 +1,5 @@
+// Package main sets up the AWS Lambda function for handling the schema endpoint.
+// It initializes the API router and request logging configuration.
 package main
 
 import (

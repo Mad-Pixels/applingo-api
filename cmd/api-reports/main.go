@@ -1,3 +1,5 @@
+// Package main implements the API Lambda for reporting runtime errors from the device.
+// It provides the report endpoint for sending structured error reports to an S3 bucket.
 package main
 
 import (

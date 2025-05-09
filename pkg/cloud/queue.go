@@ -11,9 +11,16 @@ import (
 )
 
 var (
-	ErrEmptyQueueURL      = errors.New("empty queue URL")
-	ErrEmptyMessageBody   = errors.New("empty message body")
+	// ErrEmptyQueueURL is returned when a required SQS queue URL is empty.
+	ErrEmptyQueueURL = errors.New("empty queue URL")
+
+	// ErrEmptyMessageBody is returned when the message body is missing in a send request.
+	ErrEmptyMessageBody = errors.New("empty message body")
+
+	// ErrEmptyReceiptHandle is returned when the receipt handle is not provided for delete or visibility operations.
 	ErrEmptyReceiptHandle = errors.New("empty receipt handle")
+
+	// ErrInvalidMaxMessages is returned when the number of requested messages is out of valid range (1 to 10).
 	ErrInvalidMaxMessages = errors.New("max messages should be between 1 and 10")
 )
 
@@ -125,15 +132,22 @@ func (q *Queue) ReceiveMessage(ctx context.Context, input ReceiveMessageInput) (
 		VisibilityTimeout:   defaultVisibilityTimeout,
 		WaitTimeSeconds:     defaultWaitTimeSeconds,
 	}
+
 	if input.VisibilityTimeout != nil {
 		msgInput.VisibilityTimeout = *input.VisibilityTimeout
 	}
+
 	if input.WaitTimeSeconds != nil {
 		msgInput.WaitTimeSeconds = *input.WaitTimeSeconds
 	}
+
 	if len(input.AttributeNames) > 0 {
-		msgInput.AttributeNames = input.AttributeNames
+		msgInput.MessageSystemAttributeNames = make([]types.MessageSystemAttributeName, len(input.AttributeNames))
+		for i, attr := range input.AttributeNames {
+			msgInput.MessageSystemAttributeNames[i] = types.MessageSystemAttributeName(attr)
+		}
 	}
+
 	if len(input.MessageAttributes) > 0 {
 		msgInput.MessageAttributeNames = input.MessageAttributes
 	}
