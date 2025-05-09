@@ -2,265 +2,310 @@ package types
 
 import (
 	"github.com/Mad-Pixels/applingo-api/pkg/utils"
+
 	"github.com/pkg/errors"
 )
 
-// DictionaryTopic represents common dictionary topics.
+// DictionaryTopic represents practical, real-life dictionary topics.
 type DictionaryTopic int
 
 const (
-	// TopicBasics represents basic vocabulary.
-	TopicBasics DictionaryTopic = iota
+	// ----------------------------- >
+	// Group: Travel & Transportation
+	// ----------------------------- >
 
-	// TopicFood represents food and cooking.
-	TopicFood
+	// TopicAirportTravel represents vocabulary related to airports and air travel.
+	TopicAirportTravel DictionaryTopic = iota
 
-	// TopicTravel represents travel and tourism.
-	TopicTravel
+	// TopicHotel represents vocabulary related to hotels and accommodations.
+	TopicHotel
 
-	// TopicBusiness represents business and management.
-	TopicBusiness
+	// TopicDiningOut represents vocabulary for restaurants and dining out.
+	TopicDiningOut
 
-	// TopicTechnology represents technology and innovation.
-	TopicTechnology
+	// TopicGroceryShopping represents vocabulary for supermarkets and grocery stores.
+	TopicGroceryShopping
 
-	// TopicHealth represents health and medicine.
-	TopicHealth
+	// TopicPublicTransport represents vocabulary for public transportation and tickets.
+	TopicPublicTransport
 
-	// TopicSports represents sports and fitness.
-	TopicSports
+	// TopicNavigation represents vocabulary for navigating streets and asking directions.
+	TopicNavigation
 
-	// TopicEntertainment represents entertainment and media.
-	TopicEntertainment
+	// TopicCarRental represents vocabulary for renting and using cars abroad.
+	TopicCarRental
 
-	// TopicScience represents science and research.
-	TopicScience
+	// TopicSightseeing represents vocabulary for tourist attractions and sightseeing.
+	TopicSightseeing
 
-	// TopicNature represents nature and environment.
-	TopicNature
+	// TopicTransportApps represents vocabulary for using local transport apps and maps.
+	TopicTransportApps
 
-	// TopicArt represents art and creativity.
-	TopicArt
+	// TopicCityNavigation represents vocabulary for navigating urban environments.
+	TopicCityNavigation
 
-	// TopicMusic represents music and performance.
-	TopicMusic
+	// Group: Emergencies & Healthcare
 
-	// TopicLiterature represents literature and writing.
-	TopicLiterature
+	// TopicEmergency represents vocabulary for emergencies and healthcare situations.
+	TopicEmergency
 
-	// TopicMovies represents movies and cinematography.
-	TopicMovies
+	// TopicPharmacy represents vocabulary for pharmacies and medications.
+	TopicPharmacy
 
-	// TopicHistory represents history and civilizations.
-	TopicHistory
+	// TopicMedicalVisit represents vocabulary for visiting doctors and describing symptoms.
+	TopicMedicalVisit
 
-	// TopicPsychology represents psychology and behavior.
-	TopicPsychology
+	// TopicVetVisit represents vocabulary for pets and veterinary visits.
+	TopicVetVisit
 
-	// TopicPhilosophy represents philosophy and ethics.
-	TopicPhilosophy
+	// ----------------------------- >
+	// Group: Daily Life & Services
+	// ----------------------------- >
 
-	// TopicEconomics represents economics and markets.
-	TopicEconomics
+	// TopicCafeCulture represents vocabulary related to cafés and coffee culture.
+	TopicCafeCulture
 
-	// TopicPolitics represents politics and governance.
-	TopicPolitics
+	// TopicLocalFoods represents vocabulary for local food items and bakeries.
+	TopicLocalFoods
 
-	// TopicGeography represents geography and cultures.
-	TopicGeography
+	// TopicSeasonalClothing represents vocabulary for clothing and weather conditions.
+	TopicSeasonalClothing
 
-	// TopicAstronomy represents astronomy and space.
-	TopicAstronomy
+	// TopicSIMCards represents vocabulary for mobile phones and SIM cards abroad.
+	TopicSIMCards
 
-	// TopicPets represents pets and animal care.
-	TopicPets
+	// TopicRealEstate represents vocabulary for renting and buying property.
+	TopicRealEstate
 
-	// TopicGardening represents gardening and plants.
-	TopicGardening
+	// TopicSpecialDiets represents vocabulary for food allergies and dietary preferences.
+	TopicSpecialDiets
 
-	// TopicArchitecture represents architecture and design.
-	TopicArchitecture
+	// TopicFestivals represents vocabulary related to festivals and local holidays.
+	TopicFestivals
 
-	// TopicPhotography represents photography and visual arts.
-	TopicPhotography
+	// TopicPublicServices represents vocabulary for city services and public offices.
+	TopicPublicServices
 
-	// TopicRelationships represents relationships and communication.
-	TopicRelationships
+	// TopicStreetFood represents vocabulary for local markets and street food.
+	TopicStreetFood
 
-	// TopicInternet represents internet and digital life.
-	TopicInternet
+	// TopicHairSalon represents vocabulary for visiting barbershops and hair salons.
+	TopicHairSalon
 
-	// TopicEducation represents education and learning.
-	TopicEducation
-
-	// TopicFinance represents finance and investing.
-	TopicFinance
-
-	// TopicSocialMedia represents social media and networking.
-	TopicSocialMedia
-
-	// TopicInnovations represents innovations and discoveries.
-	TopicInnovations
-
-	// TopicLaw represents law and justice.
-	TopicLaw
-
-	// TopicMedicine represents medicine and healthcare.
-	TopicMedicine
-
-	// TopicFashion represents fashion and style.
-	TopicFashion
-
-	// TopicCulture represents culture and traditions.
-	TopicCulture
-
-	// TopicHobbies represents hobbies and leisure activities.
-	TopicHobbies
-
-	// TopicWorkplace represents workplace and professional life.
-	TopicWorkplace
-
-	// TopicHome represents home and household management.
-	TopicHome
-
-	// TopicTransportation represents transportation and travel modes.
-	TopicTransportation
-
-	// TopicWeather represents weather and climate.
+	// TopicWeather represents vocabulary for weather forecasts and natural conditions.
 	TopicWeather
 
-	// TopicEmotions represents emotions and feelings.
-	TopicEmotions
+	// TopicPostOffice represents vocabulary for postal services and parcel delivery.
+	TopicPostOffice
 
-	// TopicHolidays represents holidays and celebrations.
+	// TopicLibrary represents vocabulary for libraries and studying.
+	TopicLibrary
+
+	// TopicRecycling represents vocabulary for waste sorting and recycling.
+	TopicRecycling
+
+	// TopicLostAndFound represents vocabulary for lost items and related conversations.
+	TopicLostAndFound
+
+	// ----------------------------- >
+	// Group: Work & Business
+	// ----------------------------- >
+
+	// TopicJobInterviews represents vocabulary for job interviews and resumes.
+	TopicJobInterviews
+
+	// TopicOfficeCommunication represents vocabulary for communication in office settings.
+	TopicOfficeCommunication
+
+	// TopicBusinessWriting represents vocabulary for emails and formal writing.
+	TopicBusinessWriting
+
+	// TopicRemoteWork represents vocabulary for remote work and freelancing.
+	TopicRemoteWork
+
+	// TopicOnlineShopping represents vocabulary for e-commerce and deliveries.
+	TopicOnlineShopping
+
+	// TopicBanking represents vocabulary for banking and opening accounts.
+	TopicBanking
+
+	// TopicInvesting represents vocabulary for personal finance and investing.
+	TopicInvesting
+
+	// TopicInsurance represents vocabulary for insurance policies and claims.
+	TopicInsurance
+
+	// TopicDigitalSecurity represents vocabulary related to cybersecurity and privacy.
+	TopicDigitalSecurity
+
+	// ----------------------------- >
+	// Group: Communication & Culture
+	// ----------------------------- >
+
+	// TopicCulturalEtiquette represents vocabulary for customs, etiquette, and manners.
+	TopicCulturalEtiquette
+
+	// TopicSocialMedia represents vocabulary for social networks and digital profiles.
+	TopicSocialMedia
+
+	// TopicConnectivity represents vocabulary for public Wi-Fi and internet access.
+	TopicConnectivity
+
+	// TopicSmallTalk represents vocabulary for small talk and casual conversations.
+	TopicSmallTalk
+
+	// TopicLanguageExchange represents vocabulary for language exchange and studying abroad.
+	TopicLanguageExchange
+
+	// ----------------------------- >
+	// Group: Hobbies & Leisure
+	// ----------------------------- >
+
+	// TopicMuseums represents vocabulary for museums and art galleries.
+	TopicMuseums
+
+	// TopicTravelPhotography represents vocabulary for taking photos while traveling.
+	TopicTravelPhotography
+
+	// TopicGardening represents vocabulary for gardening tools and plant care.
+	TopicGardening
+
+	// TopicDIY represents vocabulary for home repairs and do-it-yourself projects.
+	TopicDIY
+
+	// TopicHolidays represents vocabulary for holiday activities and celebrations.
 	TopicHolidays
 
-	// TopicShopping represents shopping and consumer behavior.
+	// TopicShopping represents vocabulary for shopping and consumer behavior.
 	TopicShopping
-
-	// TopicAcademic represents academic and research terminology.
-	TopicAcademic
-
-	// TopicUrbanLife represents urban life and city navigation.
-	TopicUrbanLife
 )
 
-// String returns the string representation of the topic
+// String returns the string representation of the topic.
 func (t DictionaryTopic) String() string {
 	switch t {
-	case TopicBasics:
-		return "Basic Vocabulary"
-	case TopicFood:
-		return "Food and Cooking"
-	case TopicTravel:
-		return "Travel and Tourism"
-	case TopicBusiness:
-		return "Business and Management"
-	case TopicTechnology:
-		return "Technology and Innovation"
-	case TopicHealth:
-		return "Health and Medicine"
-	case TopicSports:
-		return "Sports and Fitness"
-	case TopicEntertainment:
-		return "Entertainment and Media"
-	case TopicScience:
-		return "Science and Research"
-	case TopicNature:
-		return "Nature and Environment"
-	case TopicArt:
-		return "Art and Creativity"
-	case TopicMusic:
-		return "Music and Performance"
-	case TopicLiterature:
-		return "Literature and Writing"
-	case TopicMovies:
-		return "Movies and Cinematography"
-	case TopicHistory:
-		return "History and Civilizations"
-	case TopicPsychology:
-		return "Psychology and Behavior"
-	case TopicPhilosophy:
-		return "Philosophy and Ethics"
-	case TopicEconomics:
-		return "Economics and Markets"
-	case TopicPolitics:
-		return "Politics and Governance"
-	case TopicGeography:
-		return "Geography and Cultures"
-	case TopicAstronomy:
-		return "Astronomy and Space"
-	case TopicPets:
-		return "Pets and Animal Care"
-	case TopicGardening:
-		return "Gardening and Plants"
-	case TopicArchitecture:
-		return "Architecture and Design"
-	case TopicPhotography:
-		return "Photography and Visual Arts"
-	case TopicRelationships:
-		return "Relationships and Communication"
-	case TopicInternet:
-		return "Internet and Digital Life"
-	case TopicEducation:
-		return "Education and Learning"
-	case TopicFinance:
-		return "Finance and Investing"
+	case TopicAirportTravel:
+		return "Airport and Air Travel"
+	case TopicHotel:
+		return "Hotel and Accommodation"
+	case TopicDiningOut:
+		return "Restaurants and Dining Out"
+	case TopicGroceryShopping:
+		return "Supermarket and Grocery Shopping"
+	case TopicEmergency:
+		return "Emergency and Healthcare Situations"
+	case TopicPublicTransport:
+		return "Public Transportation and Tickets"
+	case TopicNavigation:
+		return "Street Navigation and Directions"
+	case TopicCarRental:
+		return "Renting a Car Abroad"
+	case TopicJobInterviews:
+		return "Job Interviews and Resumes"
+	case TopicOfficeCommunication:
+		return "Office Communication and Meetings"
+	case TopicBusinessWriting:
+		return "Email and Business Writing"
+	case TopicOnlineShopping:
+		return "Online Shopping and Delivery"
+	case TopicDigitalSecurity:
+		return "Digital Security and Privacy"
+	case TopicBanking:
+		return "Banking and Opening an Account"
+	case TopicInvesting:
+		return "Investing and Personal Finance"
+	case TopicInsurance:
+		return "Insurance and Claims"
+	case TopicPharmacy:
+		return "Pharmacy and Medication"
+	case TopicMedicalVisit:
+		return "Doctor’s Appointment and Symptoms"
+	case TopicCafeCulture:
+		return "Cafés and Coffee Culture"
+	case TopicLocalFoods:
+		return "Bakeries and Local Foods"
+	case TopicSightseeing:
+		return "Tourist Attractions and Sightseeing"
+	case TopicSeasonalClothing:
+		return "Climate and Seasonal Clothing"
+	case TopicTransportApps:
+		return "Local Transportation Apps and Maps"
+	case TopicCulturalEtiquette:
+		return "Cultural Etiquette and Manners"
+	case TopicSIMCards:
+		return "Mobile Phones and SIM Cards Abroad"
+	case TopicRealEstate:
+		return "Real Estate and Apartment Search"
+	case TopicSpecialDiets:
+		return "Food Allergies and Special Diets"
+	case TopicFestivals:
+		return "Festivals and Local Holidays"
+	case TopicPublicServices:
+		return "City Services and Public Offices"
+	case TopicRemoteWork:
+		return "Working Remotely and Freelancing"
+	case TopicMuseums:
+		return "Art Galleries and Museums"
+	case TopicTravelPhotography:
+		return "Photography and Taking Pictures Abroad"
 	case TopicSocialMedia:
-		return "Social Media and Networking"
-	case TopicInnovations:
-		return "Innovations and Discoveries"
-	case TopicLaw:
-		return "Law and Justice"
-	case TopicMedicine:
-		return "Medicine and Healthcare"
-	case TopicFashion:
-		return "Fashion and Style"
-	case TopicCulture:
-		return "Culture and Traditions"
-	case TopicHobbies:
-		return "Hobbies and Leisure Activities"
-	case TopicWorkplace:
-		return "Workplace and Professional Life"
-	case TopicHome:
-		return "Home and Household Management"
-	case TopicTransportation:
-		return "Transportation and Travel Modes"
+		return "Social Media and Online Presence"
+	case TopicConnectivity:
+		return "Public Wi-Fi and Connectivity"
+	case TopicSmallTalk:
+		return "Small Talk and Daily Conversations"
+	case TopicVetVisit:
+		return "Pets and Vet Visits"
+	case TopicGardening:
+		return "Gardening Tools and Plants"
+	case TopicStreetFood:
+		return "Local Markets and Street Food"
+	case TopicDIY:
+		return "DIY and Home Repairs"
+	case TopicHairSalon:
+		return "Hairdresser and Barbershop Vocabulary"
 	case TopicWeather:
-		return "Weather and Climate"
-	case TopicEmotions:
-		return "Emotions and Feelings"
+		return "Weather Forecast and Natural Conditions"
+	case TopicLibrary:
+		return "Libraries and Study Materials"
+	case TopicPostOffice:
+		return "Parcel Pickup and Postal Services"
+	case TopicLanguageExchange:
+		return "Language Exchange and Study Abroad"
+	case TopicRecycling:
+		return "Recycling and Waste Sorting"
+	case TopicLostAndFound:
+		return "Lost and Found Situations"
 	case TopicHolidays:
 		return "Holidays and Celebrations"
 	case TopicShopping:
 		return "Shopping and Consumer Behavior"
-	case TopicAcademic:
-		return "Academic and Research Terminology"
-	case TopicUrbanLife:
+	case TopicCityNavigation:
 		return "Urban Life and City Navigation"
 	default:
 		return "Unknown Topic"
 	}
 }
 
-// AllDictionaryTopics returns a slice of all available topics
+// AllDictionaryTopics returns a slice of all available dictionary topics.
 func AllDictionaryTopics() []DictionaryTopic {
 	return []DictionaryTopic{
-		TopicBasics, TopicFood, TopicTravel, TopicBusiness, TopicTechnology,
-		TopicHealth, TopicSports, TopicEntertainment, TopicScience,
-		TopicNature, TopicArt, TopicMusic, TopicLiterature, TopicMovies,
-		TopicHistory, TopicPsychology, TopicPhilosophy, TopicEconomics,
-		TopicPolitics, TopicGeography, TopicAstronomy, TopicPets,
-		TopicGardening, TopicArchitecture, TopicPhotography, TopicRelationships,
-		TopicInternet, TopicEducation, TopicFinance, TopicSocialMedia,
-		TopicInnovations, TopicLaw, TopicMedicine, TopicFashion,
-		TopicCulture, TopicHobbies, TopicWorkplace, TopicHome,
-		TopicTransportation, TopicWeather, TopicEmotions, TopicHolidays,
-		TopicShopping, TopicAcademic, TopicUrbanLife,
+		TopicAirportTravel, TopicHotel, TopicDiningOut, TopicGroceryShopping,
+		TopicEmergency, TopicPublicTransport, TopicNavigation, TopicCarRental,
+		TopicJobInterviews, TopicOfficeCommunication, TopicBusinessWriting,
+		TopicOnlineShopping, TopicDigitalSecurity, TopicBanking, TopicInvesting,
+		TopicInsurance, TopicPharmacy, TopicMedicalVisit,
+		TopicCafeCulture, TopicLocalFoods, TopicSightseeing, TopicSeasonalClothing,
+		TopicTransportApps, TopicCulturalEtiquette, TopicSIMCards, TopicRealEstate,
+		TopicSpecialDiets, TopicFestivals, TopicPublicServices, TopicRemoteWork,
+		TopicMuseums, TopicTravelPhotography, TopicSocialMedia, TopicConnectivity,
+		TopicSmallTalk, TopicVetVisit, TopicGardening, TopicStreetFood,
+		TopicDIY, TopicHairSalon, TopicWeather, TopicLibrary, TopicPostOffice,
+		TopicLanguageExchange, TopicRecycling, TopicLostAndFound, TopicHolidays,
+		TopicShopping, TopicCityNavigation,
 	}
 }
 
-// GetRandomDictionaryTopic returns a random dictionary topic
+// GetRandomDictionaryTopic returns a random dictionary topic.
 func GetRandomDictionaryTopic() (DictionaryTopic, error) {
 	topics := AllDictionaryTopics()
 	idx, err := utils.RandomInt(0, len(topics)-1)
@@ -270,7 +315,7 @@ func GetRandomDictionaryTopic() (DictionaryTopic, error) {
 	return topics[idx], nil
 }
 
-// ParseDictionaryTopic converts string to DictionaryTopic
+// ParseDictionaryTopic converts a string to DictionaryTopic.
 func ParseDictionaryTopic(s string) (DictionaryTopic, error) {
 	for _, topic := range AllDictionaryTopics() {
 		if topic.String() == s {
