@@ -64,6 +64,7 @@ require (
 	github.com/go-openapi/spec v0.21.0
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
